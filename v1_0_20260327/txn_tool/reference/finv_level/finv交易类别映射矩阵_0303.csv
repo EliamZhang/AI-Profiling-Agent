@@ -1,0 +1,408 @@
+﻿loan_regular,account_type,tag_level1,dr_cr,tag_level2,category
+Loan Account,car loan,LIABILITY,credit,Liability_Repayment,Non SACC Loans
+Loan Account,credit card,LIABILITY,credit,Liability_Repayment,Credit Card Repayments
+Regular Account,transaction,LIABILITY,credit,Refund_Or_Reversal,Credit Card Repayments
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Debt Collection
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Debt Consolidation
+Loan Account,credit card,LIABILITY,credit,Liability_Repayment,Non SACC Loans
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Non SACC Loans
+Loan Account,credit card,LIABILITY,credit,Liability_Repayment,SACC Loans
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,SACC Loans
+Loan Account,home loan,LIABILITY,credit,Liability_Repayment,Non SACC Loans
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Debt Collection
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Non SACC Loans
+Regular Account,investments,LIABILITY,debit,Liability_Repayment,Credit Card Repayments
+Regular Account,investments,LIABILITY,debit,Liability_Repayment,Debt Collection
+Regular Account,investments,LIABILITY,debit,Liability_Repayment,Non SACC Loans
+Regular Account,investments,LIABILITY,debit,Liability_Repayment,SACC Loans
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Unlabeled
+Regular Account,savings,LIABILITY,debit,Liability_Repayment,Debt Collection
+Regular Account,savings,LIABILITY,debit,Liability_Repayment,Non SACC Loans
+Regular Account,savings,LIABILITY,debit,Liability_Repayment,SACC Loans
+Loan Account,personal loan,LIABILITY,debit,Liability_Drawdown,Non SACC Loans
+Loan Account,personal loan,LIABILITY,credit,Liability_Repayment,Non SACC Loans
+Regular Account,savings,LIABILITY,debit,Liability_Repayment,Credit Card Repayments
+Regular Account,transaction,LIABILITY,debit,Liability_Repayment,Debt Collection
+Regular Account,savings,LIABILITY,debit,Liability_Repayment,Debt Consolidation
+Regular Account,trading,LIABILITY,debit,Liability_Repayment,Non SACC Loans
+Regular Account,transaction,LIABILITY,debit,Liability_Repayment,Non SACC Loans
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,All Other Credits
+Regular Account,Unlabeled,LIABILITY,debit,Liability_Repayment,Debt Collection
+Regular Account,transaction,LIABILITY,debit,Liability_Repayment,Debt Consolidation
+Regular Account,transaction,LIABILITY,debit,Liability_Repayment,SACC Loans
+Regular Account,Unlabeled,LIABILITY,debit,Liability_Repayment,Non SACC Loans
+Regular Account,Unlabeled,LIABILITY,debit,Liability_Repayment,SACC Loans
+Regular Account,investments,LIABILITY,credit,Liability_Drawdown,Non SACC Loans
+Regular Account,transaction,LIABILITY,debit,Liability_Repayment,Credit Card Repayments
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Dining Out
+Regular Account,Unlabeled,LIABILITY,debit,Liability_Repayment,Debt Consolidation
+Regular Account,investments,LIABILITY,credit,Liability_Drawdown,SACC Loans
+Regular Account,savings,LIABILITY,credit,Liability_Drawdown,Non SACC Loans
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,External Transfers
+Regular Account,savings,LIABILITY,credit,Liability_Drawdown,Debt Consolidation
+Regular Account,savings,LIABILITY,credit,Liability_Drawdown,SACC Loans
+Regular Account,trading,LIABILITY,credit,Liability_Drawdown,Non SACC Loans
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Information
+Loan Account,car loan,LIABILITY,debit,Liability_Drawdown,External Transfers
+Loan Account,car loan,LIABILITY,debit,Liability_Drawdown,Fees
+Loan Account,car loan,LIABILITY,credit,Liability_Repayment,All Other Credits
+Loan Account,car loan,LIABILITY,credit,Liability_Repayment,External Transfers
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Insurance
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Unlabeled
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Internal Transfer
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Rent
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Automotive
+Loan Account,credit card,LIABILITY,credit,Liability_Repayment,Centrelink
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Centrelink
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Unlabeled
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Department Stores
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,All Other Credits
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Dining Out
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Automotive
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Department Stores
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Donations
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Education
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Dining Out
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Entertainment
+Loan Account,credit card,LIABILITY,debit,Liability_Repayment,Credit Card Repayments
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,External Transfers
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Entertainment
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Fees
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,External Transfers
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Gambling
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Fees
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Groceries
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Gambling
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Gyms and other memberships
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Groceries
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Health
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Gyms and other memberships
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Home Improvement
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Health
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Home Improvement
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Insurance
+Loan Account,credit card,LIABILITY,credit,Liability_Repayment,Internal Transfer
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Information
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Overdrawn
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Personal Care
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Insurance
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Pet Care
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Rent
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Overdrawn
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Retail
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Pet Care
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Subscription TV
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Retail
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Telecommunications
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Subscription TV
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Transport
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Telecommunications
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Travel
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Transport
+Loan Account,credit card,LIABILITY,debit,Liability_Drawdown,Utilities
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Travel
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Utilities
+Regular Account,investments,LIABILITY,credit,Refund_Or_Reversal,Credit Card Repayments
+Regular Account,savings,LIABILITY,credit,Refund_Or_Reversal,Credit Card Repayments
+Regular Account,investments,LIABILITY,credit,Refund_Or_Reversal,Debt Collection
+Loan Account,home loan,LIABILITY,credit,Liability_Repayment,Fees
+Regular Account,savings,LIABILITY,credit,Refund_Or_Reversal,Debt Collection
+Regular Account,Unlabeled,LIABILITY,credit,Refund_Or_Reversal,Credit Card Repayments
+Regular Account,transaction,LIABILITY,credit,Refund_Or_Reversal,Debt Collection
+Regular Account,Unlabeled,LIABILITY,credit,Refund_Or_Reversal,Debt Collection
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Unlabeled
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Automotive
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Department Stores
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Dining Out
+Regular Account,investments,LIABILITY,debit,Dishonours Fee,Dishonours
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Education
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Entertainment
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,External Transfers
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Fees
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Groceries
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Health
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Home Improvement
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Insurance
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Internal Transfer
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Retail
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Telecommunications
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Transport
+Loan Account,home loan,LIABILITY,debit,Liability_Drawdown,Utilities
+Regular Account,investments,INCOME,credit,Other Income,Unlabeled
+Regular Account,investments,EXPENSE,debit,Telecommunications,Telecommunications
+Regular Account,investments,INCOME,credit,Other Income,All Other Credits
+Regular Account,investments,INCOME,credit,Other Income,Automotive
+Regular Account,investments,EXPENSE,debit,Utilities,Utilities
+Regular Account,investments,INCOME,credit,Centrelink,Centrelink
+Regular Account,savings,EXPENSE,debit,Telecommunications,Telecommunications
+Regular Account,investments,INCOME,credit,Other Income,Department Stores
+Regular Account,savings,EXPENSE,debit,Utilities,Utilities
+Regular Account,investments,INCOME,credit,Other Income,Dining Out
+Regular Account,trading,EXPENSE,debit,Telecommunications,Telecommunications
+Regular Account,savings,LIABILITY,debit,Dishonours Fee,Dishonours
+Regular Account,trading,EXPENSE,debit,Utilities,Utilities
+Regular Account,transaction,EXPENSE,debit,Telecommunications,Telecommunications
+Regular Account,investments,INCOME,credit,Other Income,Education
+Regular Account,transaction,EXPENSE,debit,Utilities,Utilities
+Regular Account,investments,INCOME,credit,Other Income,Entertainment
+Regular Account,investments,EXPENSE,debit,Automotive,Automotive
+Regular Account,investments,INCOME,credit,Other Income,External Transfers
+Regular Account,investments,EXPENSE,debit,Transport,Transport
+Regular Account,investments,INCOME,credit,Other Income,Fees
+Regular Account,savings,EXPENSE,debit,Automotive,Automotive
+Regular Account,investments,INCOME,credit,Other Income,Gambling
+Regular Account,savings,EXPENSE,debit,Transport,Transport
+Regular Account,investments,INCOME,credit,Other Income,Groceries
+Regular Account,trading,EXPENSE,debit,Automotive,Automotive
+Regular Account,investments,INCOME,credit,Other Income,Gyms and other memberships
+Regular Account,trading,EXPENSE,debit,Transport,Transport
+Regular Account,investments,INCOME,credit,Other Income,Health
+Regular Account,transaction,EXPENSE,debit,Automotive,Automotive
+Regular Account,investments,INCOME,credit,Other Income,Home Improvement
+Regular Account,transaction,EXPENSE,debit,Transport,Transport
+Regular Account,investments,INCOME,credit,Other Income,Insurance
+Regular Account,investments,EXPENSE,debit,External Transfers,External Transfers
+Regular Account,investments,INCOME,credit,Other Income,Internal Transfer
+Regular Account,investments,EXPENSE,debit,Internal Transfer,Internal Transfer
+Regular Account,savings,EXPENSE,debit,External Transfers,External Transfers
+Regular Account,savings,EXPENSE,debit,Internal Transfer,Internal Transfer
+Regular Account,trading,EXPENSE,debit,External Transfers,External Transfers
+Regular Account,investments,INCOME,credit,Other Income,Rent
+Regular Account,trading,EXPENSE,debit,Internal Transfer,Internal Transfer
+Regular Account,investments,INCOME,credit,Other Income,Retail
+Regular Account,transaction,EXPENSE,debit,External Transfers,External Transfers
+Regular Account,investments,INCOME,credit,Other Income,Subscription TV
+Regular Account,transaction,EXPENSE,debit,Internal Transfer,Internal Transfer
+Regular Account,investments,INCOME,credit,Other Income,Telecommunications
+Regular Account,investments,EXPENSE,debit,Department Stores,Department Stores
+Regular Account,investments,INCOME,credit,Other Income,Transport
+Regular Account,investments,EXPENSE,debit,Retail,Retail
+Regular Account,investments,INCOME,credit,Other Income,Travel
+Regular Account,savings,EXPENSE,debit,Department Stores,Department Stores
+Regular Account,investments,INCOME,credit,Other Income,Utilities
+Regular Account,savings,EXPENSE,debit,Retail,Retail
+Loan Account,personal loan,LIABILITY,debit,Liability_Drawdown,Unlabeled
+Regular Account,transaction,LIABILITY,debit,Dishonours Fee,Dishonours
+Loan Account,personal loan,LIABILITY,debit,Liability_Drawdown,External Transfers
+Loan Account,personal loan,LIABILITY,debit,Liability_Drawdown,Fees
+Loan Account,personal loan,LIABILITY,credit,Liability_Repayment,Unlabeled
+Loan Account,personal loan,LIABILITY,credit,Liability_Repayment,All Other Credits
+Loan Account,personal loan,LIABILITY,credit,Liability_Repayment,External Transfers
+Loan Account,personal loan,LIABILITY,credit,Liability_Repayment,Information
+Regular Account,trading,EXPENSE,debit,Department Stores,Department Stores
+Regular Account,trading,EXPENSE,debit,Retail,Retail
+Regular Account,savings,INCOME,credit,Other Income,All Other Credits
+Regular Account,savings,INCOME,credit,Other Income,Automotive
+Regular Account,transaction,EXPENSE,debit,Department Stores,Department Stores
+Regular Account,savings,INCOME,credit,Centrelink,Centrelink
+Regular Account,transaction,EXPENSE,debit,Retail,Retail
+Regular Account,savings,INCOME,credit,Other Income,Department Stores
+Regular Account,investments,EXPENSE,debit,Unlabeled,Unlabeled
+Regular Account,savings,INCOME,credit,Other Income,Dining Out
+Regular Account,savings,EXPENSE,debit,Unlabeled,Unlabeled
+Regular Account,Unlabeled,LIABILITY,debit,Dishonours Fee,Dishonours
+Regular Account,trading,EXPENSE,debit,Unlabeled,Unlabeled
+Regular Account,savings,INCOME,credit,Other Income,Donations
+Regular Account,transaction,EXPENSE,debit,Unlabeled,Unlabeled
+Regular Account,savings,INCOME,credit,Other Income,Education
+Regular Account,investments,EXPENSE,debit,Groceries,Groceries
+Regular Account,savings,INCOME,credit,Other Income,Entertainment
+Regular Account,investments,EXPENSE,debit,Pet Care,Pet Care
+Regular Account,savings,INCOME,credit,Other Income,External Transfers
+Regular Account,savings,EXPENSE,debit,Groceries,Groceries
+Regular Account,savings,INCOME,credit,Other Income,Fees
+Regular Account,savings,EXPENSE,debit,Pet Care,Pet Care
+Regular Account,savings,INCOME,credit,Other Income,Gambling
+Regular Account,trading,EXPENSE,debit,Groceries,Groceries
+Regular Account,savings,INCOME,credit,Other Income,Groceries
+Regular Account,trading,EXPENSE,debit,Pet Care,Pet Care
+Regular Account,savings,INCOME,credit,Other Income,Gyms and other memberships
+Regular Account,transaction,EXPENSE,debit,Groceries,Groceries
+Regular Account,savings,INCOME,credit,Other Income,Health
+Regular Account,transaction,EXPENSE,debit,Pet Care,Pet Care
+Regular Account,savings,INCOME,credit,Other Income,Home Improvement
+Regular Account,investments,EXPENSE,debit,Dining Out,Dining Out
+Regular Account,savings,INCOME,credit,Other Income,Information
+Regular Account,savings,INCOME,credit,Other Income,Insurance
+Regular Account,investments,EXPENSE,debit,Donations,Donations
+Regular Account,savings,INCOME,credit,Other Income,Internal Transfer
+Regular Account,investments,EXPENSE,debit,Entertainment,Entertainment
+Regular Account,investments,EXPENSE,debit,Gambling,Gambling
+Regular Account,savings,INCOME,credit,Other Income,Personal Care
+Regular Account,investments,EXPENSE,debit,Gyms and other memberships,Gyms and other memberships
+Regular Account,savings,INCOME,credit,Other Income,Pet Care
+Regular Account,investments,EXPENSE,debit,Subscription TV,Subscription TV
+Regular Account,savings,INCOME,credit,Other Income,Rent
+Regular Account,investments,EXPENSE,debit,Travel,Travel
+Regular Account,savings,INCOME,credit,Other Income,Retail
+Regular Account,savings,EXPENSE,debit,Dining Out,Dining Out
+Regular Account,savings,INCOME,credit,Other Income,Subscription TV
+Regular Account,savings,EXPENSE,debit,Donations,Donations
+Regular Account,savings,INCOME,credit,Other Income,Telecommunications
+Regular Account,savings,EXPENSE,debit,Entertainment,Entertainment
+Regular Account,savings,INCOME,credit,Other Income,Transport
+Regular Account,savings,EXPENSE,debit,Gambling,Gambling
+Regular Account,savings,INCOME,credit,Other Income,Travel
+Regular Account,savings,EXPENSE,debit,Gyms and other memberships,Gyms and other memberships
+Regular Account,savings,INCOME,credit,Other Income,Utilities
+Regular Account,savings,EXPENSE,debit,Subscription TV,Subscription TV
+Regular Account,savings,INCOME,credit,Wages,Wages
+Regular Account,savings,EXPENSE,debit,Travel,Travel
+Regular Account,savings,INCOME,credit,Other Income,Unlabeled
+Regular Account,trading,INCOME,credit,Other Income,All Other Credits
+Regular Account,trading,EXPENSE,debit,Dining Out,Dining Out
+Regular Account,trading,INCOME,credit,Centrelink,Centrelink
+Regular Account,trading,INCOME,credit,Other Income,Department Stores
+Regular Account,trading,EXPENSE,debit,Donations,Donations
+Regular Account,trading,INCOME,credit,Other Income,Dining Out
+Regular Account,trading,EXPENSE,debit,Entertainment,Entertainment
+Loan Account,credit card,LIABILITY,debit,Dishonours Fee,Dishonours
+Regular Account,trading,EXPENSE,debit,Subscription TV,Subscription TV
+Regular Account,trading,EXPENSE,debit,Travel,Travel
+Regular Account,trading,INCOME,credit,Other Income,External Transfers
+Regular Account,transaction,EXPENSE,debit,Dining Out,Dining Out
+Regular Account,transaction,EXPENSE,debit,Donations,Donations
+Regular Account,trading,INCOME,credit,Other Income,Health
+Regular Account,transaction,EXPENSE,debit,Entertainment,Entertainment
+Regular Account,transaction,EXPENSE,debit,Gambling,Gambling
+Regular Account,transaction,EXPENSE,debit,Gyms and other memberships,Gyms and other memberships
+Regular Account,trading,INCOME,credit,Other Income,Internal Transfer
+Regular Account,transaction,EXPENSE,debit,Subscription TV,Subscription TV
+Regular Account,transaction,EXPENSE,debit,Travel,Travel
+Regular Account,investments,EXPENSE,debit,Centrelink,Centrelink
+Regular Account,savings,EXPENSE,debit,Centrelink,Centrelink
+Regular Account,transaction,EXPENSE,debit,Centrelink,Centrelink
+Regular Account,investments,EXPENSE,debit,Home Improvement,Home Improvement
+Regular Account,investments,EXPENSE,debit,Rent,Rent
+Regular Account,trading,INCOME,credit,Other Income,Transport
+Regular Account,savings,EXPENSE,debit,Home Improvement,Home Improvement
+Regular Account,savings,EXPENSE,debit,Rent,Rent
+Regular Account,trading,EXPENSE,debit,Home Improvement,Home Improvement
+Regular Account,trading,INCOME,credit,Other Income,Unlabeled
+Regular Account,transaction,INCOME,credit,Other Income,Unlabeled
+Regular Account,transaction,INCOME,credit,Other Income,All Other Credits
+Regular Account,transaction,INCOME,credit,Other Income,Automotive
+Regular Account,trading,EXPENSE,debit,Rent,Rent
+Regular Account,transaction,INCOME,credit,Centrelink,Centrelink
+Regular Account,transaction,EXPENSE,debit,Home Improvement,Home Improvement
+Regular Account,transaction,INCOME,credit,Other Income,Department Stores
+Regular Account,transaction,EXPENSE,debit,Rent,Rent
+Regular Account,transaction,INCOME,credit,Other Income,Dining Out
+Regular Account,investments,EXPENSE,debit,Health,Health
+Loan Account,home loan,LIABILITY,debit,Dishonours Fee,Dishonours
+Regular Account,investments,EXPENSE,debit,Personal Care,Personal Care
+Regular Account,transaction,INCOME,credit,Other Income,Donations
+Regular Account,savings,EXPENSE,debit,Health,Health
+Regular Account,transaction,INCOME,credit,Other Income,Education
+Regular Account,savings,EXPENSE,debit,Personal Care,Personal Care
+Regular Account,transaction,INCOME,credit,Other Income,Entertainment
+Regular Account,trading,EXPENSE,debit,Health,Health
+Regular Account,transaction,INCOME,credit,Other Income,External Transfers
+Regular Account,trading,EXPENSE,debit,Personal Care,Personal Care
+Regular Account,transaction,INCOME,credit,Other Income,Fees
+Regular Account,transaction,EXPENSE,debit,Health,Health
+Regular Account,transaction,INCOME,credit,Other Income,Gambling
+Regular Account,transaction,EXPENSE,debit,Personal Care,Personal Care
+Regular Account,transaction,INCOME,credit,Other Income,Groceries
+Loan Account,personal loan,LIABILITY,debit,Dishonours Fee,Dishonours
+Regular Account,transaction,INCOME,credit,Other Income,Gyms and other memberships
+Regular Account,investments,EXPENSE,debit,Fees,Fees
+Regular Account,transaction,INCOME,credit,Other Income,Health
+Regular Account,investments,EXPENSE,debit,Insurance,Insurance
+Regular Account,transaction,INCOME,credit,Other Income,Home Improvement
+Regular Account,investments,EXPENSE,debit,Overdrawn,Overdrawn
+Regular Account,transaction,INCOME,credit,Other Income,Information
+Regular Account,transaction,INCOME,credit,Other Income,Insurance
+Loan Account,credit card,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,transaction,INCOME,credit,Other Income,Internal Transfer
+Regular Account,savings,EXPENSE,debit,Fees,Fees
+Regular Account,transaction,INCOME,credit,Other Income,Overdrawn
+Regular Account,savings,EXPENSE,debit,Insurance,Insurance
+Regular Account,transaction,INCOME,credit,Other Income,Personal Care
+Regular Account,savings,EXPENSE,debit,Overdrawn,Overdrawn
+Regular Account,transaction,INCOME,credit,Other Income,Pet Care
+Regular Account,trading,EXPENSE,debit,Insurance,Insurance
+Regular Account,transaction,INCOME,credit,Other Income,Rent
+Loan Account,home loan,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,transaction,INCOME,credit,Other Income,Retail
+Regular Account,transaction,EXPENSE,debit,Fees,Fees
+Regular Account,transaction,INCOME,credit,Other Income,Subscription TV
+Regular Account,transaction,EXPENSE,debit,Insurance,Insurance
+Regular Account,transaction,INCOME,credit,Other Income,Telecommunications
+Regular Account,transaction,EXPENSE,debit,Overdrawn,Overdrawn
+Regular Account,transaction,INCOME,credit,Other Income,Transport
+Regular Account,investments,EXPENSE,debit,Education,Education
+Regular Account,transaction,INCOME,credit,Other Income,Travel
+Regular Account,savings,EXPENSE,debit,Education,Education
+Regular Account,transaction,INCOME,credit,Other Income,Utilities
+Regular Account,transaction,EXPENSE,debit,Education,Education
+Regular Account,transaction,INCOME,credit,Wages,Wages
+Regular Account,investments,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,Unlabeled,LIABILITY,debit,Liability_Repayment,Credit Card Repayments
+Regular Account,savings,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,transaction,LIABILITY,credit,Liability_Drawdown,Debt Consolidation
+Regular Account,transaction,LIABILITY,credit,Liability_Drawdown,Non SACC Loans
+Regular Account,transaction,LIABILITY,credit,Liability_Drawdown,SACC Loans
+Regular Account,trading,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,Unlabeled,LIABILITY,credit,Liability_Drawdown,Debt Consolidation
+Regular Account,Unlabeled,LIABILITY,credit,Liability_Drawdown,Non SACC Loans
+Regular Account,Unlabeled,LIABILITY,credit,Liability_Drawdown,SACC Loans
+Regular Account,Unlabeled,EXPENSE,debit,Telecommunications,Telecommunications
+Regular Account,Unlabeled,EXPENSE,debit,Utilities,Utilities
+Regular Account,Unlabeled,EXPENSE,debit,Automotive,Automotive
+Regular Account,Unlabeled,EXPENSE,debit,Transport,Transport
+Regular Account,Unlabeled,EXPENSE,debit,External Transfers,External Transfers
+Regular Account,Unlabeled,EXPENSE,debit,Internal Transfer,Internal Transfer
+Regular Account,Unlabeled,EXPENSE,debit,Department Stores,Department Stores
+Regular Account,Unlabeled,EXPENSE,debit,Retail,Retail
+Regular Account,Unlabeled,EXPENSE,debit,Unlabeled,Unlabeled
+Regular Account,Unlabeled,EXPENSE,debit,Groceries,Groceries
+Regular Account,Unlabeled,EXPENSE,debit,Pet Care,Pet Care
+Regular Account,Unlabeled,EXPENSE,debit,Dining Out,Dining Out
+Regular Account,Unlabeled,EXPENSE,debit,Donations,Donations
+Regular Account,Unlabeled,EXPENSE,debit,Entertainment,Entertainment
+Regular Account,Unlabeled,EXPENSE,debit,Gambling,Gambling
+Regular Account,Unlabeled,EXPENSE,debit,Gyms and other memberships,Gyms and other memberships
+Regular Account,Unlabeled,EXPENSE,debit,Subscription TV,Subscription TV
+Regular Account,Unlabeled,EXPENSE,debit,Travel,Travel
+Regular Account,Unlabeled,EXPENSE,debit,Centrelink,Centrelink
+Regular Account,Unlabeled,INCOME,credit,Other Income,Unlabeled
+Regular Account,Unlabeled,INCOME,credit,Other Income,All Other Credits
+Regular Account,Unlabeled,INCOME,credit,Other Income,Automotive
+Regular Account,Unlabeled,INCOME,credit,Centrelink,Centrelink
+Regular Account,Unlabeled,EXPENSE,debit,Home Improvement,Home Improvement
+Regular Account,Unlabeled,INCOME,credit,Other Income,Department Stores
+Regular Account,Unlabeled,EXPENSE,debit,Rent,Rent
+Regular Account,Unlabeled,INCOME,credit,Other Income,Dining Out
+Regular Account,transaction,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,Unlabeled,INCOME,credit,Other Income,Donations
+Regular Account,Unlabeled,INCOME,credit,Other Income,Education
+Regular Account,Unlabeled,INCOME,credit,Other Income,Entertainment
+Regular Account,Unlabeled,INCOME,credit,Other Income,External Transfers
+Regular Account,Unlabeled,INCOME,credit,Other Income,Fees
+Regular Account,Unlabeled,EXPENSE,debit,Health,Health
+Regular Account,Unlabeled,INCOME,credit,Other Income,Gambling
+Regular Account,Unlabeled,EXPENSE,debit,Personal Care,Personal Care
+Regular Account,Unlabeled,INCOME,credit,Other Income,Groceries
+Regular Account,Unlabeled,INCOME,credit,Other Income,Gyms and other memberships
+Regular Account,Unlabeled,INCOME,credit,Other Income,Health
+Regular Account,Unlabeled,INCOME,credit,Other Income,Home Improvement
+Regular Account,Unlabeled,INCOME,credit,Other Income,Information
+Regular Account,Unlabeled,INCOME,credit,Other Income,Insurance
+Regular Account,Unlabeled,INCOME,credit,Other Income,Internal Transfer
+Regular Account,Unlabeled,INCOME,credit,Other Income,Overdrawn
+Regular Account,Unlabeled,INCOME,credit,Other Income,Personal Care
+Regular Account,Unlabeled,INCOME,credit,Other Income,Pet Care
+Regular Account,Unlabeled,INCOME,credit,Other Income,Rent
+Regular Account,Unlabeled,LIABILITY,credit,Refund_Or_Reversal,Dishonours
+Regular Account,Unlabeled,INCOME,credit,Other Income,Retail
+Regular Account,Unlabeled,EXPENSE,debit,Fees,Fees
+Regular Account,Unlabeled,INCOME,credit,Other Income,Subscription TV
+Regular Account,Unlabeled,EXPENSE,debit,Insurance,Insurance
+Regular Account,Unlabeled,INCOME,credit,Other Income,Telecommunications
+Regular Account,Unlabeled,EXPENSE,debit,Overdrawn,Overdrawn
+Regular Account,Unlabeled,INCOME,credit,Other Income,Transport
+Regular Account,Unlabeled,INCOME,credit,Other Income,Travel
+Regular Account,Unlabeled,INCOME,credit,Other Income,Utilities
+Regular Account,Unlabeled,EXPENSE,debit,Education,Education
+Regular Account,Unlabeled,INCOME,credit,Wages,Wages
