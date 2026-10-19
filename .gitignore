@@ -6,7 +6,8 @@ __pycache__/
 data/
 *_sample_with_feature_all_1k.csv
 
-# 分析产物含客户级明细（user_id / 逾期标签），勿入库
+# 分析产物含客户级明细（user_id / 逾期标签），整目录勿入库
+analysis/
 analysis/out/
 analysis/out_*/
 analysis/cache/
