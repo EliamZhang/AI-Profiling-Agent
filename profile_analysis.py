@@ -28,7 +28,7 @@ VERSION = "1.1.0"
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 DEFAULT_CONFIG = {
-    "input_path": str(PROJECT_ROOT / "sample_with_feature_all_1k.csv"),
+    "input_path": str(PROJECT_ROOT / "fundo_sample_with_feature_all_1k.csv"),
     "dict_path": str(PROJECT_ROOT / "dict.csv"),
     "output_dir": str(PROJECT_ROOT / "analysis" / "out"),
     "cache_dir": str(PROJECT_ROOT / "analysis" / "cache"),
@@ -37,8 +37,8 @@ DEFAULT_CONFIG = {
     "segment_reservoir_size": 3000,
     "subset_cache": "auto",              # auto | on | off
     "subset_cache_threshold_mb": 300,
-    "target_column": "duedate_1m_5",
-    "target_label": "首期逾期≥5天",
+    "target_column": None,
+    "target_label": "",
     "target_positive_value": 1,
     "gate_column": "txn_raw_input_cnt",
     "gate_min": 1,
@@ -3216,8 +3216,8 @@ def generate_insights(cfg: dict, overview: dict, feature_df: pd.DataFrame, seg_d
             ),
         })
         caveats.append("目标标签正样本极少，任何分组逾期率差异都可能由随机波动导致，不能据此做上线决策。")
-    else:
-        caveats.append("目标列不存在或没有已到期样本，未做目标关联分析。")
+    elif cfg.get("target_column"):
+        caveats.append("目标列存在但没有已到期样本，未做目标关联分析。")
 
     if len(corr_df):
         pairs = corr_df[(corr_df["row"] != corr_df["col"]) & corr_df["corr"].notna()].copy()
@@ -3331,10 +3331,11 @@ def _write_quality(cfg: dict, overview: dict, pass1: dict, feature_df: pd.DataFr
         "门槛判定与特征缺失应保持一致；大于 0 说明存在口径冲突")
     add("门槛内但全特征缺失", f"{pass1['gate_true_without_data']:,}", "ok" if pass1['gate_true_without_data'] == 0 else "warn",
         "门槛内记录理论上应至少有一个可用特征")
-    add("目标列", cfg["target_column"], "ok" if target.get("valid_n", 0) else "warn",
-        f"已到期 {target.get('valid_n', 0):,} 条，正样本 {target.get('positives', 0):,} 条")
-    add("无效目标标签", str(target.get("other", 0)), "warn" if target.get("other", 0) else "ok",
-        f"仅0和{cfg['target_positive_value']}进入目标分析，其余非空数值均排除")
+    if cfg.get("target_column"):
+        add("目标列", cfg["target_column"], "ok" if target.get("valid_n", 0) else "warn",
+            f"已到期 {target.get('valid_n', 0):,} 条，正样本 {target.get('positives', 0):,} 条")
+        add("无效目标标签", str(target.get("other", 0)), "warn" if target.get("other", 0) else "ok",
+            f"仅0和{cfg['target_positive_value']}进入目标分析，其余非空数值均排除")
     insufficient = int(seg_df.loc[seg_df["segment"] == "数据不足", "users"].sum())
     low_coverage = insufficient - (rows_total - txn_rows)
     add("有流水但评分覆盖不足", str(low_coverage), "warn" if low_coverage else "ok",
@@ -3504,6 +3505,26 @@ def run_analysis(config: dict | None = None) -> dict:
     period_text = _period_text(pass1["period"])
     rows_ = pass1["total_rows"]
     txn_rows = pass1["txn_rows"]
+    target_enabled = bool(cfg.get("target_column"))
+    outputs = [
+        "feature_stats.csv", "feature_histograms.csv", "feature_breakpoints.json",
+        "dimension_summary.csv", "dimension_score_hist.csv", "segment_summary.csv",
+        "segment_profiles.csv", "risk_flags.csv", "category_mix.csv", "correlations.csv",
+        "quality_checks.csv", "observation_bands.csv",
+        "lender_summary.csv", "lender_institutions.csv", "lender_segments.csv",
+        "lender_behavior.csv", "lender_products.csv", "lender_top_competitors.csv",
+        "income_summary.csv", "income_archetypes.csv", "income_pay_rhythm.csv",
+        "income_segments.csv",
+        "dishonour_summary.csv", "dishonour_recovery.csv", "dishonour_segments.csv",
+        "dishonour_types.csv",
+    ]
+    if target_enabled:
+        outputs += [
+            "target_overall.json", "target_by_segment.csv", "target_by_score_band.csv",
+            "target_feature_smd.csv", "lender_behavior_target.csv",
+            "income_archetype_target.csv", "dishonour_recovery_target.csv",
+        ]
+    outputs += ["overview.json", "insights.json", "run_meta.json"]
     overview = {
         "version": VERSION,
         "generated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -3538,55 +3559,57 @@ def run_analysis(config: dict | None = None) -> dict:
             "total_before_report": round(time.time() - t_start, 2),
         },
         "subset_cache_used": bool(read_path),
-        "outputs": [
-            "feature_stats.csv", "feature_histograms.csv", "feature_breakpoints.json",
-            "dimension_summary.csv", "dimension_score_hist.csv", "segment_summary.csv",
-            "segment_profiles.csv", "risk_flags.csv", "category_mix.csv", "correlations.csv",
-            "target_overall.json", "target_by_segment.csv", "target_by_score_band.csv",
-            "target_feature_smd.csv", "quality_checks.csv", "observation_bands.csv",
-            "lender_summary.csv", "lender_institutions.csv", "lender_segments.csv",
-            "lender_behavior.csv", "lender_behavior_target.csv", "lender_products.csv",
-            "lender_top_competitors.csv",
-            "income_summary.csv", "income_archetypes.csv", "income_pay_rhythm.csv",
-            "income_segments.csv", "income_archetype_target.csv",
-            "dishonour_summary.csv", "dishonour_recovery.csv", "dishonour_segments.csv",
-            "dishonour_types.csv", "dishonour_recovery_target.csv",
-            "overview.json", "insights.json", "run_meta.json",
-        ],
+        "outputs": outputs,
     }
 
     pass2["dim_df"].to_csv(output_dir / "dimension_summary.csv", index=False, encoding="utf-8-sig")
     if cfg.get("export_user_scores", True):
         overview["outputs"].append("user_scores.csv")
-    pass2["observation_df"].to_csv(output_dir / "observation_bands.csv", index=False, encoding="utf-8-sig")
+    seg_out = pass2["seg_df"]
+    obs_out = pass2["observation_df"]
+    target_files = (
+        "target_overall.json", "target_by_segment.csv", "target_by_score_band.csv",
+        "target_feature_smd.csv", "lender_behavior_target.csv",
+        "income_archetype_target.csv", "dishonour_recovery_target.csv",
+    )
+    if target_enabled:
+        _write_json(output_dir / "target_overall.json", target)
+        seg_out[["segment", "users", "target_matured", "target_pos", "target_rate",
+                 "target_ci_low", "target_ci_high"]].to_csv(
+            output_dir / "target_by_segment.csv", index=False, encoding="utf-8-sig")
+        pass2["band_df"].to_csv(output_dir / "target_by_score_band.csv", index=False, encoding="utf-8-sig")
+        pass2["smd_df"].to_csv(output_dir / "target_feature_smd.csv", index=False, encoding="utf-8-sig")
+        pass2["lender_target_df"].to_csv(output_dir / "lender_behavior_target.csv", index=False, encoding="utf-8-sig")
+        pass2["income_target_df"].to_csv(output_dir / "income_archetype_target.csv", index=False, encoding="utf-8-sig")
+        pass2["dishonour_target_df"].to_csv(output_dir / "dishonour_recovery_target.csv", index=False, encoding="utf-8-sig")
+    else:
+        seg_out = seg_out.drop(columns=["target_matured", "target_pos", "target_rate",
+                                        "target_ci_low", "target_ci_high"], errors="ignore")
+        obs_out = obs_out.drop(columns=["matured", "positives", "rate", "ci_low", "ci_high"],
+                               errors="ignore")
+        for name in target_files:
+            (output_dir / name).unlink(missing_ok=True)
+    obs_out.to_csv(output_dir / "observation_bands.csv", index=False, encoding="utf-8-sig")
     pass2["dim_hist_df"].to_csv(output_dir / "dimension_score_hist.csv", index=False, encoding="utf-8-sig")
-    pass2["seg_df"].to_csv(output_dir / "segment_summary.csv", index=False, encoding="utf-8-sig")
+    seg_out.to_csv(output_dir / "segment_summary.csv", index=False, encoding="utf-8-sig")
     pass2["profile_df"].to_csv(output_dir / "segment_profiles.csv", index=False, encoding="utf-8-sig")
     pass2["flag_df"].to_csv(output_dir / "risk_flags.csv", index=False, encoding="utf-8-sig")
     pass2["cat_df"].to_csv(output_dir / "category_mix.csv", index=False, encoding="utf-8-sig")
     pass2["corr_df"].to_csv(output_dir / "correlations.csv", index=False, encoding="utf-8-sig")
-    _write_json(output_dir / "target_overall.json", target)
-    pass2["seg_df"][["segment", "users", "target_matured", "target_pos", "target_rate", "target_ci_low", "target_ci_high"]].to_csv(
-        output_dir / "target_by_segment.csv", index=False, encoding="utf-8-sig")
-    pass2["band_df"].to_csv(output_dir / "target_by_score_band.csv", index=False, encoding="utf-8-sig")
-    pass2["smd_df"].to_csv(output_dir / "target_feature_smd.csv", index=False, encoding="utf-8-sig")
     pass2["lender_summary_df"].to_csv(output_dir / "lender_summary.csv", index=False, encoding="utf-8-sig")
     pass2["lender_inst_df"].to_csv(output_dir / "lender_institutions.csv", index=False, encoding="utf-8-sig")
     pass2["lender_seg_df"].to_csv(output_dir / "lender_segments.csv", index=False, encoding="utf-8-sig")
     pass2["lender_behavior_df"].to_csv(output_dir / "lender_behavior.csv", index=False, encoding="utf-8-sig")
-    pass2["lender_target_df"].to_csv(output_dir / "lender_behavior_target.csv", index=False, encoding="utf-8-sig")
     pass2["lender_product_df"].to_csv(output_dir / "lender_products.csv", index=False, encoding="utf-8-sig")
     pass2["lender_top_df"].to_csv(output_dir / "lender_top_competitors.csv", index=False, encoding="utf-8-sig")
     pass2["income_summary_df"].to_csv(output_dir / "income_summary.csv", index=False, encoding="utf-8-sig")
     pass2["income_arch_df"].to_csv(output_dir / "income_archetypes.csv", index=False, encoding="utf-8-sig")
     pass2["income_rhythm_df"].to_csv(output_dir / "income_pay_rhythm.csv", index=False, encoding="utf-8-sig")
     pass2["income_seg_df"].to_csv(output_dir / "income_segments.csv", index=False, encoding="utf-8-sig")
-    pass2["income_target_df"].to_csv(output_dir / "income_archetype_target.csv", index=False, encoding="utf-8-sig")
     pass2["dishonour_summary_df"].to_csv(output_dir / "dishonour_summary.csv", index=False, encoding="utf-8-sig")
     pass2["dishonour_recovery_df"].to_csv(output_dir / "dishonour_recovery.csv", index=False, encoding="utf-8-sig")
     pass2["dishonour_seg_df"].to_csv(output_dir / "dishonour_segments.csv", index=False, encoding="utf-8-sig")
     pass2["dishonour_type_df"].to_csv(output_dir / "dishonour_types.csv", index=False, encoding="utf-8-sig")
-    pass2["dishonour_target_df"].to_csv(output_dir / "dishonour_recovery_target.csv", index=False, encoding="utf-8-sig")
 
     print("[5/5] 生成洞察与质量检查", flush=True)
     insights = generate_insights(cfg, overview, feature_df, pass2["seg_df"], pass2["flag_df"],
@@ -3646,11 +3669,17 @@ def load_intermediates(output_dir: str) -> dict:
         except pd.errors.EmptyDataError:
             return pd.DataFrame()
 
+    def read_csv_optional(name):
+        return read_csv(name) if (out / name).exists() else pd.DataFrame()
+
+    def read_json_optional(name, default):
+        return read_json(name) if (out / name).exists() else default
+
     return {
         "output_dir": str(out),
         "overview": read_json("overview.json"),
         "insights": read_json("insights.json"),
-        "target": read_json("target_overall.json"),
+        "target": read_json_optional("target_overall.json", {}),
         "run_meta": read_json("run_meta.json"),
         "feature_stats": read_csv("feature_stats.csv"),
         "feature_histograms": read_csv("feature_histograms.csv"),
@@ -3661,27 +3690,27 @@ def load_intermediates(output_dir: str) -> dict:
         "risk_flags": read_csv("risk_flags.csv"),
         "category_mix": read_csv("category_mix.csv"),
         "correlations": read_csv("correlations.csv"),
-        "target_by_segment": read_csv("target_by_segment.csv"),
-        "target_by_score_band": read_csv("target_by_score_band.csv"),
-        "target_feature_smd": read_csv("target_feature_smd.csv"),
+        "target_by_segment": read_csv_optional("target_by_segment.csv"),
+        "target_by_score_band": read_csv_optional("target_by_score_band.csv"),
+        "target_feature_smd": read_csv_optional("target_feature_smd.csv"),
         "quality_checks": read_csv("quality_checks.csv"),
         "lender_summary": read_csv("lender_summary.csv"),
         "lender_institutions": read_csv("lender_institutions.csv"),
         "lender_segments": read_csv("lender_segments.csv"),
         "lender_behavior": read_csv("lender_behavior.csv"),
-        "lender_behavior_target": read_csv("lender_behavior_target.csv"),
+        "lender_behavior_target": read_csv_optional("lender_behavior_target.csv"),
         "lender_products": read_csv("lender_products.csv"),
         "lender_top_competitors": read_csv("lender_top_competitors.csv"),
         "income_summary": read_csv("income_summary.csv"),
         "income_archetypes": read_csv("income_archetypes.csv"),
         "income_pay_rhythm": read_csv("income_pay_rhythm.csv"),
         "income_segments": read_csv("income_segments.csv"),
-        "income_archetype_target": read_csv("income_archetype_target.csv"),
+        "income_archetype_target": read_csv_optional("income_archetype_target.csv"),
         "dishonour_summary": read_csv("dishonour_summary.csv"),
         "dishonour_recovery": read_csv("dishonour_recovery.csv"),
         "dishonour_segments": read_csv("dishonour_segments.csv"),
         "dishonour_types": read_csv("dishonour_types.csv"),
-        "dishonour_recovery_target": read_csv("dishonour_recovery_target.csv"),
+        "dishonour_recovery_target": read_csv_optional("dishonour_recovery_target.csv"),
         "observation_bands": read_csv("observation_bands.csv") if (out / "observation_bands.csv").exists() else pd.DataFrame(),
     }
 

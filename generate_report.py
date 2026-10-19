@@ -116,6 +116,10 @@ def esc(value) -> str:
     return html.escape(str(value), quote=True)
 
 
+def target_configured(data) -> bool:
+    return bool((data.get("target") or {}).get("column"))
+
+
 def _float(value, default=math.nan) -> float:
     try:
         out = float(value)
@@ -542,19 +546,21 @@ def render_header(ov, title: str) -> str:
         '报告仅消费中间统计结果，不重复计算。</p>'
         f'<div class="chips">{chip_html}</div>'
         '</div></header>'
-        + render_nav()
+        + render_nav(target_configured({"target": ov.get("target", {})}))
     )
 
 
-def render_nav() -> str:
+def render_nav(include_target: bool = True) -> str:
     links = [
         ("summary", "总览"), ("findings", "核心结论"),
         ("segments", "客群结构"), ("income", "收入形态"), ("lender", "负债结构"),
         ("dishonour", "拒付恢复"), ("dimensions", "维度评分"), ("features", "特征分布"),
         ("observations", "近期变化与缓冲"),
-        ("risk", "风险标签"), ("consumption", "消费结构"), ("target", "目标分析"),
-        ("correlation", "维度相关"), ("appendix", "附录"),
+        ("risk", "风险标签"), ("consumption", "消费结构"),
     ]
+    if include_target:
+        links.append(("target", "目标分析"))
+    links += [("correlation", "维度相关"), ("appendix", "附录")]
     html_links = "".join(f'<a href="#{i}">{esc(t)}</a>' for i, t in links)
     return f'<nav class="toc"><div class="wrap toc-inner">{html_links}</div></nav>'
 
@@ -586,17 +592,22 @@ def render_summary(data) -> str:
                  f'{int(high["users"]):,} 条' if high is not None else "", "danger"),
         kpi_card("未结清拒付", f'{flag_pct("flag_unresolved_dishonour"):.1f}%', "占可用流水用户"),
         kpi_card("多头借贷", f'{flag_pct("flag_multi_lender"):.1f}%', "≥3 家放款机构"),
-        kpi_card("目标逾期率", _pct(target.get("rate")),
-                 f'正样本 {int(target.get("positives", 0)):,} / 已到期 {int(target.get("valid_n", 0)):,}',
-                 "warn" if _safe(target.get("positives")) < 30 else ""),
-        kpi_card("数据不足", f'{insufficient["share_pct"]:.1f}%' if insufficient is not None else "—",
-                 "无流水或健康分覆盖不足"),
     ]
+    if target_configured(data):
+        cards.append(
+            kpi_card("目标逾期率", _pct(target.get("rate")),
+                     f'正样本 {int(target.get("positives", 0)):,} / 已到期 {int(target.get("valid_n", 0)):,}',
+                     "warn" if _safe(target.get("positives")) < 30 else "")
+        )
+    cards.append(kpi_card("数据不足", f'{insufficient["share_pct"]:.1f}%' if insufficient is not None else "—",
+                          "无流水或健康分覆盖不足"))
+    target_hint = ("目标标签正样本很少时，分组逾期率仅作探索性参考。"
+                   if target_configured(data) else "")
     intro = (
         '<div class="callout"><strong>阅读提示：</strong>'
         '健康分与客群划分仅覆盖具备交易流水的申请；'
         '“数据不足”表示无流水或健康分覆盖率不足；个别维度仍可能有分数，不应将该客群解读为低风险或高风险。'
-        '目标标签正样本很少时，分组逾期率仅作探索性参考。</div>'
+        f'{target_hint}</div>'
     )
     return section("执行总览", f'<div class="kpi-grid">{"".join(cards)}</div>{intro}',
                    "summary", "关键规模、覆盖率与风险指标")
@@ -667,20 +678,24 @@ def render_segments(data) -> str:
         for _, r in seg.iterrows()
     )
     rows = []
+    show_target = target_configured(data)
     for _, r in seg.iterrows():
-        rate = r.get("target_rate")
-        ci = "—" if not math.isfinite(_safe(rate)) else f'{_pct(rate)} [{_pct(r.get("target_ci_low"))}, {_pct(r.get("target_ci_high"))}]'
-        rows.append([
+        row = [
             f'<span class="dot" style="background:{SEGMENT_COLORS.get(r["segment"], "#94a3b8")}"></span> {esc(r["segment"])}',
             f'{int(r["users"]):,}', f'{r["share_pct"]:.1f}%',
             _num(r.get("health_median"), 1), _num(r.get("risk_flags_mean"), 2),
-            f'{int(r.get("target_matured", 0)):,}', f'{int(r.get("target_pos", 0)):,}', ci,
-        ])
-    summary_tbl = table(
-        ["客群", "记录数", "占比", "健康分中位数", "风险标签均值", "已到期", "正样本", "逾期率 [95%CI]"],
-        rows, cls="data-table",
-        aligns=["left", "right", "right", "right", "right", "right", "right", "right"],
-    )
+        ]
+        if show_target:
+            rate = r.get("target_rate")
+            ci = "—" if not math.isfinite(_safe(rate)) else f'{_pct(rate)} [{_pct(r.get("target_ci_low"))}, {_pct(r.get("target_ci_high"))}]'
+            row += [f'{int(r.get("target_matured", 0)):,}', f'{int(r.get("target_pos", 0)):,}', ci]
+        rows.append(row)
+    headers = ["客群", "记录数", "占比", "健康分中位数", "风险标签均值"]
+    aligns = ["left", "right", "right", "right", "right"]
+    if show_target:
+        headers += ["已到期", "正样本", "逾期率 [95%CI]"]
+        aligns += ["right", "right", "right"]
+    summary_tbl = table(headers, rows, cls="data-table", aligns=aligns)
     narr = ins.get("segment_narratives", {})
     narr_cards = "".join(
         f'<div class="seg-note" style="border-left-color:{SEGMENT_COLORS.get(name, "#94a3b8")}">'
@@ -868,6 +883,11 @@ def render_income(data) -> str:
         '<div class="callout">当前没有已到期目标样本，收入形态与逾期的关联暂不展示。</div>'
     )
 
+    target_card = (
+        f'<div class="card"><h3>收入形态 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div>'
+        if target_configured(data) else ""
+    )
+
     cfg = data.get("run_meta", {}).get("config", {})
     stable_share = _float(cfg.get("income_stable_wage_share"), 0.5)
     stable_months = _float(cfg.get("income_stable_min_months"), 5)
@@ -896,7 +916,7 @@ def render_income(data) -> str:
     <div class="card"><h3>各客群收入形态分布</h3>
       <p class="muted">占比以客群内可用流水用户为分母；形态划分为规则判定，不含模型预测。</p>
       {seg_tbl}</div>
-    <div class="card"><h3>收入形态 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div>
+    {target_card}
     {note}'''
     return section("收入形态与发薪节律", body, "income",
                    "基于现有工资、福利与收入来源字段的结构分型，观察项")
@@ -1076,6 +1096,12 @@ def render_lender(data) -> str:
         '“占可识别借款用户”的分母为能识别出放款机构的用户。'
         '风险标签“多头借贷”仅统计机构名单内竞品，本节机构数采用全量去重口径，两者不可直接比较。</div>'
     )
+    comp_card = f'<div class="card"><h3>头部放款机构（Top {len(comp_rows)}）</h3>{comp_tbl}</div>'
+    if target_configured(data):
+        bottom = (f'<div class="two-col wide">{comp_card}'
+                  f'<div class="card"><h3>借贷行为 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div></div>')
+    else:
+        bottom = comp_card
     body = f'''
     <div class="kpi-grid">{''.join(kpis)}</div>
     <div class="two-col wide">
@@ -1099,10 +1125,7 @@ def render_lender(data) -> str:
     <div class="card"><h3>放款与还款产品结构（近182天）</h3>
       <p class="muted">用户占比分别以有放款、有还款记录用户为分母；金额占比在已分类产品内计算。</p>
       {prod_tbl}</div>
-    <div class="two-col wide">
-      <div class="card"><h3>头部放款机构（Top {len(comp_rows)}）</h3>{comp_tbl}</div>
-      <div class="card"><h3>借贷行为 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div>
-    </div>
+    {bottom}
     {note}'''
     return section("负债结构深挖", body, "lender",
                    "基于现有 lender 字段：参与结构、机构分布、行为分型与产品构成")
@@ -1255,6 +1278,10 @@ def render_dishonour(data) -> str:
         '本节全部为观察项，不进入健康分，也不改变客群划分；'
         '拒付识别依赖银行流水可见性与机构映射，未映射交易可能被归入其他类型。</div>'
     )
+    target_card = (
+        f'<div class="card"><h3>拒付状态 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div>'
+        if target_configured(data) else ""
+    )
     body = f'''
     <div class="kpi-grid">{''.join(kpis)}</div>
     <div class="two-col wide">
@@ -1268,7 +1295,7 @@ def render_dishonour(data) -> str:
     <div class="card"><h3>各客群拒付恢复指标</h3>
       <p class="muted">未结清金额中位数仅在存在未结清拒付的用户内计算。</p>
       {seg_perf_tbl}</div>
-    <div class="card"><h3>拒付状态 × 逾期率（探索性）</h3>{target_note}{tgt_tbl}</div>
+    {target_card}
     {note}'''
     return section("拒付恢复", body, "dishonour",
                    "拒付结清、未结清金额与机构结构，观察项")
@@ -1294,24 +1321,30 @@ def render_observations(data) -> str:
             f' · 流水覆盖率 {_pct_points(stat["coverage_txn_pct"])}</p>{chart}'
             f'<p class="muted">{esc(stat["definition"])}</p></div>'
         )
-        target_rows = [[esc(r["band"]), f'{int(r["users"]):,}', _pct_points(r["share_pct"]),
-                        f'{int(r["matured"]):,}', f'{int(r["positives"]):,}', _pct(r["rate"]),
-                        f'{_pct(r["ci_low"])} – {_pct(r["ci_high"])}'] for _, r in group.iterrows()]
+        target_tbl = ""
+        if target_configured(data):
+            target_rows = [[esc(r["band"]), f'{int(r["users"]):,}', _pct_points(r["share_pct"]),
+                            f'{int(r["matured"]):,}', f'{int(r["positives"]):,}', _pct(r["rate"]),
+                            f'{_pct(r["ci_low"])} – {_pct(r["ci_high"])}'] for _, r in group.iterrows()]
+            target_tbl = table(["观察区间", "申请数", "占流水比例", "有效标签数", "正样本", "目标率", "95%CI"],
+                               target_rows, cls="data-table")
         profiles = data["segment_profiles"]
         profiles = profiles[profiles["metric"] == key]
         segment_rows = [[esc(r["segment"]), f'{int(r["n"]):,}', _fmt(r["p50"], stat["fmt"]),
                          _fmt(r["p25"], stat["fmt"]), _fmt(r["p75"], stat["fmt"])] for _, r in profiles.iterrows()]
+        detail_label = "分群与目标交叉" if target_configured(data) else "分群分布"
         details.append(
-            f'<details class="card"><summary>{esc(stat["label"])}：分群与目标交叉</summary>'
+            f'<details class="card"><summary>{esc(stat["label"])}：{detail_label}</summary>'
             + table(["客群", "有效条数", "中位数", "P25", "P75"], segment_rows, cls="data-table")
-            + table(["观察区间", "申请数", "占流水比例", "有效标签数", "正样本", "目标率", "95%CI"], target_rows, cls="data-table")
+            + target_tbl
             + '</details>'
         )
     note = ('<div class="callout">新增六个指标仅作观察，不计入健康分。趋势比较近28天与此前154天的日均金额，'
             '两个区间互不重叠；窗口完整性与近期新入账账户会影响结果，不能直接解释为收入增长率。'
             '历史基线为0、源字段缺失或分母为0时归为数据不足。支出覆盖天数按历史支出速度估算，'
             '并非未来可用资金预测。刚性支出与固定账单可能重叠，不可相加。'
-            '分箱为观察阈值，目标关联需结合样本数与置信区间解读。</div>')
+            '分箱为观察阈值'
+            + ('，目标关联需结合样本数与置信区间解读。</div>' if target_configured(data) else '。</div>'))
     return section("近期变化与支出缓冲", note + '<div class="two-col">' + ''.join(cards) + '</div>' + ''.join(details),
                    "observations", "近期收支变化、刚性支出负担与余额覆盖能力；分析单位为申请记录")
 
@@ -1701,7 +1734,7 @@ def render_footer(ov) -> str:
 def build_html(data, title: str | None = None) -> str:
     ov = data["overview"]
     page_title = title or data.get("run_meta", {}).get("config", {}).get("report_title") or DEFAULT_CONFIG["report_title"]
-    body = "".join([
+    parts = [
         render_header(ov, page_title),
         '<main class="wrap">',
         render_summary(data),
@@ -1715,12 +1748,16 @@ def build_html(data, title: str | None = None) -> str:
         render_features(data),
         render_risk(data),
         render_consumption(data),
-        render_target(data),
+    ]
+    if target_configured(data):
+        parts.append(render_target(data))
+    parts += [
         render_correlation(data),
         render_appendix(data),
         '</main>',
         render_footer(ov),
-    ])
+    ]
+    body = "".join(parts)
     return (
         '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'

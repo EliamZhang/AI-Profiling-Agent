@@ -1,6 +1,20 @@
 # 交易行为用户画像分析工具
 
-基于银行流水宽表特征的用户画像分析与 HTML 报告生成工具。两个脚本形成完整调用链：**只需运行 `generate_report.py`，即可完成分析并产出最终报告**。
+基于银行流水宽表特征的用户画像分析与 HTML 报告生成工具。通用分析与报告逻辑集中在两个引擎脚本中，产品差异通过 `products/` 下的 JSON 配置隔离，各产品提供独立入口。
+
+## 项目结构
+
+```
+profile_analysis.py       通用分析引擎（流式读取、指标、评分、分群、风险标签）
+generate_report.py        通用报告引擎（调用分析，读取中间结果生成 HTML）
+products/
+  fundo.json              Fundo 产品配置
+  wagego.json             WageGo 产品配置
+run_fundo.py              Fundo 入口
+run_wagego.py             WageGo 入口
+```
+
+新增产品时复制一份 `products/<product>.json`，修改输入/输出路径、标题与目标列，再按需增加同名入口脚本即可；无需改动引擎代码。产品配置中的相对路径相对于 `products/` 解析。
 
 ## v1.1 检查与修正（2026-10-19）
 
@@ -27,7 +41,7 @@
 
 前期基线或分母为0、字段缺失时留空，分箱中单列数据不足。窗口内新增账户、流水历史不足和一次性收入都会影响趋势解释；覆盖天数是按历史支出速度计算的描述指标，不是未来预测。分箱仅作观察，边界见 `OBSERVATION_BANDS`。
 
-新增中间结果 `observation_bands.csv`，包含各指标分箱、分群交叉、有效标签数、正样本数、目标率与Wilson区间；用户级明细新增六个指标及区间，以及收入形态、借贷行为、拒付状态。HTML新增“近期变化与支出缓冲”章节。
+新增中间结果 `observation_bands.csv`，包含各指标分箱、分群交叉与占比；启用目标分析时另含有效标签数、正样本数、目标率与Wilson区间。用户级明细新增六个指标及区间，以及收入形态、借贷行为、拒付状态。HTML新增“近期变化与支出缓冲”章节。
 
 当前注册指标122个，计分指标46个。现有1,000条样本重新验证后，可用流水657条；新增指标覆盖率99.09%–100%。修复后的分群为：优质均衡21、稳健工薪59、均衡普通13、月光消费84、现金流紧张280、高风险承压200、数据不足343。分群变化来自评分与数据处理修正，新增观察指标不参与分群。
 
@@ -39,14 +53,17 @@ python -m unittest discover -s tests -v
 
 11项测试覆盖缺失列、缺失值与大额负值、派生求和、窗口公式、异常目标标签、评分与原始SMD、门槛过滤、无流水/无标签/稀疏输入、JSON规范性、gzip、缓存以及不同分块大小。
 
-全样本额外交叉验证：六个新增指标逐行与独立pandas公式一致，分箱申请数守恒；默认分块与137行分块加缓存的特征统计、分群一致；报告导航锚点、SVG有限坐标与JSON规范性检查通过。目标有效标签133条、正样本3条，目标率2.26%，仍仅适合探索性分析。
+全样本额外交叉验证：六个新增指标逐行与独立pandas公式一致，分箱申请数守恒；默认分块与137行分块加缓存的特征统计、分群一致；报告导航锚点、SVG有限坐标与JSON规范性检查通过。
 
 ## 交付物
 
 | 文件 | 作用 |
 |---|---|
-| `profile_analysis.py` | 画像分析：流式读取、特征统计、维度评分、规则分群、风险标签、目标分析，输出中间结果 |
-| `generate_report.py` | 统一入口：自动调用分析脚本，只读取中间结果生成自包含 HTML 报告 |
+| `profile_analysis.py` | 通用画像分析：流式读取、特征统计、维度评分、规则分群、风险标签、可选目标分析，输出中间结果 |
+| `generate_report.py` | 通用报告入口：自动调用分析脚本，只读取中间结果生成自包含 HTML 报告 |
+| `run_fundo.py` | Fundo 产品入口，自动加载 `products/fundo.json` |
+| `run_wagego.py` | WageGo 产品入口，自动加载 `products/wagego.json` |
+| `products/*.json` | 产品级配置：输入输出路径、报告标题、目标标签 |
 | `profiling_config.example.json` | 配置示例 |
 | `PROFILING_README.md` | 本文档 |
 
@@ -58,37 +75,43 @@ python -m unittest discover -s tests -v
 # 安装依赖
 python -m pip install pandas numpy
 
-# 一键分析 + 生成报告（默认读取 sample_with_feature_all_1k.csv）
-python generate_report.py
+# Fundo：分析 + 生成报告（输出到 analysis/out_fundo）
+python run_fundo.py
+
+# WageGo：分析 + 生成报告（输出到 analysis/out_wagego）
+python run_wagego.py
 
 # 打开报告
-start analysis/out/profiling_report.html        # Windows
-# open analysis/out/profiling_report.html       # macOS
+start analysis/out_fundo/profiling_report.html     # Windows
+# open analysis/out_fundo/profiling_report.html    # macOS
 
-# 使用配置文件
-python generate_report.py --config profiling_config.example.json
+# 入口脚本支持覆盖配置中的任意参数
+python run_wagego.py --input other.csv --output-dir analysis/wagego_202610 --open
 
 # 复用已有中间结果，只重绘报告
-python generate_report.py --skip-analysis
+python run_fundo.py --skip-analysis
 
-# 指定输入/输出并自动打开
+# 不使用产品配置时，也可直接调用通用引擎
+python generate_report.py --config profiling_config.example.json
 python generate_report.py --input data.csv --output-dir analysis/prod_202610 --open
 ```
 
-生成报告默认路径：`analysis/out/profiling_report.html`。
+默认输出：Fundo 为 `analysis/out_fundo/profiling_report.html`，WageGo 为 `analysis/out_wagego/profiling_report.html`。
+
+两个产品的 `target_column` 均为 `null`：分析跳过目标统计，不生成目标中间文件，报告不出现“目标分析”导航、章节和逾期交叉表，并在附录数据质量中注明未启用逾期标签。后续需要时，在对应产品配置中填入标签列即可重新启用。
 
 ## 处理链路
 
 ```
 CSV 宽表
   │
-  ├─ Pass 1  分块读取 → 覆盖度、均值/方差、分位数抽样、直方图、目标计数、口径校验
+  ├─ Pass 1  分块读取 → 覆盖度、均值/方差、分位数抽样、直方图、目标计数（可选）、口径校验
   │            └─ 可选：写出窄表 gzip 缓存（仅保留本次读取列）
   │
   ├─ 固化    特征统计表、评分断点（201 个分位点）、分组直方图
   │
   ├─ Pass 2  分块读取 → 百分位评分、健康分、规则分群、风险标签、
-  │           分群画像、目标分组/SMD、维度相关性、用户级评分
+  │           分群画像、目标分组/SMD（可选）、维度相关性、用户级评分
   │
   ├─ 中间结果 CSV / JSON（analysis/out）
   │
@@ -101,7 +124,7 @@ CSV 宽表
 
 - **粒度**：一行一条申请记录；同一用户可有多条申请。
 - **可用流水门槛**：`txn_raw_input_cnt >= 1`。不满足的记录进入「数据不足」客群，不参与评分。
-- **目标标签**：默认 `duedate_1m_5`，正样本值 `1`；标签缺失或未到期的记录不进入目标分析。
+- **目标标签（默认关闭）**：产品配置中 `target_column` 为 `null`，不进行目标关联分析，也不生成目标中间文件。需要时填入标签列（如 Fundo 的 `duedate_1m_5`）并将正样本值设为 `1`；标签缺失或未到期的记录不进入目标分析。
 - **缺失值哨兵**：除借贷机构模块为 `-1.0` 外，其余模块为 `-999999.99999`。借贷可加总金额、次数和机构数的 `-1` 按上游无匹配记录语义恢复为0；其他缺失仍留空。脚本会用 `dict.csv` 核对默认值并报告冲突。
 - **特征列**：脚本启动时校验注册表；生产特征版本变化时，可用 `--allow-missing-features` 跳过缺失列，但建议先对齐版本。
 - **编码**：UTF-8（兼容 BOM）。
@@ -200,36 +223,31 @@ CSV 宽表
 | `feature_breakpoints.json` | 每个计分特征的 201 个分位断点 |
 | `dimension_summary.csv` | 维度均值、分位数、低/中/高得分占比、覆盖率 |
 | `dimension_score_hist.csv` | 维度得分 10 分箱分布 |
-| `segment_summary.csv` | 分群规模、健康分、风险标签、分群逾期率 |
+| `segment_summary.csv` | 分群规模、健康分、风险标签（启用目标分析时含分群逾期率） |
 | `segment_profiles.csv` | 分群 × 核心指标的中位数/四分位数 |
 | `risk_flags.csv` | 风险标签触发数与触发率 |
 | `category_mix.csv` | 交易分类支出占比 |
 | `correlations.csv` | 维度间 Pearson 相关系数 |
-| `target_overall.json` | 目标标签整体逾期率与 Wilson 区间 |
-| `target_by_segment.csv` | 分群逾期率与置信区间 |
-| `target_by_score_band.csv` | 健康分/维度分分层逾期率 |
-| `target_feature_smd.csv` | 正负样本标准化均值差（SMD） |
 | `lender_summary.csv` | 借贷参与、放款/还款金额、机构数、近期融资与集中度汇总 |
 | `lender_institutions.csv` | 放款机构数分桶用户分布 |
 | `lender_segments.csv` | 分群 × 负债参与、融资动态与集中度中位数 |
 | `lender_behavior.csv` | 分群 × 近 28 天借贷行为分型占比 |
-| `lender_behavior_target.csv` | 借贷行为 × 逾期率（探索性） |
 | `lender_products.csv` | 放款/还款产品结构（用户、金额、笔数、笔均） |
 | `lender_top_competitors.csv` | 头部放款机构用户数与金额占比 |
 | `income_summary.csv` | 收入形态、发薪节律与发薪连续性汇总 |
 | `income_archetypes.csv` | 收入形态 × 工资、收入、来源结构中位数 |
 | `income_pay_rhythm.csv` | 发薪节律规模与收入形态构成 |
 | `income_segments.csv` | 分群 × 收入形态、发薪节律与连续性中位数 |
-| `income_archetype_target.csv` | 收入形态 × 逾期率（探索性） |
 | `dishonour_summary.csv` | 拒付状态、结清/未结清次数与金额、结清率汇总 |
 | `dishonour_recovery.csv` | 分群 × 拒付状态用户分布 |
 | `dishonour_segments.csv` | 分群 × 拒付参与率、未结清率与恢复指标 |
 | `dishonour_types.csv` | 六类拒付的未结清/已结清次数金额、补扣与恢复率 |
-| `dishonour_recovery_target.csv` | 拒付状态 × 逾期率（探索性） |
 | `quality_checks.csv` | 数据质量、门槛与恒等式校验 |
 | `user_scores.csv` | 用户/申请级评分、分群、风险标签（含 PII，勿入库） |
 | `overview.json` / `insights.json` / `run_meta.json` | 报告元数据、自动结论、运行信息 |
 | `config_used.json` | 本次实际生效配置 |
+
+启用 `target_column` 后，还会额外生成 `target_overall.json`、`target_by_segment.csv`、`target_by_score_band.csv`、`target_feature_smd.csv`、`lender_behavior_target.csv`、`income_archetype_target.csv`、`dishonour_recovery_target.csv`，并在上述分群/观察表中增加目标统计列。默认关闭时这些文件不会生成。
 
 ## 配置
 
@@ -241,17 +259,17 @@ CSV 宽表
 
 | 键 | 默认值 | 说明 |
 |---|---|---|
-| `input_path` | `sample_with_feature_all_1k.csv` | 输入特征 CSV |
+| `input_path` | `fundo_sample_with_feature_all_1k.csv` | 输入特征 CSV（产品配置会覆盖） |
 | `dict_path` | `dict.csv` | 数据字典（哨兵核对） |
-| `output_dir` | `analysis/out` | 中间结果与报告目录 |
-| `cache_dir` | `analysis/cache` | 窄表缓存目录 |
+| `output_dir` | `analysis/out` | 中间结果与报告目录（产品配置会覆盖） |
+| `cache_dir` | `analysis/cache` | 窄表缓存目录（产品配置会覆盖） |
 | `chunk_size` | `5000` | 分块行数 |
 | `reservoir_size` | `20000` | 每特征分位数抽样上限 |
 | `segment_reservoir_size` | `3000` | 每分群指标抽样上限 |
 | `subset_cache` | `auto` | `auto`/`on`/`off`；文件 ≥ 300MB 时自动启用 |
 | `subset_cache_threshold_mb` | `300` | 自动缓存阈值 |
-| `target_column` | `duedate_1m_5` | 目标标签列 |
-| `target_label` | `首期逾期≥5天` | 报告展示名 |
+| `target_column` | `null` | 目标标签列；默认关闭，填入列名后启用目标分析 |
+| `target_label` | 空 | 报告展示名；无目标时留空 |
 | `target_positive_value` | `1` | 正样本取值 |
 | `gate_column` / `gate_min` | `txn_raw_input_cnt` / `1` | 交易流水可用门槛 |
 | `export_user_scores` | `true` | 是否导出用户级明细 |
@@ -336,6 +354,7 @@ CSV 宽表
 3. **调整分群**：修改配置文件的 `segment_thresholds`，无需改代码。
 4. **新增报告章节**：在 `generate_report.py` 增加渲染函数，并在 `build_html()` 中挂载；数据仍从 `load_intermediates()` 读取。
 5. **接入调度**：`generate_report.py` 返回码 0/非 0，可直接由 Airflow/Cron 调用；建议每次运行使用独立 `output_dir` 并按日期归档。
+6. **新增产品**：复制 `products/` 下的产品配置，调整输入/输出路径、标题与 `target_column`；再复制入口脚本并指向新配置即可，无需修改引擎。
 
 ## 安全与合规
 

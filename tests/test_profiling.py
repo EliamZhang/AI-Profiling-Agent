@@ -104,7 +104,8 @@ class ProfilingRegressionTests(unittest.TestCase):
         frame.loc[10, "txn_raw_input_cnt"] = 0  # 特征存在仍须服从门槛
         frame.loc[11, "duedate_1m_5"] = -1
         with tempfile.TemporaryDirectory() as directory:
-            data = self.run_fixture(frame, directory, score_low=25, score_high=80)
+            data = self.run_fixture(frame, directory, score_low=25, score_high=80,
+                                    target_column="duedate_1m_5")
             users = pd.read_csv(Path(directory) / "out" / "user_scores.csv")
             self.assertTrue(pd.isna(users.loc[10, "health_score"]))
             self.assertEqual(users.loc[10, "risk_flag_count"], 0)
@@ -136,7 +137,7 @@ class ProfilingRegressionTests(unittest.TestCase):
                 data = self.run_fixture(frame, directory)
                 self.assertEqual(data["segment_summary"].set_index("segment").loc["数据不足", "users"], len(frame))
                 self.assertIn("<!DOCTYPE html>", report.build_html(data))
-                self.assertEqual(data["target"]["valid_n"], 0)
+                self.assertEqual(data["target"].get("valid_n", 0), 0)
                 flags = data["risk_flags"].set_index("flag")
                 self.assertEqual(flags.loc["flag_no_wage", "users"], 0)
                 self.assertEqual(flags.loc["flag_no_income", "users"], 0)

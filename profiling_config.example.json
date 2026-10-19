@@ -1,5 +1,5 @@
 {
-  "input_path": "sample_with_feature_all_1k.csv",
+  "input_path": "fundo_sample_with_feature_all_1k.csv",
   "dict_path": "dict.csv",
   "output_dir": "analysis/out",
   "cache_dir": "analysis/cache",
@@ -8,8 +8,8 @@
   "segment_reservoir_size": 3000,
   "subset_cache": "auto",
   "subset_cache_threshold_mb": 300,
-  "target_column": "duedate_1m_5",
-  "target_label": "首期逾期≥5天",
+  "target_column": null,
+  "target_label": "",
   "target_positive_value": 1,
   "gate_column": "txn_raw_input_cnt",
   "gate_min": 1,

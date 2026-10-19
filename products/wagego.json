@@ -1,0 +1,10 @@
+{
+  "input_path": "../wagego_sample_with_feature_all_1k.csv",
+  "dict_path": "../dict.csv",
+  "output_dir": "../analysis/out_wagego",
+  "cache_dir": "../analysis/cache_wagego",
+  "target_column": null,
+  "target_label": "",
+  "report_title": "WageGo 交易行为用户画像分析报告",
+  "report_name": "profiling_report.html"
+}

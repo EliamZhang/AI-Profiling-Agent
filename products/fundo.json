@@ -1,0 +1,10 @@
+{
+  "input_path": "../fundo_sample_with_feature_all_1k.csv",
+  "dict_path": "../dict.csv",
+  "output_dir": "../analysis/out_fundo",
+  "cache_dir": "../analysis/cache_fundo",
+  "target_column": null,
+  "target_label": "",
+  "report_title": "Fundo 交易行为用户画像分析报告",
+  "report_name": "profiling_report.html"
+}
