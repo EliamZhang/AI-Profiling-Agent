@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fundo × WageGo 用户画像对比</title>
+<style>
+:root{--fundo:#2f6fed;--wagego:#0f8b8d;--ink:#101828;--muted:#667085;--line:#e4e7ec;--bg:#f5f7fb;--warm:#b54708;--danger:#b42318}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.62;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.hero{background:radial-gradient(circle at 85% 10%,rgba(15,139,141,.32),transparent 34%),radial-gradient(circle at 8% 20%,rgba(47,111,237,.38),transparent 38%),linear-gradient(135deg,#0b1f3a 0%,#123b66 55%,#0d4d5a 100%);color:#fff;padding:56px 0 38px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-80px;bottom:-120px;width:420px;height:420px;border:1px solid rgba(255,255,255,.12);border-radius:50%;box-shadow:0 0 0 60px rgba(255,255,255,.03),0 0 0 120px rgba(255,255,255,.02)}
+.hero-top{position:relative;z-index:1}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#98a2b3;font-weight:800}
+.eyebrow.light{color:#a9c4e8}
+.hero h1{font-size:44px;line-height:1.18;letter-spacing:-.03em;margin:12px 0 16px;font-weight:800}
+.hero h1 .fundo{color:#9cc0ff}
+.hero h1 .wagego{color:#7ee0d1}
+.hero h1 .x{color:#8da2bf;font-weight:400}
+.lede{max-width:900px;color:#dbe7f6;font-size:15.5px;line-height:1.75;margin:0}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:22px;color:#c7d7ea;font-size:12px}
+.hero-meta span{display:inline-flex;align-items:center;gap:6px}
+.hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:30px;border-top:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16)}
+.hero-stat{padding:18px 18px 16px;border-left:1px solid rgba(255,255,255,.16)}
+.hero-stat:first-child{border-left:0;padding-left:0}
+.hero-stat span{display:block;color:#a9c4e8;font-size:11.5px;margin-bottom:6px}
+.hero-stat b{display:block;font-size:21px;letter-spacing:-.02em;white-space:nowrap}
+.hero-stat b em{color:#8da2bf;font-style:normal;font-weight:400;margin:0 4px}
+.hero-stat small{display:block;color:#8da2bf;font-size:10.5px;margin-top:3px}
+.hero-note{position:relative;z-index:1;color:#94a3b8;font-size:11.5px;line-height:1.7;margin:18px 0 0;max-width:900px}
+.nav{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;gap:18px;overflow-x:auto;padding:0 28px;max-width:1180px;margin:0 auto;height:52px;align-items:center;white-space:nowrap}
+.nav a{font-size:12.5px;color:#475467;padding:4px 0;border-bottom:2px solid transparent}
+.nav a:hover{color:var(--fundo);border-color:var(--fundo)}
+.section{padding:44px 0 10px}
+.section-head{display:flex;justify-content:space-between;align-items:flex-end;gap:26px;margin-bottom:18px;border-top:1px solid var(--line);padding-top:26px}
+.section h2{font-size:26px;line-height:1.25;letter-spacing:-.02em;margin:4px 0 0}
+.section-sub{max-width:430px;text-align:right;color:var(--muted);font-size:12.5px;line-height:1.7;margin:0}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:0 1px 2px rgba(16,24,40,.04);min-width:0}
+.card h3{font-size:14.5px;line-height:1.35;margin:0 0 10px;letter-spacing:-.01em}
+.card p{margin:0 0 9px;font-size:13px;color:#344054}
+.card p:last-child{margin-bottom:0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.two-col>*{min-width:0}
+.finding-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+.finding{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;min-width:0;box-shadow:0 1px 2px rgba(16,24,40,.03)}
+.finding-title{font-size:11px;color:#98a2b3;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.finding p{margin:0;font-size:13px;color:#344054}
+.finding b{color:var(--ink)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+.kpi-grid>*{min-width:0}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+.kpi-label{font-size:11.5px;color:var(--muted);margin-bottom:7px}
+.kpi-values{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline}
+.kpi-values span{display:inline-flex;align-items:center;gap:5px}
+.kpi-values b{font-size:19px;letter-spacing:-.02em}
+.kpi-sub{font-size:10.5px;color:#98a2b3;margin-top:5px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 auto;margin-right:5px}
+.dot.f{background:var(--fundo)}
+.dot.w{background:var(--wagego)}
+.callout{background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid var(--fundo);padding:14px 18px;border-radius:10px;font-size:13px;color:#1e3a8a;margin:16px 0;line-height:1.7}
+.callout.warn{background:#fffbeb;border-color:#fde68a;border-left-color:#d97706;color:#78350f}
+.callout.danger{background:#fef3f2;border-color:#fecdca;border-left-color:#d92d20;color:#7a271a}
+.table-wrap{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;margin-top:10px}
+table.data{width:100%;border-collapse:collapse;font-size:12.5px;min-width:480px}
+table.data th{background:#f8fafc;color:#475467;font-weight:700;text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data td{padding:9px 12px;border-bottom:1px solid #f0f2f5;vertical-align:top}
+table.data tr:last-child td{border-bottom:0}
+table.data tr:nth-child(even) td{background:#fcfcfd}
+table.data th.right,table.data td.right{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.data th.left,table.data td.left{text-align:left}
+.table-note{font-size:10.5px;color:#98a2b3;line-height:1.65;margin:7px 2px 0}
+.tiny{display:block;color:#98a2b3;font-size:10.5px;font-weight:400;white-space:nowrap}
+.stack-block{margin:8px 0 14px}
+.stack-meta{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#475467;margin-bottom:5px}
+.stack-meta b.fundo{color:var(--fundo)}
+.stack-meta b.wagego{color:var(--wagego)}
+.stack{display:flex;height:30px;border-radius:8px;overflow:hidden;background:#eaecf0}
+.stack-seg{display:flex;align-items:center;justify-content:center;min-width:0;font-size:10px;font-weight:800;letter-spacing:.01em;overflow:hidden;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:10px;font-size:11.5px;color:#475467}
+.legend span{display:inline-flex;align-items:center}
+.clean-list{margin:0;padding-left:17px;color:#475467;font-size:12.5px;line-height:1.8}
+.clean-list li{margin-bottom:5px}
+.muted{color:var(--muted);font-size:12px}
+code{background:#f2f4f7;border:1px solid #eaecf0;border-radius:4px;padding:1px 5px;font-size:10.5px;color:#344054;white-space:nowrap}
+.file-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.file-list code{white-space:nowrap}
+.footer{border-top:1px solid var(--line);background:#fff;padding:18px 0;margin-top:22px}
+.footer-inner{display:flex;justify-content:space-between;gap:16px;color:#98a2b3;font-size:11.5px}
+@media (max-width:1160px){
+  .hero-grid{grid-template-columns:1fr 1fr}
+  .hero-stat:nth-child(3){border-left:0;padding-left:0}
+  .hero-stat:nth-child(-n+2){border-bottom:1px solid rgba(255,255,255,.16)}
+  .two-col,.finding-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .section-head{flex-direction:column;align-items:flex-start;gap:8px}
+  .section-sub{text-align:left;max-width:none}
+}
+@media (max-width:640px){
+  .wrap{padding:0 18px}
+  .hero{padding:40px 0 30px}
+  .hero h1{font-size:32px}
+  .hero-stat{padding:12px 10px}
+  .hero-stat b{font-size:18px}
+  .kpi-grid,.finding-grid{grid-template-columns:1fr}
+  .nav-inner{padding:0 18px;height:44px;gap:14px}
+  .section{padding:32px 0 6px}
+  .section h2{font-size:22px}
+  .footer-inner{flex-direction:column}
+}
+@media print{
+  .nav{display:none}
+  body{background:#fff}
+  .hero{background:#fff;color:#111;padding:24px 0}
+  .hero h1 .fundo,.hero h1 .wagego,.hero h1 .x{color:#111}
+  .lede,.hero-note,.hero-meta,.hero-stat span,.hero-stat small,.hero-stat b em{color:#333}
+  .hero-grid,.hero-stat{border-color:#ddd}
+  .section{break-inside:avoid}
+  .card,.finding,.kpi{box-shadow:none}
+}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="wrap">
+  <div class="hero-top">
+    <div class="eyebrow light">PRODUCT PROFILE COMPARISON · FULL SAMPLE</div>
+    <h1><span class="fundo">Fundo</span> <span class="x">×</span> <span class="wagego">WageGo</span><br>用户画像对比</h1>
+    <p class="lede">基于两个产品最新全量新客申请样本（Fundo 申请期 2026-09-01 至 09-30；WageGo 2026-08-14 至 10-14）。先看数据可见度与样本口径，再比较客群结构、收入、负债、拒付和流动性。健康分与维度分均为各自样本内百分位，跨产品不比较分数绝对值。</p>
+    <div class="hero-meta">
+      <span><i class="dot f"></i>Fundo · 31,333 条申请 · 21,255 条可用流水</span>
+      <span><i class="dot w"></i>WageGo · 38,767 条申请 · 37,057 条可用流水</span>
+      <span>122 个注册特征 · 46 个计分指标</span>
+    </div>
+  </div>
+  <div class="hero-grid">
+    <div class="hero-stat"><span>可用流水覆盖</span><b>67.8% <em>/</em> 95.6%</b><small>Fundo / WageGo</small></div>
+    <div class="hero-stat"><span>高风险承压 · 有评分</span><b>32.8% <em>/</em> 57.4%</b><small>剔除数据不足后</small></div>
+    <div class="hero-stat"><span>存在未结清拒付</span><b>32.7% <em>/</em> 57.5%</b><small>占可用流水用户</small></div>
+    <div class="hero-stat"><span>余额中位数</span><b>A$138 <em>/</em> A$19</b><small>流水用户</small></div>
+  </div>
+  <p class="hero-note">阅读顺序：覆盖与分母 → 客群结构 → 五维画像 → 收入/负债/拒付/流动性 → 业务解读。技术口径和数据质量统一放在附录。</p>
+</div></header>
+
+<nav class="nav"><div class="nav-inner"><a href="#summary">摘要</a><a href="#coverage">覆盖与分母</a><a href="#segments">客群结构</a><a href="#dimensions">五维画像</a><a href="#income">收入与发薪</a><a href="#lender">负债与融资</a><a href="#dishonour">拒付与恢复</a><a href="#liquidity">流动性与消费</a><a href="#interpretation">业务解读</a><a href="#appendix">附录</a></div></nav>
+<main>
+
+<section id="summary" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">01 · 摘要</div><h2>先看核心差异</h2></div>
+    <p class="section-sub">同一套画像体系，两个产品的样本可见度和负债行为差异最大。</p>
+  </div>
+  
+    <div class="callout "><strong>一句话：</strong>WageGo 的流水可见度接近满样本，借贷参与、现金贷使用、未结清拒付和流动性压力都更高；Fundo 有近三分之一申请没有可用流水，已评分人群更偏向现金流紧张。</div>
+    <div class="finding-grid">
+      <div class="finding"><div class="finding-title">数据可见度</div><p>Fundo 可用流水 <b>21,255</b> 条（67.8%），数据不足 <b>10,078</b> 条（32.2%）；WageGo 可用流水 <b>37,057</b> 条（95.6%），数据不足仅 <b>1,711</b> 条（4.4%）。</p></div>
+      <div class="finding"><div class="finding-title">客群风险结构</div><p>在有评分用户中，Fundo 高风险承压 <b>32.8%</b>、现金流紧张 <b>43.3%</b>；WageGo 分别为 <b>57.4%</b> 和 <b>24.2%</b>。WageGo 的高风险客群占比更高，Fundo 的已评分人群更集中在现金流紧张。</p></div>
+      <div class="finding"><div class="finding-title">借贷与拒付</div><p>有放款记录：Fundo <b>66.5%</b>，WageGo <b>82.1%</b>；放款机构数中位数 <b>1</b> vs <b>3</b>。未结清拒付：<b>32.7%</b> vs <b>57.5%</b>。</p></div>
+      <div class="finding"><div class="finding-title">流动性</div><p>余额中位数 <b>A$138</b> vs <b>A$19</b>；固定支出备用月数 <b>1.4</b> vs <b>0.6</b> 个月；负余额天数占比 <b>2.2%</b> vs <b>7.3%</b>。</p></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-label">健康分中位数</div>
+    <div class="kpi-values"><span><i class="dot f"></i><b>54.6</b></span><span><i class="dot w"></i><b>53.7</b></span></div>
+    <div class="kpi-sub">样本内百分位，仅描述各自客群</div></div>
+      <div class="kpi"><div class="kpi-label">工资收入占比中位数</div>
+    <div class="kpi-values"><span><i class="dot f"></i><b>23.7%</b></span><span><i class="dot w"></i><b>28.7%</b></span></div>
+    <div class="kpi-sub">工资收入 / 总收入</div></div>
+      <div class="kpi"><div class="kpi-label">债务支出 / 收入中位数</div>
+    <div class="kpi-values"><span><i class="dot f"></i><b>5.3%</b></span><span><i class="dot w"></i><b>10.5%</b></span></div>
+    <div class="kpi-sub">182 天窗口</div></div>
+      <div class="kpi"><div class="kpi-label">数据不足占比</div>
+    <div class="kpi-values"><span><i class="dot f"></i><b>32.2%</b></span><span><i class="dot w"></i><b>4.4%</b></span></div>
+    <div class="kpi-sub">无流水或健康分覆盖不足</div></div>
+    </div>
+    <div class="callout warn"><strong>先别直接比健康分：</strong>两个产品的健康分中位数接近（54.6 vs 53.7），但这是各自样本内的相对位置。真正可横向观察的是覆盖率、规则型风险标签、借贷参与和拒付状态。</div>
+    
+</div></section>
+
+<section id="coverage" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">02 · 覆盖与分母</div><h2>样本覆盖决定可比性</h2></div>
+    <p class="section-sub">两个产品的流水覆盖率差异很大，客群占比必须区分全部申请与有评分用户。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">指标</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">申请记录</td><td class="right">31,333</td><td class="right">38,767</td></tr><tr><td class="left">去重用户</td><td class="right">30,353</td><td class="right">37,457</td></tr><tr><td class="left">可用流水记录</td><td class="right">21,255（67.8%）</td><td class="right">37,057（95.6%）</td></tr><tr><td class="left">健康分可用</td><td class="right">21,255（67.8%）</td><td class="right">37,056（95.6%）</td></tr><tr><td class="left">数据不足</td><td class="right">10,078（32.2%）</td><td class="right">1,711（4.4%）</td></tr><tr><td class="left">申请时间范围</td><td class="right">2026-09-01 至 2026-09-30</td><td class="right">2026-08-14 至 2026-10-14</td></tr><tr><td class="left">源表列数</td><td class="right">13,363</td><td class="right">13,422</td></tr><tr><td class="left">注册 / 计分特征</td><td class="right">122 / 46</td><td class="right">122 / 46</td></tr><tr><td class="left">样本标记</td><td class="right">新客 · 单月申请</td><td class="right">新客 · 单月申请</td></tr></tbody></table></div><p class="table-note">申请时间范围来自申请时间字段；金额和占比均来自各自中间结果。</p>
+    <div class="callout warn"><strong>分母提醒：</strong>Fundo 的数据不足占比为 <b>32.2%</b>，WageGo 为 <b>4.4%</b>。如果直接用“全部申请”比较客群占比，Fundo 会被大量无流水记录稀释；下面的客群表同时给出“全部申请”和“有评分用户”两种口径。</div>
+    <div class="two-col">
+      <div class="card"><h3>为什么覆盖率会影响画像</h3>
+        <p>画像的评分、分群和大部分风险标签都要求至少有一条可用流水，并且健康分覆盖率达到阈值。没有流水的申请只能进入“数据不足”，不能判断其真实风险高低。</p>
+        <p>因此，Fundo 的“数据不足”占三成，更像是一个<strong>数据可见度问题</strong>，而不是三成申请天然低风险或高风险。WageGo 的覆盖率接近满样本，客群结构更接近其申请总体。</p>
+      </div>
+      <div class="card"><h3>哪些指标可以横向看</h3>
+        <p><strong>相对可比：</strong>流水覆盖率、借贷参与率、放款机构数、规则型风险标签、拒付状态、余额和缓冲类指标。</p>
+        <p><strong>不可直接比：</strong>健康分、五维分数的绝对值，以及基于各自样本内百分位的分群阈值。它们描述的是“在本产品样本中的相对位置”。</p>
+      </div>
+    </div>
+    
+</div></section>
+
+<section id="segments" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">03 · 客群结构</div><h2>Fundo 更紧，WageGo 更重</h2></div>
+    <p class="section-sub">分群名称相同，但阈值来自各自样本；有评分口径更适合比较风险结构。</p>
+  </div>
+  
+    <div class="card">
+      <h3>全部申请</h3>
+      <div class="stack-block">
+      <div class="stack-meta"><b class="fundo">Fundo</b><span>全部申请 · 31,333</span></div>
+      <div class="stack"><div class="stack-seg" style="width:1.6245%;background:#2f6fed" title="优质均衡 · 509 · 1.6%"></div><div class="stack-seg" style="width:5.2756%;background:#0f8b8d" title="稳健工薪 · 1,653 · 5.3%"></div><div class="stack-seg" style="width:1.3596%;background:#7c5cff" title="均衡普通 · 426 · 1.4%"></div><div class="stack-seg" style="width:7.9565%;background:#d97706" title="月光消费 · 2,493 · 8.0%"></div><div class="stack-seg" style="width:29.3684%;background:#dc6b19" title="现金流紧张 · 9,202 · 29.4%">29.4%</div><div class="stack-seg" style="width:22.2513%;background:#dc2626" title="高风险承压 · 6,972 · 22.3%">22.3%</div><div class="stack-seg" style="width:32.1642%;background:#98a2b3" title="数据不足 · 10,078 · 32.2%">32.2%</div></div>
+    </div>
+      <div class="stack-block">
+      <div class="stack-meta"><b class="wagego">WageGo</b><span>全部申请 · 38,767</span></div>
+      <div class="stack"><div class="stack-seg" style="width:0.8461%;background:#2f6fed" title="优质均衡 · 328 · 0.8%"></div><div class="stack-seg" style="width:6.3508%;background:#0f8b8d" title="稳健工薪 · 2,462 · 6.4%"></div><div class="stack-seg" style="width:1.3594%;background:#7c5cff" title="均衡普通 · 527 · 1.4%"></div><div class="stack-seg" style="width:9.0283%;background:#d97706" title="月光消费 · 3,500 · 9.0%">9.0%</div><div class="stack-seg" style="width:23.1615%;background:#dc6b19" title="现金流紧张 · 8,979 · 23.2%">23.2%</div><div class="stack-seg" style="width:54.8405%;background:#dc2626" title="高风险承压 · 21,260 · 54.8%">54.8%</div><div class="stack-seg" style="width:4.4135%;background:#98a2b3" title="数据不足 · 1,711 · 4.4%"></div></div>
+    </div>
+      <div class="legend"><span><i class="dot" style="background:#2f6fed"></i>优质均衡</span><span><i class="dot" style="background:#0f8b8d"></i>稳健工薪</span><span><i class="dot" style="background:#7c5cff"></i>均衡普通</span><span><i class="dot" style="background:#d97706"></i>月光消费</span><span><i class="dot" style="background:#dc6b19"></i>现金流紧张</span><span><i class="dot" style="background:#dc2626"></i>高风险承压</span><span><i class="dot" style="background:#98a2b3"></i>数据不足</span></div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3>有评分用户（剔除数据不足）</h3>
+      <div class="stack-block">
+      <div class="stack-meta"><b class="fundo">Fundo</b><span>有评分用户 · 21,255</span></div>
+      <div class="stack"><div class="stack-seg" style="width:2.3947%;background:#2f6fed" title="优质均衡 · 509 · 2.4%"></div><div class="stack-seg" style="width:7.7770%;background:#0f8b8d" title="稳健工薪 · 1,653 · 7.8%"></div><div class="stack-seg" style="width:2.0042%;background:#7c5cff" title="均衡普通 · 426 · 2.0%"></div><div class="stack-seg" style="width:11.7290%;background:#d97706" title="月光消费 · 2,493 · 11.7%">11.7%</div><div class="stack-seg" style="width:43.2933%;background:#dc6b19" title="现金流紧张 · 9,202 · 43.3%">43.3%</div><div class="stack-seg" style="width:32.8017%;background:#dc2626" title="高风险承压 · 6,972 · 32.8%">32.8%</div></div>
+    </div>
+      <div class="stack-block">
+      <div class="stack-meta"><b class="wagego">WageGo</b><span>有评分用户 · 37,056</span></div>
+      <div class="stack"><div class="stack-seg" style="width:0.8851%;background:#2f6fed" title="优质均衡 · 328 · 0.9%"></div><div class="stack-seg" style="width:6.6440%;background:#0f8b8d" title="稳健工薪 · 2,462 · 6.6%"></div><div class="stack-seg" style="width:1.4222%;background:#7c5cff" title="均衡普通 · 527 · 1.4%"></div><div class="stack-seg" style="width:9.4452%;background:#d97706" title="月光消费 · 3,500 · 9.4%">9.4%</div><div class="stack-seg" style="width:24.2309%;background:#dc6b19" title="现金流紧张 · 8,979 · 24.2%">24.2%</div><div class="stack-seg" style="width:57.3726%;background:#dc2626" title="高风险承压 · 21,260 · 57.4%">57.4%</div></div>
+    </div>
+      <div class="legend"><span><i class="dot" style="background:#2f6fed"></i>优质均衡</span><span><i class="dot" style="background:#0f8b8d"></i>稳健工薪</span><span><i class="dot" style="background:#7c5cff"></i>均衡普通</span><span><i class="dot" style="background:#d97706"></i>月光消费</span><span><i class="dot" style="background:#dc6b19"></i>现金流紧张</span><span><i class="dot" style="background:#dc2626"></i>高风险承压</span><span><i class="dot" style="background:#98a2b3"></i>数据不足</span></div>
+    </div>
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">客群</th><th class="right">Fundo 全部</th><th class="right">Fundo 有评分</th><th class="right">WageGo 全部</th><th class="right">WageGo 有评分</th></tr></thead><tbody><tr><td class="left">优质均衡</td><td class="right">509 · 1.6%</td><td class="right">509 · 2.4%</td><td class="right">328 · 0.8%</td><td class="right">328 · 0.9%</td></tr><tr><td class="left">稳健工薪</td><td class="right">1,653 · 5.3%</td><td class="right">1,653 · 7.8%</td><td class="right">2,462 · 6.4%</td><td class="right">2,462 · 6.6%</td></tr><tr><td class="left">均衡普通</td><td class="right">426 · 1.4%</td><td class="right">426 · 2.0%</td><td class="right">527 · 1.4%</td><td class="right">527 · 1.4%</td></tr><tr><td class="left">月光消费</td><td class="right">2,493 · 8.0%</td><td class="right">2,493 · 11.7%</td><td class="right">3,500 · 9.0%</td><td class="right">3,500 · 9.4%</td></tr><tr><td class="left">现金流紧张</td><td class="right">9,202 · 29.4%</td><td class="right">9,202 · 43.3%</td><td class="right">8,979 · 23.2%</td><td class="right">8,979 · 24.2%</td></tr><tr><td class="left">高风险承压</td><td class="right">6,972 · 22.3%</td><td class="right">6,972 · 32.8%</td><td class="right">21,260 · 54.8%</td><td class="right">21,260 · 57.4%</td></tr><tr><td class="left">数据不足</td><td class="right">10,078 · 32.2%</td><td class="right">—</td><td class="right">1,711 · 4.4%</td><td class="right">—</td></tr></tbody></table></div><p class="table-note">有评分口径的分母为健康分可用用户（Fundo 21,255；WageGo 37,056）。数据不足客群不进入有评分口径，表中以“—”表示。</p>
+    <div class="callout "><strong>结构差异：</strong>有评分口径下，Fundo 最大客群是现金流紧张（<b>43.3%</b>），WageGo 最大客群是高风险管理承压（<b>57.4%</b>）。高风险承压本身由多个风险标签和负债得分共同判定，分群结果不是独立于风险标签的证据。</div>
+    
+</div></section>
+
+<section id="dimensions" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">04 · 五维画像</div><h2>负债压力差异最大</h2></div>
+    <p class="section-sub">五维分数是样本内百分位，重点看相对位置与低分占比，不比较绝对分数。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">维度</th><th class="right">Fundo 中位数（低分 / 高分）</th><th class="right">WageGo 中位数（低分 / 高分）</th><th class="right">差异 W−F</th></tr></thead><tbody><tr><td class="left">收入稳定性</td><td class="right">52.0 <span class="tiny">低 26.3% / 高 16.4%</span></td><td class="right">56.8 <span class="tiny">低 20.1% / 高 19.0%</span></td><td class="right">+4.7</td></tr><tr><td class="left">收支储蓄</td><td class="right">51.0 <span class="tiny">低 25.0% / 高 13.3%</span></td><td class="right">51.5 <span class="tiny">低 25.2% / 高 14.2%</span></td><td class="right">+0.5</td></tr><tr><td class="left">流动性缓冲</td><td class="right">51.3 <span class="tiny">低 29.8% / 高 18.4%</span></td><td class="right">51.1 <span class="tiny">低 32.7% / 高 19.3%</span></td><td class="right">-0.2</td></tr><tr><td class="left">负债压力</td><td class="right">66.1 <span class="tiny">低 17.3% / 高 43.7%</span></td><td class="right">56.2 <span class="tiny">低 21.1% / 高 30.2%</span></td><td class="right">-9.9</td></tr><tr><td class="left">消费活跃度</td><td class="right">56.2 <span class="tiny">低 29.2% / 高 25.3%</span></td><td class="right">56.6 <span class="tiny">低 28.8% / 高 25.6%</span></td><td class="right">+0.4</td></tr></tbody></table></div><p class="table-note">低分 = 维度分 &lt; 40；高分 = 维度分 ≥ 70。分数方向已统一为越高越好；负债压力分数越高表示压力越低。</p>
+    <div class="two-col">
+      <div class="card"><h3>最明显的两项</h3>
+        <p><strong>负债压力：</strong>Fundo 中位 66.1，WageGo 56.2；
+           WageGo 的低分占比 21.1%，高于 Fundo 的 17.3%。</p>
+        <p><strong>收入稳定性：</strong>WageGo 中位 56.8，高于 Fundo 的 52.0；
+           Fundo 的低分占比 26.3%，WageGo 为 20.1%。</p>
+      </div>
+      <div class="card"><h3>其余维度接近</h3>
+        <p>收支储蓄、流动性缓冲、消费活跃度的中位数差距都在 0.5 分以内。这个“接近”是百分位评分的结果，不代表两个产品的实际收支或流动性水平相同；实际水平要看后面的余额、缓冲、债务支出和拒付指标。</p>
+        <p>健康分中位数 54.6 vs 53.7，同样只能说明各自样本内的相对位置。</p>
+      </div>
+    </div>
+    <div class="callout warn"><strong>口径边界：</strong>每个产品的断点和分数都基于本产品样本重新计算。跨产品比较“负债压力 66 分”与“负债压力 56 分”，只能说明各自样本中的相对排名不同，不能直接推导为实际债务负担相差 10 分。</div>
+    
+</div></section>
+
+<section id="income" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">05 · 收入与发薪</div><h2>WageGo 更偏高薪与双周/周薪</h2></div>
+    <p class="section-sub">收入形态和发薪节律都是观察项，不进入健康分；现金收入可能被低估。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">指标</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">稳定工资</td><td class="right">16.3%</td><td class="right">19.0%</td></tr><tr><td class="left">不稳定工资</td><td class="right">25.0%</td><td class="right">29.1%</td></tr><tr><td class="left">多源 / 非工资</td><td class="right">52.4%</td><td class="right">49.4%</td></tr><tr><td class="left">福利依赖</td><td class="right">6.3%</td><td class="right">2.5%</td></tr><tr><td class="left">无收入</td><td class="right">0.05%</td><td class="right">0.06%</td></tr><tr><td class="left">工资收入占比中位数</td><td class="right">23.7%</td><td class="right">28.7%</td></tr><tr><td class="left">工资收入总额中位数</td><td class="right">A$16.8k</td><td class="right">A$24.4k</td></tr><tr><td class="left">总收入中位数</td><td class="right">A$61.0k</td><td class="right">A$73.8k</td></tr><tr><td class="left">收入来源数中位数</td><td class="right">7</td><td class="right">6</td></tr><tr><td class="left">工资变异系数中位数</td><td class="right">0.27</td><td class="right">0.25</td></tr><tr><td class="left">无工资入账</td><td class="right">25.9%</td><td class="right">14.4%</td></tr></tbody></table></div><p class="table-note">收入形态互斥，占比分母为可用流水用户；金额为 182 天窗口，单位按源数据推断为澳元。</p>
+    <div class="two-col">
+      <div class="card"><h3>收入形态</h3>
+        <div class="table-wrap"><table class="data"><thead><tr><th class="left">发薪节律</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">月薪</td><td class="right">2.2%</td><td class="right">3.7%</td></tr><tr><td class="left">双周薪</td><td class="right">26.0%</td><td class="right">32.1%</td></tr><tr><td class="left">周薪</td><td class="right">39.2%</td><td class="right">41.5%</td></tr><tr><td class="left">不规律</td><td class="right">5.6%</td><td class="right">7.5%</td></tr><tr><td class="left">无工资/未识别</td><td class="right">27.0%</td><td class="right">15.2%</td></tr></tbody></table></div><p class="table-note">四类发薪标记互斥；无工资/未识别不等于无收入。</p>
+      </div>
+      <div class="card"><h3>解读</h3>
+        <p>WageGo 的稳定工资占比、工资收入占比和总收入中位数都更高；Fundo 的多源/非工资、福利依赖和无工资入账占比更高。</p>
+        <p>但 WageGo 的收入优势没有转化为更厚的流动性缓冲：它的余额、备用月数和负余额天数都更弱。收入水平需要和债务支出、现金贷使用、拒付状态一起看。</p>
+        <p class="muted">收入形态依赖工资、福利和银行流水识别；现金收入、家庭内部转账和一次性入账可能造成误分类。</p>
+      </div>
+    </div>
+    
+</div></section>
+
+<section id="lender" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">06 · 负债与融资</div><h2>WageGo 借得更深、更分散</h2></div>
+    <p class="section-sub">借贷参与、机构数和产品结构都是观察项；机构数口径与“多头借贷”标签不同。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">指标</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">有放款记录</td><td class="right">66.5%</td><td class="right">82.1%</td></tr><tr><td class="left">仅还款记录</td><td class="right">19.7%</td><td class="right">10.6%</td></tr><tr><td class="left">无借贷记录</td><td class="right">13.8%</td><td class="right">7.3%</td></tr><tr><td class="left">放款机构数中位数</td><td class="right">1</td><td class="right">3</td></tr><tr><td class="left">放款机构数 ≥3</td><td class="right">38.2%</td><td class="right">62.1%</td></tr><tr><td class="left">近 28 天净融资扩张</td><td class="right">14.7%</td><td class="right">17.8%</td></tr><tr><td class="left">近 28 天净偿还</td><td class="right">27.4%</td><td class="right">43.2%</td></tr><tr><td class="left">近 28 天放款 / 182 天放款中位数</td><td class="right">16.9%</td><td class="right">17.4%</td></tr><tr><td class="left">单机构最大放款集中度中位数</td><td class="right">30.0%</td><td class="right">16.6%</td></tr><tr><td class="left">放款总额（182 天）</td><td class="right">A$90.28m</td><td class="right">A$316.97m</td></tr><tr><td class="left">还款总额（182 天）</td><td class="right">A$156.44m</td><td class="right">A$480.09m</td></tr></tbody></table></div><p class="table-note">借贷参与占比分母为可用流水用户；放款/还款金额为 182 天窗口。</p>
+    <div class="card" style="margin-top:16px"><h3>放款产品结构</h3>
+      <div class="table-wrap"><table class="data"><thead><tr><th class="left">产品</th><th class="right">Fundo 金额占比</th><th class="right">WageGo 金额占比</th><th class="right">Fundo 使用率</th><th class="right">WageGo 使用率</th></tr></thead><tbody><tr><td class="left">现金贷 / 工资贷</td><td class="right">61.3%</td><td class="right">73.2%</td><td class="right">62.3%</td><td class="right">82.9%</td></tr><tr><td class="left">个人贷款</td><td class="right">36.2%</td><td class="right">25.9%</td><td class="right">51.6%</td><td class="right">59.1%</td></tr><tr><td class="left">BNPL</td><td class="right">1.0%</td><td class="right">0.5%</td><td class="right">15.0%</td><td class="right">12.0%</td></tr><tr><td class="left">银行</td><td class="right">1.6%</td><td class="right">0.4%</td><td class="right">0.6%</td><td class="right">0.5%</td></tr></tbody></table></div><p class="table-note">金额占比只在已识别产品的放款金额内计算；使用率分母为有放款记录用户。产品识别覆盖：Fundo 88.5%，WageGo 93.8%。</p>
+    </div>
+    <div class="callout warn"><strong>两个“多头”口径不要混用：</strong>风险标签“多头借贷”只统计机构名单内的竞品，触发率为 <b>0.3% vs 0.6%</b>；上表的“放款机构数 ≥3”使用全量去重机构，分别为 <b>38.2% vs 62.1%</b>。两者不能直接比较。</div>
+    
+</div></section>
+
+<section id="dishonour" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">07 · 拒付与恢复</div><h2>WageGo 拒付更普遍、恢复更弱</h2></div>
+    <p class="section-sub">未结清表示 182 天窗口内未识别到补扣，不等同于当前违约状态。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">指标</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">有拒付记录</td><td class="right">36.2%</td><td class="right">58.3%</td></tr><tr><td class="left">存在未结清拒付</td><td class="right">32.7%</td><td class="right">57.5%</td></tr><tr><td class="left">结清状态：仅已解决</td><td class="right">9.8%</td><td class="right">1.5%</td></tr><tr><td class="left">结清状态：部分解决</td><td class="right">33.1%</td><td class="right">29.4%</td></tr><tr><td class="left">结清状态：全部未解决</td><td class="right">57.1%</td><td class="right">69.1%</td></tr><tr><td class="left">结清率（次数口径）</td><td class="right">19.3%</td><td class="right">8.0%</td></tr><tr><td class="left">未结清金额占比</td><td class="right">84.2%</td><td class="right">94.8%</td></tr><tr><td class="left">未结清笔数</td><td class="right">65,688</td><td class="right">283,118</td></tr><tr><td class="left">未结清金额</td><td class="right">A$12.11m</td><td class="right">A$58.82m</td></tr><tr><td class="left">未结清金额中位数</td><td class="right">A$758</td><td class="right">A$1.3k</td></tr><tr><td class="left">已结清金额</td><td class="right">A$2.27m</td><td class="right">A$3.22m</td></tr></tbody></table></div><p class="table-note">拒付占比分母为可用流水用户；结清状态占比分母为有拒付记录用户；金额单位按源数据推断为澳元。</p>
+    <div class="card" style="margin-top:16px"><h3>未结清金额与恢复率</h3>
+      <div class="table-wrap"><table class="data"><thead><tr><th class="left">产品</th><th class="right">Fundo 未结清金额</th><th class="right">WageGo 未结清金额</th><th class="right">Fundo 恢复率</th><th class="right">WageGo 恢复率</th></tr></thead><tbody><tr><td class="left">个人贷款</td><td class="right">A$5.31m</td><td class="right">A$19.74m</td><td class="right">20.5%</td><td class="right">11.0%</td></tr><tr><td class="left">现金贷 / 工资贷</td><td class="right">A$6.52m</td><td class="right">A$38.21m</td><td class="right">17.3%</td><td class="right">4.0%</td></tr><tr><td class="left">BNPL</td><td class="right">A$108.5k</td><td class="right">A$308.7k</td><td class="right">19.6%</td><td class="right">11.9%</td></tr><tr><td class="left">银行</td><td class="right">A$173.4k</td><td class="right">A$547.5k</td><td class="right">6.7%</td><td class="right">3.0%</td></tr><tr><td class="left">债务催收</td><td class="right">A$1.4k</td><td class="right">A$17.8k</td><td class="right">0.0%</td><td class="right">0.0%</td></tr></tbody></table></div><p class="table-note">恢复率按次数口径；金额和笔数仅统计已识别产品，分项未覆盖全部拒付。</p>
+    </div>
+    <div class="callout danger"><strong>规模差异：</strong>WageGo 未结清金额 <b>A$58.82m</b>，是 Fundo <b>A$12.11m</b> 的约 4.9 倍；未结清笔数 283,118 vs 65,688。其中现金贷/工资贷未结清金额 <b>A$38.21m</b> vs <b>A$6.52m</b>，恢复率仅 4.0% vs 17.3%。</div>
+    
+</div></section>
+
+<section id="liquidity" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">08 · 流动性与消费</div><h2>WageGo 缓冲更薄</h2></div>
+    <p class="section-sub">余额、备用月数和负余额天数直接描述可观测的流动性；消费占比受转账分类影响。</p>
+  </div>
+  
+    <div class="table-wrap"><table class="data"><thead><tr><th class="left">指标</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">余额中位数</td><td class="right">A$138</td><td class="right">A$19</td></tr><tr><td class="left">负余额天数占比中位数</td><td class="right">2.2%</td><td class="right">7.3%</td></tr><tr><td class="left">固定支出备用月数中位数</td><td class="right">1.4</td><td class="right">0.6</td></tr><tr><td class="left">储蓄率中位数（余额变动口径）</td><td class="right">-0.14%</td><td class="right">-0.23%</td></tr><tr><td class="left">现金净流出用户占比</td><td class="right">58.3%</td><td class="right">57.6%</td></tr><tr><td class="left">收支结余率中位数（流水口径）</td><td class="right">0.88%</td><td class="right">2.57%</td></tr><tr><td class="left">债务支出 / 收入中位数</td><td class="right">5.3%</td><td class="right">10.5%</td></tr><tr><td class="left">可选消费占比中位数</td><td class="right">4.6%</td><td class="right">3.6%</td></tr><tr><td class="left">必需支出占比中位数</td><td class="right">6.6%</td><td class="right">5.3%</td></tr><tr><td class="left">转账类支出占比中位数</td><td class="right">54.1%</td><td class="right">52.4%</td></tr><tr><td class="left">债务类支出占比中位数</td><td class="right">4.6%</td><td class="right">8.8%</td></tr><tr><td class="left">赌博支出触发率</td><td class="right">19.8%</td><td class="right">27.6%</td></tr><tr><td class="left">近 28 天收入 / 前期日均</td><td class="right">1.03</td><td class="right">1.03</td></tr><tr><td class="left">近 28 天支出 / 前期日均</td><td class="right">1.06</td><td class="right">1.06</td></tr><tr><td class="left">高承诺支出 / 收入中位数</td><td class="right">2.2%</td><td class="right">1.8%</td></tr><tr><td class="left">期末余额可覆盖支出天数中位数</td><td class="right">0.38</td><td class="right">0.13</td></tr></tbody></table></div><p class="table-note">余额与支出类指标基于申请前 182 天流水；储蓄率使用余额变动口径，收支结余率使用交易分类口径，两者不可混用。</p>
+    <div class="two-col">
+      <div class="card"><h3>流动性</h3>
+        <p>WageGo 余额中位数只有 <b>A$19</b>，Fundo 为 <b>A$138</b>；
+           WageGo 的固定支出备用月数 <b>0.6</b> 个月，Fundo <b>1.4</b> 个月。</p>
+        <p>WageGo 负余额天数占比中位数 <b>7.3%</b>，Fundo <b>2.2%</b>；债务支出/收入中位数 <b>10.5%</b> vs <b>5.3%</b>。</p>
+      </div>
+      <div class="card"><h3>消费结构</h3>
+        <p>两边的转账类支出占比都很高（中位数约五成），因此“必需 / 可选 / 赌博”等分类占比更适合看相对结构，不宜直接当作净消费水平。</p>
+        <p>WageGo 的赌博类支出触发率 <b>27.6%</b>，高于 Fundo 的 <b>19.8%</b>；但该标签是规则触发率，不代表赌博金额占总支出的比例同样高。</p>
+      </div>
+    </div>
+    <div class="callout warn"><strong>近期变化：</strong>两边的近 28 天收入/支出倍数中位数都接近 1，说明“近期突然加速”不是这两个样本的主要共同特征；真正的差异更多体现在存量负债、拒付和流动性缓冲。</div>
+    
+</div></section>
+
+<section id="interpretation" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">09 · 业务解读</div><h2>四条可验证的差异链</h2></div>
+    <p class="section-sub">以下是从数据中观察到的事实与假设，不是因果结论，也不构成策略建议。</p>
+  </div>
+  
+    <div class="finding-grid">
+      <div class="finding"><div class="finding-title">1 · 数据可见度差异</div><p>Fundo 有 <b>32.2%</b> 的申请没有可用流水，WageGo 只有 <b>4.4%</b>。这可能来自数据连接/授权路径、申请渠道、客户现金使用习惯或产品定位的差异。在没有流水的人群中，不能仅凭“数据不足”判断风险高低。</p></div>
+      <div class="finding"><div class="finding-title">2 · 信贷活跃度差异</div><p>WageGo 有放款记录 <b>82.1%</b>，放款机构数中位数 <b>3</b> 家，现金贷/工资贷占已分类放款金额 <b>73.2%</b>。Fundo 分别为 <b>66.5%</b>、<b>1</b> 家和 <b>61.3%</b>。WageGo 的画像更接近“多机构、现金贷使用更深”的信贷活跃人群。</p></div>
+      <div class="finding"><div class="finding-title">3 · 收入与缓冲的错位</div><p>WageGo 的总收入中位数更高（<b>A$73.8k</b> vs <b>A$61.0k</b>），但余额更低、备用月数更短、负余额天数更多。这说明收入水平本身没有转化为流动性缓冲；债务支出和现金贷使用是更直接的观察点。</p></div>
+      <div class="finding"><div class="finding-title">4 · 拒付是结果指标</div><p>WageGo 未结清拒付 <b>57.5%</b>、未结清金额 <b>A$58.82m</b>，Fundo 为 <b>32.7%</b> 和 <b>A$12.11m</b>。拒付状态与借贷参与、现金贷使用和流动性压力同时出现，但当前数据只能说明关联，不能区分产品设计、客户选择和行为变化的贡献。</p></div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>下一步可以验证什么</h3>
+      <ul class="clean-list">
+        <li><strong>Fundo 的流水缺口：</strong>确认无流水申请是授权/连接问题、渠道差异，还是客户本身以现金为主；不同原因对应不同的人群解释。</li>
+        <li><strong>WageGo 的借贷结构：</strong>区分“产品定位吸引高负债人群”与“存量客户本身更依赖现金贷”，需要申请前更长的历史窗口或渠道分层。</li>
+        <li><strong>拒付恢复：</strong>未结清是 182 天窗口内的状态，延长观察窗口后才能判断恢复率差异是结构性还是窗口截断。</li>
+        <li><strong>分数校准：</strong>两个产品的断点各自独立，若要做跨产品统一风险排序，需要重新校准或使用共同基准。</li>
+      </ul>
+    </div>
+    
+</div></section>
+
+<section id="appendix" class="section"><div class="wrap">
+  <div class="section-head">
+    <div><div class="eyebrow">10 · 附录</div><h2>口径、数据质量与文件</h2></div>
+    <p class="section-sub">业务结论之前先看分母；技术细节集中在这里。</p>
+  </div>
+  
+    <div class="two-col">
+      <div class="card"><h3>画像体系</h3>
+        <ul class="clean-list">
+          <li>122 个注册特征，46 个计分指标；五个计分维度权重：收入 24%、收支 26%、流动性 20%、负债 22%、活跃度 8%。</li>
+          <li>每个特征先转为<strong>本产品样本内百分位</strong>，再按维度合成；健康分是五个维度加权。</li>
+          <li>流水门槛：<code>txn_raw_input_cnt ≥ 1</code>；无流水或健康分覆盖不足进入“数据不足”。</li>
+          <li>高分方向统一为“越好”：负债压力分数越高，表示压力越低。</li>
+        </ul>
+      </div>
+      <div class="card"><h3>关键定义</h3>
+        <ul class="clean-list">
+          <li><strong>数据不足：</strong>无可用流水，或健康分覆盖率不足；不代表低风险或高风险。</li>
+          <li><strong>高风险承压：</strong>风险标签数 ≥3，或存在未结清拒付且（多头借贷或负债压力高），或负债压力维度分 &lt;30。</li>
+          <li><strong>未结清拒付：</strong>182 天窗口内未识别到补扣；不等同于当前违约状态。</li>
+          <li><strong>多头借贷标签：</strong>只统计机构名单内的竞品；全量去重机构数是另一个口径。</li>
+          <li><strong>现金贷/工资贷：</strong>按交易分类识别的放款产品；产品分项未覆盖全部放款。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>数据质量与完整性</h3>
+      <div class="table-wrap"><table class="data"><thead><tr><th class="left">检查项</th><th class="right">Fundo</th><th class="right">WageGo</th></tr></thead><tbody><tr><td class="left">可用流水覆盖</td><td class="right">21,255（67.8%）</td><td class="right">37,057（95.6%）</td></tr><tr><td class="left">门槛外但有特征值</td><td class="right">2</td><td class="right">848</td></tr><tr><td class="left">门槛内但全特征缺失</td><td class="right">0</td><td class="right">0</td></tr><tr><td class="left">有流水但评分覆盖不足</td><td class="right">0</td><td class="right">1</td></tr><tr><td class="left">收入分解一致性</td><td class="right">0 / 21,255</td><td class="right">0 / 37,057</td></tr><tr><td class="left">结余恒等式一致性</td><td class="right">0 / 21,252</td><td class="right">0 / 37,051</td></tr><tr><td class="left">借贷窗口单调性</td><td class="right">0 / 85,020</td><td class="right">0 / 148,228</td></tr><tr><td class="left">发薪节律互斥性</td><td class="right">0 / 21,255</td><td class="right">0 / 37,057</td></tr><tr><td class="left">分群覆盖</td><td class="right">31,333 / 31,333</td><td class="right">38,767 / 38,767</td></tr></tbody></table></div><p class="table-note">“门槛外但有特征值”是数据质量提示，不是评分错误；这些记录会进入数据不足或不参与评分。</p>
+    </div>
+    <div class="callout warn"><strong>最重要的可比性边界：</strong>Fundo 的申请窗口为 2026-09-01 至 2026-09-30，WageGo 为 2026-08-14 至 2026-10-14；可用流水覆盖率 67.8% vs 95.6%。不同窗口和不同覆盖率会同时影响客群占比、风险标签触发率和金额规模，因此本页优先比较方向与结构，不把差异直接归因于产品风险。</div>
+    <div class="card" style="margin-top:16px"><h3>使用边界</h3>
+      <ul class="clean-list">
+        <li>健康分、维度分和分群阈值均为各自样本内相对口径；跨产品不能直接比较绝对分数。</li>
+        <li>拒付“未结清”是窗口内状态，不是当前违约；恢复率按次数计算，金额占比按金额计算，两者分母不同。</li>
+        <li>收入形态依赖工资、福利和流水识别，现金收入、家庭内部转账和一次性入账可能造成误分类。</li>
+        <li>消费分类以交易分类为口径；转账类支出占比较高，分类占比不宜直接当作净消费或可支配支出。</li>
+        <li>金额单位沿用源数据口径（推断为澳元）；本页不包含标签关联分析，也不展示用户级明细。</li>
+      </ul>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>数据来源</h3>
+      <p class="muted">本页由以下中间结果自动汇总，不读取用户级评分明细：</p>
+      <div class="file-list">
+        <code>analysis/out_fundo/overview.json</code><code>analysis/out_fundo/segment_summary.csv</code>
+        <code>analysis/out_fundo/dimension_summary.csv</code><code>analysis/out_fundo/risk_flags.csv</code>
+        <code>analysis/out_fundo/lender_summary.csv</code><code>analysis/out_fundo/income_summary.csv</code>
+        <code>analysis/out_fundo/dishonour_summary.csv</code><code>analysis/out_fundo/dishonour_types.csv</code>
+        <code>analysis/out_fundo/category_mix.csv</code><code>analysis/out_fundo/feature_stats.csv</code>
+        <code>analysis/out_fundo/quality_checks.csv</code>
+        <code>analysis/out_wagego/overview.json</code><code>analysis/out_wagego/segment_summary.csv</code>
+        <code>analysis/out_wagego/dimension_summary.csv</code><code>analysis/out_wagego/risk_flags.csv</code>
+        <code>analysis/out_wagego/lender_summary.csv</code><code>analysis/out_wagego/income_summary.csv</code>
+        <code>analysis/out_wagego/dishonour_summary.csv</code><code>analysis/out_wagego/dishonour_types.csv</code>
+        <code>analysis/out_wagego/category_mix.csv</code><code>analysis/out_wagego/feature_stats.csv</code>
+        <code>analysis/out_wagego/quality_checks.csv</code>
+      </div>
+      <p class="muted" style="margin-top:10px">单产品完整报告：<code>analysis/out_fundo/profiling_report.html</code> · <code>analysis/out_wagego/profiling_report.html</code></p>
+    </div>
+    
+</div></section>
+</main>
+
+<footer class="footer"><div class="wrap footer-inner">
+  <span>Fundo × WageGo 用户画像对比</span>
+  <span>基于两产品最新全量新客申请样本 · 仅用于客群理解</span>
+</div></footer>
+
+</body>
+</html>
