@@ -3048,7 +3048,6 @@ def generate_insights(cfg: dict, overview: dict, feature_df: pd.DataFrame, seg_d
     scored_seg = seg_df[seg_df["segment"] != "数据不足"] if len(seg_df) else seg_df
     top_seg = scored_seg.sort_values("users", ascending=False).iloc[0] if len(scored_seg) else None
     findings = []
-    recs = []
     caveats = []
 
     findings.append({
@@ -3249,37 +3248,6 @@ def generate_insights(cfg: dict, overview: dict, feature_df: pd.DataFrame, seg_d
     caveats.append("金额单位沿用源数据口径（推断为澳元），比率类指标需注意余额变动口径与流水分类口径不可混用。")
     caveats.append("画像结果用于客群理解与策略假设，不替代征信、反欺诈、收入验证与合规审查。")
 
-    if flag_pct("flag_unresolved_dishonour") > 2 or flag_pct("flag_multi_lender") > 10:
-        recs.append("对「高风险承压」客群优先人工复核，核验未结清拒付、多头借贷与现金贷依赖，再决定额度与定价。")
-    if flag_pct("flag_negative_cashflow") > 20 or flag_pct("flag_low_buffer") > 20:
-        recs.append("现金流紧张客群适合账单提醒、自动储蓄与预算工具；授信策略应避免仅依据收入水平提额。")
-    if flag_pct("flag_gambling") > 1 or flag_pct("flag_fees_heavy") > 10:
-        recs.append("对赌博支出与费用/透支负担较高的用户增加交易监控与早期预警，作为风险名单的补充信号。")
-    if "优质均衡" in smap and smap["优质均衡"]["users"] > 0:
-        recs.append("「优质均衡」可作为提额或低风险定价的候选池，但仍需结合外部征信与收入验证做二次筛选。")
-    if "月光消费" in smap and smap["月光消费"]["users"] > 0:
-        recs.append("「月光消费」客群消费活跃但结余薄，适合分期/预算类产品，不建议直接给予高额度循环授信。")
-    if flag_pct("flag_no_txn") > 30:
-        recs.append("无流水客群建议补充银行流水授权或替代数据；在数据补齐前不应进入自动评分与自动授信。")
-    if lsum and lv("gate_users") and lv("recent_net_expand") / lv("gate_users") > 0.15:
-        recs.append("近28天净融资扩张用户占比不低，建议与现金流紧张、高负债客群交叉，复核滚动负债与还款能力。")
-    if dishonour_summary is not None and len(dishonour_summary):
-        dmap = {r["metric"]: r for _, r in dishonour_summary.iterrows()}
-
-        def dval(key):
-            row = dmap.get(key)
-            return float(row["value"]) if row is not None and pd.notna(row["value"]) else np.nan
-
-        any_n = dval("any_dishonour")
-        if any_n and dval("unresolved_users") / any_n > 0.30:
-            recs.append("有拒付记录用户中未结清占比超过三成，建议对部分解决/未解决人群优先做还款能力复核与补扣提醒。")
-    if income_archetypes is not None and len(income_archetypes):
-        stable_row = income_archetypes[income_archetypes["archetype"] == "稳定工资"]
-        if len(stable_row) and float(stable_row["share_pct"].iloc[0]) < 25:
-            recs.append("稳定工资型占比较低，收入验证不能只依赖工资流水；建议结合雇主、福利与多源收入做分层核验。")
-    if len(recs) == 0:
-        recs.append("先在小流量上验证分群阈值与策略动作，再逐步扩展到全量客群。")
-
     narratives = {}
     for segment in SEGMENT_ORDER:
         row = smap.get(segment)
@@ -3303,7 +3271,6 @@ def generate_insights(cfg: dict, overview: dict, feature_df: pd.DataFrame, seg_d
 
     return {
         "key_findings": findings,
-        "recommendations": recs,
         "segment_narratives": narratives,
         "caveats": caveats,
     }

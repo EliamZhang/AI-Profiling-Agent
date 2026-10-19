@@ -548,7 +548,7 @@ def render_header(ov, title: str) -> str:
 
 def render_nav() -> str:
     links = [
-        ("summary", "总览"), ("findings", "核心结论"), ("data", "数据质量"),
+        ("summary", "总览"), ("findings", "核心结论"),
         ("segments", "客群结构"), ("income", "收入形态"), ("lender", "负债结构"),
         ("dishonour", "拒付恢复"), ("dimensions", "维度评分"), ("features", "特征分布"),
         ("observations", "近期变化与缓冲"),
@@ -610,18 +610,14 @@ def render_findings(data) -> str:
         f'<p>{esc(f.get("text", ""))}</p></div>'
         for f in findings
     )
-    recs = "".join(f"<li>{esc(r)}</li>" for r in ins.get("recommendations", []))
     caveats = "".join(f"<li>{esc(c)}</li>" for c in ins.get("caveats", []))
     body = f'''
     <div class="finding-grid">{cards}</div>
-    <div class="two-col">
-      <div class="card"><h3>策略建议</h3><ol class="recs">{recs or "<li>暂无</li>"}</ol></div>
-      <div class="card warn-card"><h3>使用边界</h3><ul class="caveats">{caveats or "<li>暂无</li>"}</ul></div>
-    </div>'''
+    <div class="card warn-card"><h3>使用边界</h3><ul class="caveats">{caveats or "<li>暂无</li>"}</ul></div>'''
     return section("核心结论", body, "findings", "由中间统计结果自动生成，均可回溯到指标表")
 
 
-def render_data(data) -> str:
+def data_quality_body(data) -> str:
     ov = data["overview"]
     q = data["quality_checks"]
     rows = []
@@ -651,8 +647,8 @@ def render_data(data) -> str:
         '两者分母不同，不能直接互相验证或混用。'
         '活跃交易天数采用应用级去重天数，而非多账户累加天数。</div>'
     )
-    return section("数据质量与口径", f'<div class="kpi-grid small">{"".join(meta_cards)}</div>'
-                   f'{qtable}{note}', "data", "门槛、覆盖与恒等式校验")
+    return (f'<div class="kpi-grid small">{"".join(meta_cards)}</div>'
+            f'{qtable}{note}')
 
 
 def render_segments(data) -> str:
@@ -1573,12 +1569,14 @@ def render_appendix(data) -> str:
     outputs = ov.get("outputs", [])
     out_html = "".join(f"<code>{esc(o)}</code>" for o in outputs) or "—"
     body = f'''
+    <h3>数据质量与口径</h3>
+    {data_quality_body(data)}
+    <div class="card"><h3>中间结果文件</h3><div class="file-list">{out_html}</div></div>
     <div class="card"><h3>分析配置与耗时</h3>{meta_tbl}</div>
     {th_html}
-    <div class="card"><h3>中间结果文件</h3><div class="file-list">{out_html}</div></div>
     <details class="card"><summary><h3 style="display:inline">特征字典（{len(stats)} 项）</h3></summary>
       {feat_tbl}</details>'''
-    return section("附录", body, "appendix", "配置、阈值与完整指标口径")
+    return section("附录", body, "appendix", "数据质量、中间结果、配置、阈值与指标字典")
 
 
 # ---------------------------------------------------------------------------
@@ -1634,8 +1632,8 @@ h3{font-size:16px;margin:0 0 12px}
 .finding{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 17px}
 .finding-title{font-size:12px;color:var(--brand);font-weight:700;letter-spacing:.04em;margin-bottom:4px}
 .finding p{margin:0;font-size:13.5px;color:#334155}
-.recs,.caveats{margin:0;padding-left:20px;font-size:13.5px;color:#334155}
-.recs li,.caveats li{margin-bottom:7px}
+.caveats{margin:0;padding-left:20px;font-size:13.5px;color:#334155}
+.caveats li{margin-bottom:7px}
 .warn-card{border-color:#fde3b8;background:#fffcf5}
 .callout{background:#f0f5ff;border:1px solid #d8e4fb;border-radius:12px;
   padding:13px 16px;font-size:13.5px;color:#274264;margin:0 0 16px}
@@ -1708,7 +1706,6 @@ def build_html(data, title: str | None = None) -> str:
         '<main class="wrap">',
         render_summary(data),
         render_findings(data),
-        render_data(data),
         render_segments(data),
         render_income(data),
         render_lender(data),
