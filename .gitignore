@@ -3,6 +3,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # 客户样本数据，含衍生金融数据，勿入库（单文件亦超 GitHub 100MB 上限）
+data/
 *_sample_with_feature_all_1k.csv
 
 # 分析产物含客户级明细（user_id / 逾期标签），勿入库

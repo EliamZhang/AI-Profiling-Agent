@@ -10,6 +10,8 @@ generate_report.py        通用报告引擎（调用分析，读取中间结果
 products/
   fundo.json              Fundo 产品配置
   wagego.json             WageGo 产品配置
+data/                     样例数据目录（不入库）
+txn_feature_model_v1/     原始交易特征工程与风险模型推理包（v1）
 run_fundo.py              Fundo 入口
 run_wagego.py             WageGo 入口
 ```
@@ -259,7 +261,7 @@ CSV 宽表
 
 | 键 | 默认值 | 说明 |
 |---|---|---|
-| `input_path` | `fundo_sample_with_feature_all_1k.csv` | 输入特征 CSV（产品配置会覆盖） |
+| `input_path` | `data/fundo_sample_with_feature_all_1k.csv` | 输入特征 CSV（产品配置会覆盖） |
 | `dict_path` | `dict.csv` | 数据字典（哨兵核对） |
 | `output_dir` | `analysis/out` | 中间结果与报告目录（产品配置会覆盖） |
 | `cache_dir` | `analysis/cache` | 窄表缓存目录（产品配置会覆盖） |

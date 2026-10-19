@@ -28,7 +28,7 @@ VERSION = "1.1.0"
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 DEFAULT_CONFIG = {
-    "input_path": str(PROJECT_ROOT / "fundo_sample_with_feature_all_1k.csv"),
+    "input_path": str(PROJECT_ROOT / "data" / "fundo_sample_with_feature_all_1k.csv"),
     "dict_path": str(PROJECT_ROOT / "dict.csv"),
     "output_dir": str(PROJECT_ROOT / "analysis" / "out"),
     "cache_dir": str(PROJECT_ROOT / "analysis" / "cache"),

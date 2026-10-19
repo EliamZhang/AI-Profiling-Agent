@@ -1,5 +1,5 @@
 {
-  "input_path": "../fundo_sample_with_feature_all_1k.csv",
+  "input_path": "../data/fundo_sample_with_feature_all_1k.csv",
   "dict_path": "../dict.csv",
   "output_dir": "../analysis/out_fundo",
   "cache_dir": "../analysis/cache_fundo",
