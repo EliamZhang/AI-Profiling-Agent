@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="新模型置入了谁、置出了谁：Swap In / Swap Out 的画像、可能原因与交换逻辑。"><title>新模型置入了谁，又置出了谁 · Swap In × Swap Out</title><style>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="新模型置入了谁、置出了谁：Swap In / Swap Out 的核心结论、画像证据、可能原因与解释边界。"><title>新模型置入了谁，又置出了谁 · Swap In × Swap Out</title><style>
 :root{
   --fundo:#15803d;--fundo-dark:#166534;--fundo-soft:#dcfce7;
   --wagego:#7c3aed;--wagego-dark:#6d28d9;--wagego-soft:#f3e8ff;
@@ -336,200 +336,182 @@ a:focus-visible,summary:focus-visible{outline:3px solid #0891b2;outline-offset:4
 .pd-values b{margin-left:auto}
 .pd-data{font-size:11px}
 }
+/* Editorial summary */
+:root{--shadow:0 1px 2px rgba(15,23,42,.03)}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#1b2430 100%);padding:46px 0 30px}
+.hero::after{display:none}
+.hero h1{font-size:36px;margin:10px 0 14px}
+.hero-lede{font-size:15px;max-width:920px}
+.hero-grid{margin-top:24px}
+.hero-stat{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.12);backdrop-filter:none}
+.hero-stat .value .f{color:#5eead4}
+.hero-stat .value .w{color:#fcd34d}
+.hero-meta .dot.f{background:#5eead4}
+.hero-meta .dot.w{background:#fcd34d}
+.hero-note{max-width:920px}
+.section{padding:44px 0 6px}
+.section-head{padding-top:24px;margin-bottom:20px}
+.section-head h2{font-size:26px}
+.verdict{background:#fff;border:1px solid var(--line);border-left:4px solid var(--fundo);border-radius:12px;padding:22px 24px;margin:0 0 16px}
+.verdict-label{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--fundo-dark);margin-bottom:8px}
+.verdict p{font-size:20px;line-height:1.6;letter-spacing:-.01em;margin:0;color:var(--ink)}
+.verdict strong{font-weight:800}
+.summary-cards .card{padding:20px 22px}
+.summary-cards .card h3{display:flex;align-items:center;gap:8px}
+.summary-table{margin:0 0 16px;border-top:1px solid var(--line);font-size:13px}
+.summary-table>div{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.summary-table>div>span:nth-child(2),.summary-table>div>span:nth-child(3){text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink)}
+.summary-table .summary-head{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;padding:6px 0}
+.summary-table .summary-head span{font-weight:600;color:var(--faint)}
+.summary-cards .card p:last-child{font-size:13px;color:var(--body);line-height:1.7}
+.takeaway-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.takeaway{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;min-width:0}
+.takeaway .tag{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.takeaway h3{font-size:14.5px;line-height:1.4;margin:0 0 6px}
+.takeaway p{font-size:13px;color:var(--body);line-height:1.7;margin:0}
+.reasons{display:grid;gap:0;margin:18px 0 12px;border-top:1px solid var(--line)}
+.reason{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.reason .num{font-size:11px;font-weight:800;color:var(--faint);padding-top:2px}
+.reason h3{font-size:14.5px;line-height:1.4;margin:0 0 4px}
+.reason p{font-size:13.3px;line-height:1.7;color:var(--body);margin:0}
+.reason p b{color:var(--ink);font-variant-numeric:tabular-nums}
+.notes{border-left:2px solid var(--line-strong);padding:2px 0 2px 14px;margin:16px 0 0;font-size:12.5px;line-height:1.75;color:var(--muted)}
+.notes p{margin:0 0 7px}
+.notes p:last-child{margin-bottom:0}
+.notes strong{color:#475569}
+.boundary{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:16px}
+.boundary h3{font-size:14px;margin:0 0 8px}
+.boundary ul{margin:0;padding-left:18px;font-size:13px;line-height:1.8;color:var(--body)}
+.boundary li{margin-bottom:5px}
+.boundary li:last-child{margin-bottom:0}
+.boundary b{color:var(--ink)}
+@media(max-width:960px){
+.hero h1{font-size:32px}
+.takeaway-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+.hero{padding:38px 0 26px}
+.hero h1{font-size:28px}
+.hero-lede{font-size:14px}
+.hero-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+.hero-stat{padding:12px 14px}
+.hero-stat .value{font-size:21px}
+.hero-stat .sub{font-size:10px}
+.hero-meta{font-size:11px;gap:6px 14px}
+.verdict{padding:18px}
+.verdict p{font-size:17.5px}
+.summary-cards .card{padding:18px}
+.reason{grid-template-columns:22px 1fr;gap:8px}
+.boundary{padding:16px}
+.pd-row{padding:9px 0}
+.pd-track{height:30px}
+.pd-track:before{top:14px}
+.pd-link{top:13px}
+.pd-mid{top:5px;bottom:5px}
+.pd-point.in{top:3px}
+.pd-point.out{top:16px}
+}
 </style></head><body><header class="hero"><div class="wrap">
-<div class="eyebrow light">EXISTING CUSTOMER SWAP · WHO MOVED IN / OUT</div>
-<h1><span style="color:#0f766e">Swap In</span> <span class="x">×</span> <span style="color:#b45309">Swap Out</span><br>新模型置入了谁，又置出了谁</h1>
-<p class="hero-lede"><strong>置入 641 条申请 / 641 人，置出 139 条申请 / 138 人；两组同产品、同版特征，合并统一评分。</strong>置换呈现出清晰的风险类型交换：置入组工资可见性更弱、现金流更薄，但负债与拒付更轻；置出组工资更稳定，但借贷与拒付更重。</p>
+<div class="eyebrow light">EXISTING CUSTOMER SWAP · COHORT PROFILE</div>
+<h1><span style="color:#5eead4">Swap In</span> <span class="x">×</span> <span style="color:#fcd34d">Swap Out</span><br>新模型置入了谁，又置出了谁</h1>
+<p class="hero-lede">置换不是“好客户 vs 坏客户”，而是一次<strong>风险类型交换</strong>。置入组工资可见性更弱、现金流更薄，但负债与拒付更轻；置出组工资更稳定，但借贷与拒付更重。两组同产品、同版特征，合并 780 条统一评分。</p>
 <div class="hero-meta">
 <span><i class="dot f"></i>Swap In · 置入 · 641 条申请 · 641 人</span>
 <span><i class="dot w"></i>Swap Out · 置出 · 139 条申请 · 138 人</span>
-<span>user_type 均为 Old · 样本期 2026-09-14 至 2026-10-13</span>
+<span>样本期 2026-09-14 至 2026-10-13 · 均为 Old 用户</span>
 </div>
-<div class="hero-grid"><div class="hero-stat"><div class="label">申请数</div><div class="value"><span class="f">641</span><span class="slash">/</span><span class="w">139</span></div><div class="sub">置入 / 置出</div></div><div class="hero-stat"><div class="label">工资收入占比中位数</div><div class="value"><span class="f">21.7%</span><span class="slash">/</span><span class="w">42.1%</span></div><div class="sub">每条申请先算占比，再取中位数</div></div><div class="hero-stat"><div class="label">现金贷/工资贷使用</div><div class="value"><span class="f">49.8%</span><span class="slash">/</span><span class="w">69.1%</span></div><div class="sub">全部有流水申请</div></div><div class="hero-stat"><div class="label">存在未结清拒付</div><div class="value"><span class="f">52.0%</span><span class="slash">/</span><span class="w">59.0%</span></div><div class="sub">182 天窗口内识别</div></div></div>
-<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。健康分与维度分来自合并样本的统一断点，是相对分数，不是违约概率；置换原因结合画像差异与两版入模变量反推，变量只说明模型能看什么，不代表作用方向，也不能视为模型真实决策逻辑。</p>
-</div></header><nav class="nav" aria-label="报告章节"><div class="nav-inner"><a href="#basis">置换结果</a><a href="#profile_in">置入画像</a><a href="#why_in">置入原因</a><a href="#profile_out">置出画像</a><a href="#why_out">置出原因</a><a href="#logic">交换逻辑</a><a href="#conclusion">结论与边界</a></div></nav><main><section id="basis" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">00 · 置换结果</div><h2>置换结果：641 条申请置入，139 条置换出</h2></div>
-    <p class="section-sub">先看规模、分群与健康分，再分别看置入与置出的画像。</p></div><p class="lead">新模型在这批存量客户中置入 <strong>641 条申请 / 641 人</strong>，置出 <strong>139 条申请 / 138 人</strong>。两组来自同一产品、同一版特征，样本期相同，用户与申请互不重叠；合并 780 条后统一评分，因此下文的分数与分群使用同一套断点。</p><div class="compare pd-chart"><div class="compare-head"><h3>置换规模</h3><span>按较大组定标 · 最大 641 条</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0</span><span>320</span><span>641</span></div><span></span></div><div class="pd-row"><div class="compare-label">申请数<small>合并母本 780 条</small></div>
-        <div class="pd-track" role="img" aria-label="申请数：Swap In 641，Swap Out 139，差值 -502">
-        <span class="pd-mid"></span><span class="pd-link" style="left:21.6849%;width:78.3151%"></span>
-        <span class="pd-point in" style="left:100.0000%" title="Swap In：641"></span>
-        <span class="pd-point out" style="left:21.6849%" title="Swap Out：139"></span></div>
-        <div class="pd-values"><span class="in">IN 641</span><span class="out">OUT 139</span><b>-502</b></div></div><div class="pd-row"><div class="compare-label">用户数<small>Swap Out 有 1 人 2 条申请</small></div>
-        <div class="pd-track" role="img" aria-label="用户数：Swap In 641，Swap Out 138，差值 -503">
-        <span class="pd-mid"></span><span class="pd-link" style="left:21.5289%;width:78.4711%"></span>
-        <span class="pd-point in" style="left:100.0000%" title="Swap In：641"></span>
-        <span class="pd-point out" style="left:21.5289%" title="Swap Out：138"></span></div>
-        <div class="pd-values"><span class="in">IN 641</span><span class="out">OUT 138</span><b>-503</b></div></div><p class="table-note">申请数按申请计；用户数按人去重。差值 = Swap Out − Swap In。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>申请数</td><td>641</td><td>139</td><td>-502</td></tr><tr><td>用户数</td><td>641</td><td>138</td><td>-503</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>置换后的客群结构</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">优质均衡</div>
-        <div class="pd-track" role="img" aria-label="优质均衡：Swap In 1.2%，Swap Out 2.2%，差值 +0.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:1.2480%;width:0.9102%"></span>
-        <span class="pd-point in" style="left:1.2480%" title="Swap In：1.2%"></span>
-        <span class="pd-point out" style="left:2.1583%" title="Swap Out：2.2%"></span></div>
-        <div class="pd-values"><span class="in">IN 1.2%</span><span class="out">OUT 2.2%</span><b>+0.9pp</b></div></div><div class="pd-row"><div class="compare-label">稳健工薪</div>
-        <div class="pd-track" role="img" aria-label="稳健工薪：Swap In 5.9%，Swap Out 11.5%，差值 +5.6pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:5.9282%;width:5.5826%"></span>
-        <span class="pd-point in" style="left:5.9282%" title="Swap In：5.9%"></span>
-        <span class="pd-point out" style="left:11.5108%" title="Swap Out：11.5%"></span></div>
-        <div class="pd-values"><span class="in">IN 5.9%</span><span class="out">OUT 11.5%</span><b>+5.6pp</b></div></div><div class="pd-row"><div class="compare-label">均衡普通</div>
-        <div class="pd-track" role="img" aria-label="均衡普通：Swap In 0.9%，Swap Out 0.0%，差值 -0.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:0.9360%"></span>
-        <span class="pd-point in" style="left:0.9360%" title="Swap In：0.9%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 0.9%</span><span class="out">OUT 0.0%</span><b>-0.9pp</b></div></div><div class="pd-row"><div class="compare-label">月光消费</div>
-        <div class="pd-track" role="img" aria-label="月光消费：Swap In 11.7%，Swap Out 6.5%，差值 -5.2pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:6.4748%;width:5.2256%"></span>
-        <span class="pd-point in" style="left:11.7005%" title="Swap In：11.7%"></span>
-        <span class="pd-point out" style="left:6.4748%" title="Swap Out：6.5%"></span></div>
-        <div class="pd-values"><span class="in">IN 11.7%</span><span class="out">OUT 6.5%</span><b>-5.2pp</b></div></div><div class="pd-row"><div class="compare-label">现金流紧张</div>
-        <div class="pd-track" role="img" aria-label="现金流紧张：Swap In 34.8%，Swap Out 26.6%，差值 -8.2pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:26.6187%;width:8.1707%"></span>
-        <span class="pd-point in" style="left:34.7894%" title="Swap In：34.8%"></span>
-        <span class="pd-point out" style="left:26.6187%" title="Swap Out：26.6%"></span></div>
-        <div class="pd-values"><span class="in">IN 34.8%</span><span class="out">OUT 26.6%</span><b>-8.2pp</b></div></div><div class="pd-row"><div class="compare-label">高风险承压</div>
-        <div class="pd-track" role="img" aria-label="高风险承压：Swap In 45.4%，Swap Out 53.2%，差值 +7.8pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:45.3978%;width:7.8396%"></span>
-        <span class="pd-point in" style="left:45.3978%" title="Swap In：45.4%"></span>
-        <span class="pd-point out" style="left:53.2374%" title="Swap Out：53.2%"></span></div>
-        <div class="pd-values"><span class="in">IN 45.4%</span><span class="out">OUT 53.2%</span><b>+7.8pp</b></div></div><p class="table-note">Swap In：已评分 · n = 641；Swap Out：已评分 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>优质均衡</td><td>1.2%</td><td>2.2%</td><td>+0.9pp</td></tr><tr><td>稳健工薪</td><td>5.9%</td><td>11.5%</td><td>+5.6pp</td></tr><tr><td>均衡普通</td><td>0.9%</td><td>0.0%</td><td>-0.9pp</td></tr><tr><td>月光消费</td><td>11.7%</td><td>6.5%</td><td>-5.2pp</td></tr><tr><td>现金流紧张</td><td>34.8%</td><td>26.6%</td><td>-8.2pp</td></tr><tr><td>高风险承压</td><td>45.4%</td><td>53.2%</td><td>+7.8pp</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>健康分分布：中位数与中间 50%</h3><span>合并样本统一断点 · 同一 0–100 分刻度</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0 分</span><span>50 分</span><span>100 分</span></div><span></span></div><div class="pd-row pd-range-row"><div class="compare-label">健康分<small>P25–P75 区间；竖线为中位数</small></div><div class="pd-range" role="img" aria-label="Swap In P25 48.2，中位数 53.2，P75 58.2；Swap Out P25 49.9，中位数 55.3，P75 60.5"><span class="pd-range-lane f" style="top:2px"><span class="range-iqr" style="left:48.1800%;width:10.0100%;background:var(--series-in)"></span><span class="range-median" style="left:53.1900%;background:var(--series-in)"></span></span><span class="pd-range-lane w" style="top:20px"><span class="range-iqr" style="left:49.9050%;width:10.5500%;background:var(--wagego)"></span><span class="range-median" style="left:55.3200%;background:var(--wagego)"></span></span></div><div class="pd-values"><span class="in">IN 53.2</span><span class="out">OUT 55.3</span><b>+2.1 分</b></div></div><p class="table-note">浅色区间为 P25–P75，竖线为中位数；差值 = Swap Out − Swap In。区间反映分布，不是置信区间。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>客群</th><th>P25</th><th>中位数</th><th>P75</th></tr></thead><tbody><tr><td>Swap In</td><td>48.2</td><td>53.2</td><td>58.2</td></tr><tr><td>Swap Out</td><td>49.9</td><td>55.3</td><td>60.5</td></tr></tbody></table></details></div><div class="two-col"><div class="card"><h3>Swap In · 置入组</h3><p>641 条申请 / 641 人。高风险承压占 45.4%，现金流紧张占 34.8%；稳健工薪仅 5.9%。</p></div><div class="card"><h3>Swap Out · 置出组</h3><p>139 条申请 / 138 人。高风险承压占 53.2%，但稳健工薪占 11.5%，高于置入组；健康分中位数也略高（55.3）。</p></div></div><div class="callout warn"><strong>先看一个反直觉结果：</strong>置出组的健康分中位数反而略高（53.2 / 55.3），高风险承压占比也更高（45.4% / 53.2%）。分群与总分给出的信号并不一致，说明新模型的置换边界不是简单按现有健康分从低到高切；它可能使用了不同权重，或叠加了负债、拒付等否决项。</div></div></section><section id="profile_in" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">01 · 置入画像</div><h2>置入的人：非工资/多源收入、低负债、薄缓冲</h2></div>
-    <p class="section-sub">Swap In 的收入、现金流、流动性与负债特征。</p></div><p class="lead">Swap In 的画像可以概括为：<strong>收入总量不低，但工资可见性弱；现金流与流动性很薄；负债和拒付强度低于置出组。</strong>182 天总收入中位数 置入 A$82.1k / 置出 A$79.2k，但工资收入只有 置入 A$19.4k / 置出 A$35.3k，工资占比中位数 置入 21.7% / 置出 42.1%；多源/非工资收入占 61.0%，无工资入账 19.0%。</p><div class="kpi-grid"><div class="kpi"><div class="kpi-label">182 天总收入中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>A$82.1k</span><span class="kv w"><span class="product-mini">Swap Out</span>A$79.2k</span></div><div class="kpi-sub">原始金额特征</div></div><div class="kpi"><div class="kpi-label">工资收入中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>A$19.4k</span><span class="kv w"><span class="product-mini">Swap Out</span>A$35.3k</span></div><div class="kpi-sub">原始金额特征</div></div><div class="kpi"><div class="kpi-label">工资收入占比中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>21.7%</span><span class="kv w"><span class="product-mini">Swap Out</span>42.1%</span></div><div class="kpi-sub">每条申请先算占比，再取中位数</div></div><div class="kpi"><div class="kpi-label">多源/非工资收入</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>61.0%</span><span class="kv w"><span class="product-mini">Swap Out</span>27.3%</span></div><div class="kpi-sub">有流水申请</div></div><div class="kpi"><div class="kpi-label">期末余额中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>A$115</span><span class="kv w"><span class="product-mini">Swap Out</span>A$127</span></div><div class="kpi-sub">逐申请余额中位数，再取样本中位数</div></div><div class="kpi"><div class="kpi-label">缓冲天数中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>0.2 天</span><span class="kv w"><span class="product-mini">Swap Out</span>0.3 天</span></div><div class="kpi-sub">期末余额可覆盖支出天数</div></div><div class="kpi"><div class="kpi-label">现金贷/工资贷使用</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>49.8%</span><span class="kv w"><span class="product-mini">Swap Out</span>69.1%</span></div><div class="kpi-sub">全部有流水申请</div></div><div class="kpi"><div class="kpi-label">存在未结清拒付</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>52.0%</span><span class="kv w"><span class="product-mini">Swap Out</span>59.0%</span></div><div class="kpi-sub">182 天窗口内识别</div></div></div><div class="compare pd-chart"><div class="compare-head"><h3>收入形态：置入组更偏多源/非工资</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">稳定工资</div>
-        <div class="pd-track" role="img" aria-label="稳定工资：Swap In 9.5%，Swap Out 30.2%，差值 +20.7pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:9.5164%;width:20.6994%"></span>
-        <span class="pd-point in" style="left:9.5164%" title="Swap In：9.5%"></span>
-        <span class="pd-point out" style="left:30.2158%" title="Swap Out：30.2%"></span></div>
-        <div class="pd-values"><span class="in">IN 9.5%</span><span class="out">OUT 30.2%</span><b>+20.7pp</b></div></div><div class="pd-row"><div class="compare-label">不稳定工资</div>
-        <div class="pd-track" role="img" aria-label="不稳定工资：Swap In 25.4%，Swap Out 42.4%，差值 +17.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:25.4290%;width:17.0170%"></span>
-        <span class="pd-point in" style="left:25.4290%" title="Swap In：25.4%"></span>
-        <span class="pd-point out" style="left:42.4460%" title="Swap Out：42.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 25.4%</span><span class="out">OUT 42.4%</span><b>+17.0pp</b></div></div><div class="pd-row"><div class="compare-label">多源/非工资</div>
-        <div class="pd-track" role="img" aria-label="多源/非工资：Swap In 61.0%，Swap Out 27.3%，差值 -33.7pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:27.3381%;width:33.6603%"></span>
-        <span class="pd-point in" style="left:60.9984%" title="Swap In：61.0%"></span>
-        <span class="pd-point out" style="left:27.3381%" title="Swap Out：27.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 61.0%</span><span class="out">OUT 27.3%</span><b>-33.7pp</b></div></div><div class="pd-row"><div class="compare-label">福利依赖</div>
-        <div class="pd-track" role="img" aria-label="福利依赖：Swap In 4.1%，Swap Out 0.0%，差值 -4.1pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:4.0562%"></span>
-        <span class="pd-point in" style="left:4.0562%" title="Swap In：4.1%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 4.1%</span><span class="out">OUT 0.0%</span><b>-4.1pp</b></div></div><p class="table-note">Swap In：有流水申请 · n = 641；Swap Out：有流水申请 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>稳定工资</td><td>9.5%</td><td>30.2%</td><td>+20.7pp</td></tr><tr><td>不稳定工资</td><td>25.4%</td><td>42.4%</td><td>+17.0pp</td></tr><tr><td>多源/非工资</td><td>61.0%</td><td>27.3%</td><td>-33.7pp</td></tr><tr><td>福利依赖</td><td>4.1%</td><td>0.0%</td><td>-4.1pp</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>近 28 天收支位置</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">支出低于收入80%</div>
-        <div class="pd-track" role="img" aria-label="支出低于收入80%：Swap In 1.6%，Swap Out 6.5%，差值 +4.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:1.5601%;width:4.9148%"></span>
-        <span class="pd-point in" style="left:1.5601%" title="Swap In：1.6%"></span>
-        <span class="pd-point out" style="left:6.4748%" title="Swap Out：6.5%"></span></div>
-        <div class="pd-values"><span class="in">IN 1.6%</span><span class="out">OUT 6.5%</span><b>+4.9pp</b></div></div><div class="pd-row"><div class="compare-label">支出接近收入</div>
-        <div class="pd-track" role="img" aria-label="支出接近收入：Swap In 49.1%，Swap Out 56.1%，差值 +7.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:49.1420%;width:6.9731%"></span>
-        <span class="pd-point in" style="left:49.1420%" title="Swap In：49.1%"></span>
-        <span class="pd-point out" style="left:56.1151%" title="Swap Out：56.1%"></span></div>
-        <div class="pd-values"><span class="in">IN 49.1%</span><span class="out">OUT 56.1%</span><b>+7.0pp</b></div></div><div class="pd-row"><div class="compare-label">支出达到或超过收入</div>
-        <div class="pd-track" role="img" aria-label="支出达到或超过收入：Swap In 49.0%，Swap Out 37.4%，差值 -11.6pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:37.4101%;width:11.5759%"></span>
-        <span class="pd-point in" style="left:48.9860%" title="Swap In：49.0%"></span>
-        <span class="pd-point out" style="left:37.4101%" title="Swap Out：37.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 49.0%</span><span class="out">OUT 37.4%</span><b>-11.6pp</b></div></div><div class="pd-row"><div class="compare-label">数据不足</div>
-        <div class="pd-track" role="img" aria-label="数据不足：Swap In 0.3%，Swap Out 0.0%，差值 -0.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:0.3120%"></span>
-        <span class="pd-point in" style="left:0.3120%" title="Swap In：0.3%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 0.3%</span><span class="out">OUT 0.0%</span><b>-0.3pp</b></div></div><p class="table-note">Swap In：有流水申请 · n = 641；Swap Out：有流水申请 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>支出低于收入80%</td><td>1.6%</td><td>6.5%</td><td>+4.9pp</td></tr><tr><td>支出接近收入</td><td>49.1%</td><td>56.1%</td><td>+7.0pp</td></tr><tr><td>支出达到或超过收入</td><td>49.0%</td><td>37.4%</td><td>-11.6pp</td></tr><tr><td>数据不足</td><td>0.3%</td><td>0.0%</td><td>-0.3pp</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>期末余额覆盖支出天数</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">不足7天</div>
-        <div class="pd-track" role="img" aria-label="不足7天：Swap In 96.1%，Swap Out 99.3%，差值 +3.2pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:96.0998%;width:3.1807%"></span>
-        <span class="pd-point in" style="left:96.0998%" title="Swap In：96.1%"></span>
-        <span class="pd-point out" style="left:99.2806%" title="Swap Out：99.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 96.1%</span><span class="out">OUT 99.3%</span><b>+3.2pp</b></div></div><div class="pd-row"><div class="compare-label">7至30天</div>
-        <div class="pd-track" role="img" aria-label="7至30天：Swap In 2.3%，Swap Out 0.7%，差值 -1.6pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.7194%;width:1.6207%"></span>
-        <span class="pd-point in" style="left:2.3401%" title="Swap In：2.3%"></span>
-        <span class="pd-point out" style="left:0.7194%" title="Swap Out：0.7%"></span></div>
-        <div class="pd-values"><span class="in">IN 2.3%</span><span class="out">OUT 0.7%</span><b>-1.6pp</b></div></div><div class="pd-row"><div class="compare-label">30至90天</div>
-        <div class="pd-track" role="img" aria-label="30至90天：Swap In 0.6%，Swap Out 0.0%，差值 -0.6pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:0.6240%"></span>
-        <span class="pd-point in" style="left:0.6240%" title="Swap In：0.6%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 0.6%</span><span class="out">OUT 0.0%</span><b>-0.6pp</b></div></div><div class="pd-row"><div class="compare-label">至少90天</div>
-        <div class="pd-track" role="img" aria-label="至少90天：Swap In 0.9%，Swap Out 0.0%，差值 -0.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:0.9360%"></span>
-        <span class="pd-point in" style="left:0.9360%" title="Swap In：0.9%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 0.9%</span><span class="out">OUT 0.0%</span><b>-0.9pp</b></div></div><p class="table-note">Swap In：有流水申请 · n = 641；Swap Out：有流水申请 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>不足7天</td><td>96.1%</td><td>99.3%</td><td>+3.2pp</td></tr><tr><td>7至30天</td><td>2.3%</td><td>0.7%</td><td>-1.6pp</td></tr><tr><td>30至90天</td><td>0.6%</td><td>0.0%</td><td>-0.6pp</td></tr><tr><td>至少90天</td><td>0.9%</td><td>0.0%</td><td>-0.9pp</td></tr></tbody></table></details></div><div class="callout"><strong>画像小结：</strong>这不是“没有收入”的人群，而是“收入来源分散、工资痕迹弱、现金留存极薄”的人群。置入组的负债和拒付绝对水平低于置出组，但现金流脆弱性更高；这为下一节的“为什么可能被置入”提供了核心线索。</div></div></section><section id="why_in" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">02 · 置入原因</div><h2>为什么新模型可能让这批人进来</h2></div>
-    <p class="section-sub">结合画像差异与入模变量线索反推的四个可能驱动，不等于模型真实决策逻辑。</p></div><p class="lead">数据中没有新模型的评分、SHAP 值或拒绝原因，无法直接还原决策逻辑。下面只能从置入组相对置出组的稳定差异，结合入模变量线索，反推四个可能原因；它们是<strong>画像假设</strong>，不是模型事实。</p><div class="two-col"><div class="card"><h3>1. 非工资/多源收入被识别</h3><p>多源/非工资收入 置入 61.0% / 置出 27.3%；工资占比 置入 21.7% / 置出 42.1%；无工资入账 置入 19.0% / 置出 0.7%。模型可能更依赖交易流水识别收入，而不是工资标签。</p></div><div class="card"><h3>2. 历史负债更轻</h3><p>有放款 置入 72.7% / 置出 88.5%；放款笔数中位 置入 4 / 置出 8；放款金额中位 置入 A$1,050 / 置出 A$2,780；现金贷/工资贷 置入 49.8% / 置出 69.1%；高负债 置入 19.2% / 置出 32.4%。</p></div><div class="card"><h3>3. 拒付更轻</h3><p>未结清拒付 置入 52.0% / 置出 59.0%；未结清笔数中位 置入 1 / 置出 2；金额中位 置入 A$53 / 置出 A$278。整体比例区间有重叠，但笔数和金额方向一致。</p></div><div class="card"><h3>4. 用薄缓冲换低负债</h3><p>支出≥收入 置入 49.0% / 置出 37.4%；低缓冲标签 置入 25.1% / 置出 17.3%；负现金流 置入 55.5% / 置出 51.1%。这更像一次主动取舍：用更弱的工资可见性和更薄的缓冲，换更低的负债/拒付。</p></div></div><p><strong>从入模变量看：</strong>新模型并没有把“工资稳定”当成唯一主轴。两版模型的前两个变量都是债务类交易占比和拒付类入账笔数，但新模型把拒付窗口从 168 天缩短到 56 天，并加入余额波动、内部/外部转账、工资消费率、非 SACC 贷款和 BNPL 等近期信号。置入组的非工资流水、余额波动和现金流缺口，正好落在这些变量的观察范围内；工资痕迹弱，不再等于收入不可见。这只是变量层面的相容解释，不能证明模型实际按这些方向打分。</p><div class="callout warn"><strong>排除几个直观但证据不足的解释：</strong>收入规模接近（A$82.1k / A$79.2k），不足以解释置换；交易活跃度也不更高（活跃天数中位 125 / 131）；健康分也不是更高（53.2 / 55.3）。最可能的解释是：新模型把负债/拒付强度放在工资稳定性之前，用“低负债 + 多源流水”换“工资可见性”。</div></div></section><section id="profile_out" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">03 · 置出画像</div><h2>置出的人：工资更稳定，但借得更多、拒付更重</h2></div>
-    <p class="section-sub">Swap Out 的收入、负债、拒付与现金流特征。</p></div><p class="lead">Swap Out 的画像与 Swap In 形成镜像：<strong>工资更稳定、现金流压力反而略低，但历史借贷和拒付更重。</strong>工资收入中位数 置入 A$19.4k / 置出 A$35.3k，工资占比 置入 21.7% / 置出 42.1%，稳定工资形态占 30.2%；但放款比例 88.5%，现金贷/工资贷使用 69.1%，未结清拒付 59.0%。</p><div class="kpi-grid"><div class="kpi"><div class="kpi-label">182 天工资收入中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>A$19.4k</span><span class="kv w"><span class="product-mini">Swap Out</span>A$35.3k</span></div><div class="kpi-sub">原始金额特征</div></div><div class="kpi"><div class="kpi-label">工资收入占比中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>21.7%</span><span class="kv w"><span class="product-mini">Swap Out</span>42.1%</span></div><div class="kpi-sub">每条申请先算占比，再取中位数</div></div><div class="kpi"><div class="kpi-label">稳定工资形态</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>9.5%</span><span class="kv w"><span class="product-mini">Swap Out</span>30.2%</span></div><div class="kpi-sub">有流水申请</div></div><div class="kpi"><div class="kpi-label">有放款记录</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>72.7%</span><span class="kv w"><span class="product-mini">Swap Out</span>88.5%</span></div><div class="kpi-sub">历史 182 天 · 有流水申请</div></div><div class="kpi"><div class="kpi-label">放款笔数中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>4</span><span class="kv w"><span class="product-mini">Swap Out</span>8</span></div><div class="kpi-sub">全部有流水申请，含 0</div></div><div class="kpi"><div class="kpi-label">放款金额中位数</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>A$1,050</span><span class="kv w"><span class="product-mini">Swap Out</span>A$2,780</span></div><div class="kpi-sub">历史 182 天 · 原始金额特征</div></div><div class="kpi"><div class="kpi-label">现金贷/工资贷使用</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>49.8%</span><span class="kv w"><span class="product-mini">Swap Out</span>69.1%</span></div><div class="kpi-sub">全部有流水申请</div></div><div class="kpi"><div class="kpi-label">存在未结清拒付</div><div class="kpi-values"><span class="kv f"><span class="product-mini">Swap In</span>52.0%</span><span class="kv w"><span class="product-mini">Swap Out</span>59.0%</span></div><div class="kpi-sub">182 天窗口内识别</div></div></div><div class="compare pd-chart"><div class="compare-head"><h3>借贷行为：置出组历史借得更重，但窗口内更多净偿还</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">净偿还</div>
-        <div class="pd-track" role="img" aria-label="净偿还：Swap In 29.3%，Swap Out 50.4%，差值 +21.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:29.3292%;width:21.0305%"></span>
-        <span class="pd-point in" style="left:29.3292%" title="Swap In：29.3%"></span>
-        <span class="pd-point out" style="left:50.3597%" title="Swap Out：50.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 29.3%</span><span class="out">OUT 50.4%</span><b>+21.0pp</b></div></div><div class="pd-row"><div class="compare-label">借还平衡</div>
-        <div class="pd-track" role="img" aria-label="借还平衡：Swap In 2.3%，Swap Out 0.0%，差值 -2.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:2.3401%"></span>
-        <span class="pd-point in" style="left:2.3401%" title="Swap In：2.3%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 2.3%</span><span class="out">OUT 0.0%</span><b>-2.3pp</b></div></div><div class="pd-row"><div class="compare-label">净融资扩张</div>
-        <div class="pd-track" role="img" aria-label="净融资扩张：Swap In 16.4%，Swap Out 9.4%，差值 -7.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:9.3525%;width:7.0281%"></span>
-        <span class="pd-point in" style="left:16.3807%" title="Swap In：16.4%"></span>
-        <span class="pd-point out" style="left:9.3525%" title="Swap Out：9.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 16.4%</span><span class="out">OUT 9.4%</span><b>-7.0pp</b></div></div><div class="pd-row"><div class="compare-label">仅新增借款</div>
-        <div class="pd-track" role="img" aria-label="仅新增借款：Swap In 3.3%，Swap Out 1.4%，差值 -1.8pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:1.4388%;width:1.8373%"></span>
-        <span class="pd-point in" style="left:3.2761%" title="Swap In：3.3%"></span>
-        <span class="pd-point out" style="left:1.4388%" title="Swap Out：1.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 3.3%</span><span class="out">OUT 1.4%</span><b>-1.8pp</b></div></div><div class="pd-row"><div class="compare-label">仅偿还</div>
-        <div class="pd-track" role="img" aria-label="仅偿还：Swap In 28.1%，Swap Out 25.2%，差值 -2.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:25.1799%;width:2.9013%"></span>
-        <span class="pd-point in" style="left:28.0811%" title="Swap In：28.1%"></span>
-        <span class="pd-point out" style="left:25.1799%" title="Swap Out：25.2%"></span></div>
-        <div class="pd-values"><span class="in">IN 28.1%</span><span class="out">OUT 25.2%</span><b>-2.9pp</b></div></div><div class="pd-row"><div class="compare-label">近28天无借贷</div>
-        <div class="pd-track" role="img" aria-label="近28天无借贷：Swap In 10.5%，Swap Out 6.5%，差值 -4.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:6.4748%;width:3.9776%"></span>
-        <span class="pd-point in" style="left:10.4524%" title="Swap In：10.5%"></span>
-        <span class="pd-point out" style="left:6.4748%" title="Swap Out：6.5%"></span></div>
-        <div class="pd-values"><span class="in">IN 10.5%</span><span class="out">OUT 6.5%</span><b>-4.0pp</b></div></div><div class="pd-row"><div class="compare-label">无借贷记录</div>
-        <div class="pd-track" role="img" aria-label="无借贷记录：Swap In 10.1%，Swap Out 7.2%，差值 -2.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:7.1942%;width:2.9462%"></span>
-        <span class="pd-point in" style="left:10.1404%" title="Swap In：10.1%"></span>
-        <span class="pd-point out" style="left:7.1942%" title="Swap Out：7.2%"></span></div>
-        <div class="pd-values"><span class="in">IN 10.1%</span><span class="out">OUT 7.2%</span><b>-2.9pp</b></div></div><p class="table-note">Swap In：有流水申请 · n = 641；Swap Out：有流水申请 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>净偿还</td><td>29.3%</td><td>50.4%</td><td>+21.0pp</td></tr><tr><td>借还平衡</td><td>2.3%</td><td>0.0%</td><td>-2.3pp</td></tr><tr><td>净融资扩张</td><td>16.4%</td><td>9.4%</td><td>-7.0pp</td></tr><tr><td>仅新增借款</td><td>3.3%</td><td>1.4%</td><td>-1.8pp</td></tr><tr><td>仅偿还</td><td>28.1%</td><td>25.2%</td><td>-2.9pp</td></tr><tr><td>近28天无借贷</td><td>10.5%</td><td>6.5%</td><td>-4.0pp</td></tr><tr><td>无借贷记录</td><td>10.1%</td><td>7.2%</td><td>-2.9pp</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>拒付恢复状态：置出组更多未解决/部分解决</h3><span>统一 0–100% 刻度 · 组内占比</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">无拒付</div>
-        <div class="pd-track" role="img" aria-label="无拒付：Swap In 44.0%，Swap Out 36.7%，差值 -7.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:36.6906%;width:7.3031%"></span>
-        <span class="pd-point in" style="left:43.9938%" title="Swap In：44.0%"></span>
-        <span class="pd-point out" style="left:36.6906%" title="Swap Out：36.7%"></span></div>
-        <div class="pd-values"><span class="in">IN 44.0%</span><span class="out">OUT 36.7%</span><b>-7.3pp</b></div></div><div class="pd-row"><div class="compare-label">已全部解决</div>
-        <div class="pd-track" role="img" aria-label="已全部解决：Swap In 4.1%，Swap Out 4.3%，差值 +0.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:4.0562%;width:0.2604%"></span>
-        <span class="pd-point in" style="left:4.0562%" title="Swap In：4.1%"></span>
-        <span class="pd-point out" style="left:4.3165%" title="Swap Out：4.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 4.1%</span><span class="out">OUT 4.3%</span><b>+0.3pp</b></div></div><div class="pd-row"><div class="compare-label">部分解决</div>
-        <div class="pd-track" role="img" aria-label="部分解决：Swap In 19.3%，Swap Out 33.1%，差值 +13.7pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:19.3448%;width:13.7488%"></span>
-        <span class="pd-point in" style="left:19.3448%" title="Swap In：19.3%"></span>
-        <span class="pd-point out" style="left:33.0935%" title="Swap Out：33.1%"></span></div>
-        <div class="pd-values"><span class="in">IN 19.3%</span><span class="out">OUT 33.1%</span><b>+13.7pp</b></div></div><div class="pd-row"><div class="compare-label">未解决</div>
-        <div class="pd-track" role="img" aria-label="未解决：Swap In 32.6%，Swap Out 25.9%，差值 -6.7pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:25.8993%;width:6.7060%"></span>
-        <span class="pd-point in" style="left:32.6053%" title="Swap In：32.6%"></span>
-        <span class="pd-point out" style="left:25.8993%" title="Swap Out：25.9%"></span></div>
-        <div class="pd-values"><span class="in">IN 32.6%</span><span class="out">OUT 25.9%</span><b>-6.7pp</b></div></div><p class="table-note">Swap In：有流水申请 · n = 641；Swap Out：有流水申请 · n = 139。每类占比在各自客群内计算，两组分别合计 100%。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>无拒付</td><td>44.0%</td><td>36.7%</td><td>-7.3pp</td></tr><tr><td>已全部解决</td><td>4.1%</td><td>4.3%</td><td>+0.3pp</td></tr><tr><td>部分解决</td><td>19.3%</td><td>33.1%</td><td>+13.7pp</td></tr><tr><td>未解决</td><td>32.6%</td><td>25.9%</td><td>-6.7pp</td></tr></tbody></table></details></div><div class="compare pd-chart"><div class="compare-head"><h3>收入与现金流：置出组并不更差</h3><span>统一 0–100% 刻度</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">工资收入占比<small>每条申请先算占比，再取中位数</small></div>
+<div class="hero-grid"><div class="hero-stat"><div class="label">申请数</div><div class="value"><span class="f">641</span><span class="slash">/</span><span class="w">139</span></div><div class="sub">置入 / 置出 · 合并 780 条</div></div><div class="hero-stat"><div class="label">工资收入占比</div><div class="value"><span class="f">21.7%</span><span class="slash">/</span><span class="w">42.1%</span></div><div class="sub">中位数 · 每条申请先算占比</div></div><div class="hero-stat"><div class="label">现金贷/工资贷使用</div><div class="value"><span class="f">49.8%</span><span class="slash">/</span><span class="w">69.1%</span></div><div class="sub">有流水申请</div></div><div class="hero-stat"><div class="label">存在未结清拒付</div><div class="value"><span class="f">52.0%</span><span class="slash">/</span><span class="w">59.0%</span></div><div class="sub">182 天窗口</div></div></div>
+<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。健康分与维度分来自合并样本的统一断点，是相对分数，不是违约概率；两组按置换结果划分，不是随机实验，差异只作描述。</p>
+</div></header><nav class="nav" aria-label="报告章节"><div class="nav-inner"><a href="#summary">结论</a><a href="#swap_in">置入侧</a><a href="#swap_out">置出侧</a><a href="#logic">交换逻辑与边界</a></div></nav><main><section id="summary" class="section"><div class="wrap">
+    <div class="section-head"><div><div class="eyebrow">01 · 结论</div><h2>先看结论：置入了谁，置出了谁</h2></div>
+    <p class="section-sub">核心判断与两侧画像；先给答案，再看证据。</p></div><div class="verdict"><div class="verdict-label">核心结论</div><p>置入的是<strong>“工资更不可见、负债更轻、现金流更薄”</strong>的人；置出的是<strong>“工资更稳定、但借贷与拒付更重”</strong>的人。</p></div><div class="summary-table"><div class="summary-head"><span>指标</span><span>置入</span><span>置出</span></div><div><span>工资收入占比</span><span>21.7%</span><span>42.1%</span></div><div><span>多源/非工资收入</span><span>61.0%</span><span>27.3%</span></div><div><span>有放款记录</span><span>72.7%</span><span>88.5%</span></div><div><span>存在未结清拒付</span><span>52.0%</span><span>59.0%</span></div></div><div class="two-col summary-cards">
+    <div class="card"><h3><span class="cohort-pill in">Swap In</span>置入侧 · 为什么可能进</h3>
+    <p>工资占比只有 21.7%，无工资入账 19.0%；历史放款笔数中位 4、金额 A$1,050。与置出组相比，负债和拒付更轻；代价是支出≥收入 49.0%、低缓冲 25.1%。</p></div>
+    <div class="card"><h3><span class="cohort-pill out">Swap Out</span>置出侧 · 为什么可能出</h3>
+    <p>工资更稳定，但放款笔数中位 8、金额 A$2,780；未结清拒付 2 笔、A$278，部分解决 33.1%。现金流压力反而低于置入组。</p></div>
+    </div><div class="takeaway-grid">
+    <div class="takeaway"><div class="tag">判断 01</div><h3>不是好坏客户，是风险类型交换</h3>
+    <p>置入组用工资可见性和现金流缓冲，换更低的负债/拒付；置出组相反。两组的差别在风险类型，不在综合优劣。</p></div>
+    <div class="takeaway"><div class="tag">判断 02</div><h3>现有健康分不是置换边界</h3>
+    <p>现有健康分中位 53.2 / 55.3（置入 / 置出），置出组反而更高；高风险承压 45.4% / 53.2% 也更高。分数与分群信号不一致，说明置换不是按综合健康分切，模型可能用了不同权重或否决项。</p></div>
+    <div class="takeaway"><div class="tag">判断 03</div><h3>覆盖提升伴随现金流脆弱</h3>
+    <p>置入组支出≥收入 49.0%、低缓冲 25.1%；若目标是降坏账，先验证薄缓冲带来的逾期风险。</p></div>
+    </div></div></section><section id="swap_in" class="section"><div class="wrap">
+    <div class="section-head"><div><div class="eyebrow">02 · 置入侧</div><h2>置入的人：工资更不可见，负债更轻</h2></div>
+    <p class="section-sub">收入、现金流与负债特征，以及可能被置入的原因。</p></div><p class="lead">Swap In 并不是“没有收入”。182 天总收入中位数 A$82.1k，与置出组 A$79.2k 接近；但工资占比只有 21.7%，多源/非工资收入占 61.0%，无工资入账 19.0%。同时，历史负债和拒付都更轻。</p><div class="compare pd-chart"><div class="compare-head"><h3>收入与现金流：工资可见性更弱，缓冲更薄</h3><span>统一 0–100% 刻度 · 有流水申请</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">工资收入占比<small>中位数</small></div>
         <div class="pd-track" role="img" aria-label="工资收入占比：Swap In 21.7%，Swap Out 42.1%，差值 +20.4pp">
         <span class="pd-mid"></span><span class="pd-link" style="left:21.6900%;width:20.4200%"></span>
         <span class="pd-point in" style="left:21.6900%" title="Swap In：21.7%"></span>
         <span class="pd-point out" style="left:42.1100%" title="Swap Out：42.1%"></span></div>
-        <div class="pd-values"><span class="in">IN 21.7%</span><span class="out">OUT 42.1%</span><b>+20.4pp</b></div></div><div class="pd-row"><div class="compare-label">近 28 天支出 ≥ 收入<small>有流水申请</small></div>
-        <div class="pd-track" role="img" aria-label="近 28 天支出 ≥ 收入：Swap In 49.0%，Swap Out 37.4%，差值 -11.6pp">
+        <div class="pd-values"><span class="in">IN 21.7%</span><span class="out">OUT 42.1%</span><b>+20.4pp</b></div></div><div class="pd-row"><div class="compare-label">多源/非工资收入<small>收入形态占比</small></div>
+        <div class="pd-track" role="img" aria-label="多源/非工资收入：Swap In 61.0%，Swap Out 27.3%，差值 -33.7pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:27.3381%;width:33.6603%"></span>
+        <span class="pd-point in" style="left:60.9984%" title="Swap In：61.0%"></span>
+        <span class="pd-point out" style="left:27.3381%" title="Swap Out：27.3%"></span></div>
+        <div class="pd-values"><span class="in">IN 61.0%</span><span class="out">OUT 27.3%</span><b>-33.7pp</b></div></div><div class="pd-row"><div class="compare-label">无工资入账<small>风险标签</small></div>
+        <div class="pd-track" role="img" aria-label="无工资入账：Swap In 19.0%，Swap Out 0.7%，差值 -18.3pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:0.7194%;width:18.3133%"></span>
+        <span class="pd-point in" style="left:19.0328%" title="Swap In：19.0%"></span>
+        <span class="pd-point out" style="left:0.7194%" title="Swap Out：0.7%"></span></div>
+        <div class="pd-values"><span class="in">IN 19.0%</span><span class="out">OUT 0.7%</span><b>-18.3pp</b></div></div><div class="pd-row"><div class="compare-label">支出达到或超过收入<small>近 28 天</small></div>
+        <div class="pd-track" role="img" aria-label="支出达到或超过收入：Swap In 49.0%，Swap Out 37.4%，差值 -11.6pp">
         <span class="pd-mid"></span><span class="pd-link" style="left:37.4101%;width:11.5759%"></span>
         <span class="pd-point in" style="left:48.9860%" title="Swap In：49.0%"></span>
         <span class="pd-point out" style="left:37.4101%" title="Swap Out：37.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 49.0%</span><span class="out">OUT 37.4%</span><b>-11.6pp</b></div></div><div class="pd-row"><div class="compare-label">流动性缓冲不足<small>负余额占比高或余额中位数为负</small></div>
+        <div class="pd-values"><span class="in">IN 49.0%</span><span class="out">OUT 37.4%</span><b>-11.6pp</b></div></div><div class="pd-row"><div class="compare-label">流动性缓冲不足<small>风险标签</small></div>
         <div class="pd-track" role="img" aria-label="流动性缓冲不足：Swap In 25.1%，Swap Out 17.3%，差值 -7.9pp">
         <span class="pd-mid"></span><span class="pd-link" style="left:17.2662%;width:7.8508%"></span>
         <span class="pd-point in" style="left:25.1170%" title="Swap In：25.1%"></span>
         <span class="pd-point out" style="left:17.2662%" title="Swap Out：17.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 25.1%</span><span class="out">OUT 17.3%</span><b>-7.9pp</b></div></div><p class="table-note">IN = Swap In（圆点）；OUT = Swap Out（方点）。差值 = Swap Out − Swap In。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>工资收入占比</td><td>21.7%</td><td>42.1%</td><td>+20.4pp</td></tr><tr><td>近 28 天支出 ≥ 收入</td><td>49.0%</td><td>37.4%</td><td>-11.6pp</td></tr><tr><td>流动性缓冲不足</td><td>25.1%</td><td>17.3%</td><td>-7.9pp</td></tr></tbody></table></details></div><div class="callout"><strong>画像小结：</strong>置出组不是“现金流最差”的人——他们的支出≥收入比例（37.4%）和低缓冲标签（17.3%）都优于置入组；真正把他们与置入组区分开的是更重的历史借贷和拒付。工资更稳定，但没有抵消这两项。</div></div></section><section id="why_out" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">04 · 置出原因</div><h2>为什么新模型可能把这批人换出</h2></div>
-    <p class="section-sub">结合画像差异与入模变量线索反推的可能原因，以及不能排除的替代解释。</p></div><p class="lead">如果只看现金流，置出组并不比置入组差；真正拉开差距的是借贷与拒付。以下同样是画像与变量线索的反推，不是模型事实。</p><div class="two-col"><div class="card"><h3>1. 历史借贷更重</h3><p>有放款 置入 72.7% / 置出 88.5%；放款笔数中位 置入 4 / 置出 8；金额中位 置入 A$1,050 / 置出 A$2,780；现金贷/工资贷 置入 49.8% / 置出 69.1%；高负债 置入 19.2% / 置出 32.4%。</p></div><div class="card"><h3>2. 拒付恢复更差</h3><p>未结清 置入 52.0% / 置出 59.0%；未结清笔数中位 置入 1 / 置出 2；金额中位 置入 A$53 / 置出 A$278；部分解决 置入 19.3% / 置出 33.1%。整体比例区间有重叠，但笔数、金额和恢复状态方向一致。</p></div><div class="card"><h3>3. 高风险分群更集中</h3><p>高风险承压 置入 45.4% / 置出 53.2%（风险标签≥3）。但三项压力交集置出组反而更低（置入 12.9% / 置出 9.4%），说明模型不是简单按复合标签排序。</p></div><div class="card"><h3>4. 工资稳定没有抵消上述信号</h3><p>收入稳定性得分 置入 50.9 / 置出 60.7；健康分中位数 置入 53.2 / 置出 55.3。置出组靠收入维度把总分拉高；如果按现有健康分排序，置出组反而更高，新模型可能用了不同权重或额外否决项。</p></div></div><p><strong>从入模变量看：</strong>两版模型都看债务和拒付，差别更可能在“看多近、看多细”。新模型把拒付窗口缩短到 56 天，并加入非 SACC 贷款、BNPL 和 MyPayNow 竞品使用等更近期的负债信号；旧模型保留更多福利金、公用事业、医疗、金额总量等长期生活结构变量。置出组“工资更稳定、但近期借贷和拒付更重”的画像，与这种变量重心变化相容；它可能解释为什么这类人在两版模型下得到不同边界，但不能证明模型的实际方向。</p><div class="callout warn"><strong>最可能的解释：</strong>新模型把“历史借贷强度 + 拒付恢复”当成更强的否决项；工资稳定、现金流尚可，但不足以抵消这两项。另一个不能排除的解释是策略/政策规则而非纯模型分数——仅凭画像无法区分。</div></div></section><section id="logic" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">05 · 交换逻辑</div><h2>模型在用什么换什么</h2></div>
-    <p class="section-sub">把两边放在一起看：这不是“好客户 vs 坏客户”，而是一次风险类型交换。</p></div><p class="lead">把两边放在一起，置换不是“好客户 vs 坏客户”，而是一次<strong>风险类型交换</strong>：用工资稳定性换更低的负债/拒付，同时承担更高的现金流波动。</p><div class="compare pd-chart"><div class="compare-head"><h3>五维评分中位数：置出组收入更高，置入组负债得分更高</h3><span>合并样本统一断点 · 0–100 分，越高越好；负债压力维度得分越高表示压力越低</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0</span><span>50</span><span>100</span></div><span></span></div><div class="pd-row"><div class="compare-label">收入稳定性</div>
+        <div class="pd-values"><span class="in">IN 25.1%</span><span class="out">OUT 17.3%</span><b>-7.9pp</b></div></div><div class="pd-row"><div class="compare-label">现金贷/工资贷使用<small>风险标签</small></div>
+        <div class="pd-track" role="img" aria-label="现金贷/工资贷使用：Swap In 49.8%，Swap Out 69.1%，差值 +19.3pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:49.7660%;width:19.2988%"></span>
+        <span class="pd-point in" style="left:49.7660%" title="Swap In：49.8%"></span>
+        <span class="pd-point out" style="left:69.0647%" title="Swap Out：69.1%"></span></div>
+        <div class="pd-values"><span class="in">IN 49.8%</span><span class="out">OUT 69.1%</span><b>+19.3pp</b></div></div><p class="table-note">所有比例在各自客群内计算；IN = Swap In（圆点），OUT = Swap Out（方点），差值 = Swap Out − Swap In。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>工资收入占比</td><td>21.7%</td><td>42.1%</td><td>+20.4pp</td></tr><tr><td>多源/非工资收入</td><td>61.0%</td><td>27.3%</td><td>-33.7pp</td></tr><tr><td>无工资入账</td><td>19.0%</td><td>0.7%</td><td>-18.3pp</td></tr><tr><td>支出达到或超过收入</td><td>49.0%</td><td>37.4%</td><td>-11.6pp</td></tr><tr><td>流动性缓冲不足</td><td>25.1%</td><td>17.3%</td><td>-7.9pp</td></tr><tr><td>现金贷/工资贷使用</td><td>49.8%</td><td>69.1%</td><td>+19.3pp</td></tr></tbody></table></details></div><p class="table-note">以下数字均为置入 / 置出。</p><div class="reasons">
+    <div class="reason"><div class="num">01</div><div><h3>非工资/多源收入被识别</h3>
+    <p>多源/非工资 61.0% / 27.3%；工资占比 21.7% / 42.1%；无工资入账 19.0% / 0.7%。模型可能更依赖交易流水识别收入，而不是工资标签。</p></div></div>
+    <div class="reason"><div class="num">02</div><div><h3>历史负债更轻</h3>
+    <p>有放款 72.7% / 88.5%；放款笔数中位 4 / 8；金额中位 A$1,050 / A$2,780；现金贷/工资贷 49.8% / 69.1%。</p></div></div>
+    <div class="reason"><div class="num">03</div><div><h3>用薄缓冲换低负债</h3>
+    <p>未结清拒付 52.0% / 59.0%，笔数中位 1 / 2，金额中位 A$53 / A$278；但支出≥收入 49.0% / 37.4%，低缓冲 25.1% / 17.3%。这是取舍，不是全面更优。</p></div></div>
+    </div><div class="notes"><p><strong>变量线索：</strong>新模型仍以债务类交易占比和拒付笔数开头，但拒付窗口从 168 天缩短到 56 天，并加入余额波动、内部/外部转账、工资消费率、非 SACC 贷款和 BNPL 等近期信号。置入组的非工资流水、余额波动和现金流缺口落在这些变量视野内；工资痕迹弱，不再等于收入不可见。这是相容解释，不是模型实际打分方向。</p><p><strong>排除：</strong>收入规模 A$82.1k / A$79.2k、活跃天数 125 / 131、现有健康分 53.2 / 55.3，都不支持“收入更少 / 更活跃 / 更健康”的解释。</p></div></div></section><section id="swap_out" class="section"><div class="wrap">
+    <div class="section-head"><div><div class="eyebrow">03 · 置出侧</div><h2>置出的人：工资更稳，借贷与拒付更重</h2></div>
+    <p class="section-sub">收入、负债与拒付特征，以及可能被置出的原因。</p></div><p class="lead">Swap Out 的工资更稳定：工资占比 42.1%，稳定工资形态 30.2%，收入稳定性得分 60.7。它的现金流压力反而更低——支出≥收入 37.4%（置入 49.0%）、低缓冲 17.3%（置入 25.1%）。历史借贷存量与拒付恢复，才是真正拉开差距的地方。</p><div class="compare pd-chart"><div class="compare-head"><h3>负债与拒付：置出组更重</h3><span>统一 0–100% 刻度 · 有流水申请</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">有放款记录<small>历史 182 天</small></div>
+        <div class="pd-track" role="img" aria-label="有放款记录：Swap In 72.7%，Swap Out 88.5%，差值 +15.8pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:72.6989%;width:15.7903%"></span>
+        <span class="pd-point in" style="left:72.6989%" title="Swap In：72.7%"></span>
+        <span class="pd-point out" style="left:88.4892%" title="Swap Out：88.5%"></span></div>
+        <div class="pd-values"><span class="in">IN 72.7%</span><span class="out">OUT 88.5%</span><b>+15.8pp</b></div></div><div class="pd-row"><div class="compare-label">现金贷/工资贷使用<small>风险标签</small></div>
+        <div class="pd-track" role="img" aria-label="现金贷/工资贷使用：Swap In 49.8%，Swap Out 69.1%，差值 +19.3pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:49.7660%;width:19.2988%"></span>
+        <span class="pd-point in" style="left:49.7660%" title="Swap In：49.8%"></span>
+        <span class="pd-point out" style="left:69.0647%" title="Swap Out：69.1%"></span></div>
+        <div class="pd-values"><span class="in">IN 49.8%</span><span class="out">OUT 69.1%</span><b>+19.3pp</b></div></div><div class="pd-row"><div class="compare-label">负债压力高<small>风险标签</small></div>
+        <div class="pd-track" role="img" aria-label="负债压力高：Swap In 19.2%，Swap Out 32.4%，差值 +13.2pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:19.1888%;width:13.1853%"></span>
+        <span class="pd-point in" style="left:19.1888%" title="Swap In：19.2%"></span>
+        <span class="pd-point out" style="left:32.3741%" title="Swap Out：32.4%"></span></div>
+        <div class="pd-values"><span class="in">IN 19.2%</span><span class="out">OUT 32.4%</span><b>+13.2pp</b></div></div><div class="pd-row"><div class="compare-label">存在未结清拒付<small>182 天窗口</small></div>
+        <div class="pd-track" role="img" aria-label="存在未结清拒付：Swap In 52.0%，Swap Out 59.0%，差值 +7.0pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:51.9501%;width:7.0427%"></span>
+        <span class="pd-point in" style="left:51.9501%" title="Swap In：52.0%"></span>
+        <span class="pd-point out" style="left:58.9928%" title="Swap Out：59.0%"></span></div>
+        <div class="pd-values"><span class="in">IN 52.0%</span><span class="out">OUT 59.0%</span><b>+7.0pp</b></div></div><div class="pd-row"><div class="compare-label">拒付部分解决<small>拒付恢复状态</small></div>
+        <div class="pd-track" role="img" aria-label="拒付部分解决：Swap In 19.3%，Swap Out 33.1%，差值 +13.7pp">
+        <span class="pd-mid"></span><span class="pd-link" style="left:19.3448%;width:13.7488%"></span>
+        <span class="pd-point in" style="left:19.3448%" title="Swap In：19.3%"></span>
+        <span class="pd-point out" style="left:33.0935%" title="Swap Out：33.1%"></span></div>
+        <div class="pd-values"><span class="in">IN 19.3%</span><span class="out">OUT 33.1%</span><b>+13.7pp</b></div></div><p class="table-note">所有比例在各自客群内计算；IN = Swap In（圆点），OUT = Swap Out（方点），差值 = Swap Out − Swap In。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>有放款记录</td><td>72.7%</td><td>88.5%</td><td>+15.8pp</td></tr><tr><td>现金贷/工资贷使用</td><td>49.8%</td><td>69.1%</td><td>+19.3pp</td></tr><tr><td>负债压力高</td><td>19.2%</td><td>32.4%</td><td>+13.2pp</td></tr><tr><td>存在未结清拒付</td><td>52.0%</td><td>59.0%</td><td>+7.0pp</td></tr><tr><td>拒付部分解决</td><td>19.3%</td><td>33.1%</td><td>+13.7pp</td></tr></tbody></table></details></div><p class="table-note">以下数字均为置入 / 置出。</p><div class="reasons">
+    <div class="reason"><div class="num">01</div><div><h3>历史借贷更重</h3>
+    <p>有放款 72.7% / 88.5%；放款笔数中位 4 / 8；金额中位 A$1,050 / A$2,780；现金贷/工资贷 49.8% / 69.1%；高负债 19.2% / 32.4%。</p></div></div>
+    <div class="reason"><div class="num">02</div><div><h3>拒付恢复更差</h3>
+    <p>未结清拒付 52.0% / 59.0%；笔数中位 1 / 2；金额中位 A$53 / A$278；部分解决 19.3% / 33.1%。整体比例区间有重叠，但笔数、金额和恢复状态方向一致。</p></div></div>
+    <div class="reason"><div class="num">03</div><div><h3>工资稳定没有抵消上述信号</h3>
+    <p>收入稳定性得分 50.9 / 60.7；现有健康分中位 53.2 / 55.3；高风险承压 45.4% / 53.2%。置出组靠收入维度把总分拉高；如果按现有健康分排序，置出组反而更高，新模型可能用了不同权重或额外否决项。</p></div></div>
+    </div><div class="notes"><p><strong>变量线索：</strong>两版模型都看债务和拒付，差别更可能在“看多近、看多细”。新模型把拒付窗口缩短到 56 天，并加入非 SACC 贷款、BNPL 和 MyPayNow 竞品使用等更近期的负债信号；旧模型保留更多福利金、公用事业、医疗、金额总量等长期结构。置出组“工资更稳定、但历史借贷存量更重、拒付恢复更差”的画像，与这种变量重心变化相容；但不能证明模型的实际方向。另一个不能排除的解释是策略/政策规则而非纯模型分数。</p><p><strong>一个反向信号：</strong>置出组近 28 天净偿还占 50.4%，高于置入组 29.3%；“借得更多”更像历史存量，而不是当前加速扩张。</p></div></div></section><section id="logic" class="section"><div class="wrap">
+    <div class="section-head"><div><div class="eyebrow">04 · 交换逻辑与边界</div><h2>交换逻辑：用工资稳定性换负债安全</h2></div>
+    <p class="section-sub">五维评分、解释边界与后续验证。</p></div><p class="lead">五维评分把交换方向量化：置出组收入稳定性更高，置入组负债压力得分更高（负债压力得分越高表示压力越低）。这不是现有健康分的简单排序，而是按风险类型重新排序。</p><div class="compare pd-chart"><div class="compare-head"><h3>五维评分：收入与负债方向相反</h3><span>合并样本统一断点 · 0–100 分，越高越好</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0</span><span>50</span><span>100</span></div><span></span></div><div class="pd-row"><div class="compare-label">收入稳定性</div>
         <div class="pd-track" role="img" aria-label="收入稳定性：Swap In 50.9，Swap Out 60.7，差值 +9.9 分">
         <span class="pd-mid"></span><span class="pd-link" style="left:50.8800%;width:9.8600%"></span>
         <span class="pd-point in" style="left:50.8800%" title="Swap In：50.9"></span>
@@ -554,46 +536,4 @@ a:focus-visible,summary:focus-visible{outline:3px solid #0891b2;outline-offset:4
         <span class="pd-mid"></span><span class="pd-link" style="left:50.5100%;width:7.2900%"></span>
         <span class="pd-point in" style="left:57.8000%" title="Swap In：57.8"></span>
         <span class="pd-point out" style="left:50.5100%" title="Swap Out：50.5"></span></div>
-        <div class="pd-values"><span class="in">IN 57.8</span><span class="out">OUT 50.5</span><b>-7.3 分</b></div></div><p class="table-note">IN = Swap In（圆点）；OUT = Swap Out（方点）。差值 = Swap Out − Swap In，单位：分。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>收入稳定性</td><td>50.9</td><td>60.7</td><td>+9.9 分</td></tr><tr><td>收支储蓄</td><td>51.0</td><td>53.7</td><td>+2.7 分</td></tr><tr><td>流动性缓冲</td><td>51.5</td><td>52.6</td><td>+1.1 分</td></tr><tr><td>负债压力</td><td>61.3</td><td>50.8</td><td>-10.4 分</td></tr><tr><td>消费活跃度</td><td>57.8</td><td>50.5</td><td>-7.3 分</td></tr></tbody></table></details></div><table class="logic-table"><thead><tr><th>维度</th><th>Swap In · 置入</th><th>Swap Out · 置出</th><th>交换方向</th></tr></thead><tbody><tr><td>收入形态</td><td>多源/非工资 61.0%；工资占比 21.7%</td><td>多源/非工资 27.3%；工资占比 42.1%</td><td>置入更依赖非工资流水</td></tr><tr><td>负债强度</td><td>放款 72.7%；4 笔；A$1,050；现金贷 49.8%</td><td>放款 88.5%；8 笔；A$2,780；现金贷 69.1%</td><td>置出借得更多</td></tr><tr><td>拒付</td><td>未结清 52.0%；1 笔；A$53</td><td>未结清 59.0%；2 笔；A$278</td><td>置出拒付更重</td></tr><tr><td>现金流</td><td>支出≥收入 49.0%；负现金流 55.5%</td><td>支出≥收入 37.4%；负现金流 51.1%</td><td>置入现金流更紧</td></tr><tr><td>流动性</td><td>低缓冲 25.1%；余额 A$115</td><td>低缓冲 17.3%；余额 A$127</td><td>置入缓冲更薄</td></tr><tr><td>分群与健康分</td><td>高风险 45.4%；健康分 53.2</td><td>高风险 53.2%；健康分 55.3</td><td>置出健康分反而更高</td></tr></tbody></table><div class="compare pd-chart"><div class="compare-head"><h3>风险标签差值排序：Swap Out − Swap In</h3><span>按绝对差排序 · 统一 0–100% 刻度</span></div><div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span><span><i class="pd-key out"></i>Swap Out</span></div><div class="pd-axis-row"><span></span><div class="pd-axis"><span>0%</span><span>50%</span><span>100%</span></div><span></span></div><div class="pd-row"><div class="compare-label">现金贷/工资贷使用</div>
-        <div class="pd-track" role="img" aria-label="现金贷/工资贷使用：Swap In 49.8%，Swap Out 69.1%，差值 +19.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:49.7660%;width:19.2988%"></span>
-        <span class="pd-point in" style="left:49.7660%" title="Swap In：49.8%"></span>
-        <span class="pd-point out" style="left:69.0647%" title="Swap Out：69.1%"></span></div>
-        <div class="pd-values"><span class="in">IN 49.8%</span><span class="out">OUT 69.1%</span><b>+19.3pp</b></div></div><div class="pd-row"><div class="compare-label">无工资入账</div>
-        <div class="pd-track" role="img" aria-label="无工资入账：Swap In 19.0%，Swap Out 0.7%，差值 -18.3pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.7194%;width:18.3133%"></span>
-        <span class="pd-point in" style="left:19.0328%" title="Swap In：19.0%"></span>
-        <span class="pd-point out" style="left:0.7194%" title="Swap Out：0.7%"></span></div>
-        <div class="pd-values"><span class="in">IN 19.0%</span><span class="out">OUT 0.7%</span><b>-18.3pp</b></div></div><div class="pd-row"><div class="compare-label">负债压力高</div>
-        <div class="pd-track" role="img" aria-label="负债压力高：Swap In 19.2%，Swap Out 32.4%，差值 +13.2pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:19.1888%;width:13.1853%"></span>
-        <span class="pd-point in" style="left:19.1888%" title="Swap In：19.2%"></span>
-        <span class="pd-point out" style="left:32.3741%" title="Swap Out：32.4%"></span></div>
-        <div class="pd-values"><span class="in">IN 19.2%</span><span class="out">OUT 32.4%</span><b>+13.2pp</b></div></div><div class="pd-row"><div class="compare-label">流动性缓冲不足</div>
-        <div class="pd-track" role="img" aria-label="流动性缓冲不足：Swap In 25.1%，Swap Out 17.3%，差值 -7.9pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:17.2662%;width:7.8508%"></span>
-        <span class="pd-point in" style="left:25.1170%" title="Swap In：25.1%"></span>
-        <span class="pd-point out" style="left:17.2662%" title="Swap Out：17.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 25.1%</span><span class="out">OUT 17.3%</span><b>-7.9pp</b></div></div><div class="pd-row"><div class="compare-label">存在未结清拒付</div>
-        <div class="pd-track" role="img" aria-label="存在未结清拒付：Swap In 52.0%，Swap Out 59.0%，差值 +7.0pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:51.9501%;width:7.0427%"></span>
-        <span class="pd-point in" style="left:51.9501%" title="Swap In：52.0%"></span>
-        <span class="pd-point out" style="left:58.9928%" title="Swap Out：59.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 52.0%</span><span class="out">OUT 59.0%</span><b>+7.0pp</b></div></div><div class="pd-row"><div class="compare-label">收入不稳定</div>
-        <div class="pd-track" role="img" aria-label="收入不稳定：Swap In 16.2%，Swap Out 22.3%，差值 +6.1pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:16.2246%;width:6.0775%"></span>
-        <span class="pd-point in" style="left:16.2246%" title="Swap In：16.2%"></span>
-        <span class="pd-point out" style="left:22.3022%" title="Swap Out：22.3%"></span></div>
-        <div class="pd-values"><span class="in">IN 16.2%</span><span class="out">OUT 22.3%</span><b>+6.1pp</b></div></div><div class="pd-row"><div class="compare-label">现金净流出</div>
-        <div class="pd-track" role="img" aria-label="现金净流出：Swap In 55.5%，Swap Out 51.1%，差值 -4.5pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:51.0791%;width:4.4591%"></span>
-        <span class="pd-point in" style="left:55.5382%" title="Swap In：55.5%"></span>
-        <span class="pd-point out" style="left:51.0791%" title="Swap Out：51.1%"></span></div>
-        <div class="pd-values"><span class="in">IN 55.5%</span><span class="out">OUT 51.1%</span><b>-4.5pp</b></div></div><div class="pd-row"><div class="compare-label">福利收入依赖</div>
-        <div class="pd-track" role="img" aria-label="福利收入依赖：Swap In 4.1%，Swap Out 0.0%，差值 -4.1pp">
-        <span class="pd-mid"></span><span class="pd-link" style="left:0.0000%;width:4.0562%"></span>
-        <span class="pd-point in" style="left:4.0562%" title="Swap In：4.1%"></span>
-        <span class="pd-point out" style="left:0.0000%" title="Swap Out：0.0%"></span></div>
-        <div class="pd-values"><span class="in">IN 4.1%</span><span class="out">OUT 0.0%</span><b>-4.1pp</b></div></div><p class="table-note">按两组发生率的绝对差排序；圆点为 Swap In，方点为 Swap Out，右侧为 Swap Out − Swap In。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>现金贷/工资贷使用</td><td>49.8%</td><td>69.1%</td><td>+19.3pp</td></tr><tr><td>无工资入账</td><td>19.0%</td><td>0.7%</td><td>-18.3pp</td></tr><tr><td>负债压力高</td><td>19.2%</td><td>32.4%</td><td>+13.2pp</td></tr><tr><td>流动性缓冲不足</td><td>25.1%</td><td>17.3%</td><td>-7.9pp</td></tr><tr><td>存在未结清拒付</td><td>52.0%</td><td>59.0%</td><td>+7.0pp</td></tr><tr><td>收入不稳定</td><td>16.2%</td><td>22.3%</td><td>+6.1pp</td></tr><tr><td>现金净流出</td><td>55.5%</td><td>51.1%</td><td>-4.5pp</td></tr><tr><td>福利收入依赖</td><td>4.1%</td><td>0.0%</td><td>-4.1pp</td></tr></tbody></table></details></div><p class="table-note">收入形态标准化：未结清拒付原始差 +7.0pp，按合并样本三类收入形态加权后差 +4.1pp；现金贷/工资贷原始差 +19.3pp，标准化后仍 +18.6pp。收入结构解释了一部分拒付差，但解释不了借贷差。</p><div class="callout"><strong>关键结论：</strong>新模型的置换边界与现有健康分不完全一致。它更像是在以“负债与拒付”为主要区分轴，而不是按综合健康分排序；两版模型的变量窗口与重心差异，为这种边界变化提供了相容解释，但不能证明方向；代价是置入组的现金流更脆弱。</div><div class="two-col"><div class="card"><h3>如果目标是降低坏账</h3><p>需要验证低负债/低拒付能否抵消薄缓冲带来的逾期风险；重点跟踪 Swap In 的现金流断裂与小额拒付滚动。</p></div><div class="card"><h3>如果目标是扩大覆盖</h3><p>置入组确实覆盖了传统工资模型不容易识别的非工资/多源收入人群；价值在覆盖，而不是风险更低。</p></div></div></div></section><section id="conclusion" class="section"><div class="wrap">
-    <div class="section-head"><div><div class="eyebrow">06 · 结论与边界</div><h2>结论：置入了谁，为什么；置出了谁，为什么</h2></div>
-    <p class="section-sub">一页总结，以及需要后续验证的边界。</p></div><p class="lead">一句话总结：新模型置入的是<strong>“负债更轻、工资更不可见、现金流更紧”</strong>的人；置出的是<strong>“工资更稳定、但借贷与拒付更重”</strong>的人。</p><div class="two-col"><div class="card"><h3>置入侧 · 为什么可能进</h3><p>多源/非工资 61.0%；负债轻（放款 72.7%、现金贷 49.8%）；拒付轻（52.0%）；代价是现金流薄（支出≥收入 49.0%、低缓冲 25.1%）。</p></div><div class="card"><h3>置出侧 · 为什么可能出</h3><p>工资更稳定（工资占比 42.1%）；但借贷重（放款 88.5%、8 笔、A$2,780）；拒付重（59.0%、2 笔、A$278）。</p></div></div><div class="two-col"><div class="card"><h3>验证模型原因</h3><p>画像差异与两版入模变量的窗口/重心变化相容：新模型更偏近期余额、转账和负债行为；下一步拉取模型评分、SHAP/特征重要度与拒绝原因码，核对方向与强度。</p></div><div class="card"><h3>验证置换效果</h3><p>等 duedate_1m_5 等表现标签成熟，比较 Swap In / Swap Out 的逾期与还款；当前标签仅 83/641 与 31/139 有值，阳性 11/5，不能做结果对比。</p></div><div class="card"><h3>验证策略属性</h3><p>确认置出是否包含政策、名单或人工规则；仅凭画像无法区分“模型分数”与“策略规则”。</p></div></div><div class="callout warn"><strong>结论适用边界：</strong>（1）两组按置换结果划分，不是随机实验，差异不能归因于置换动作本身；（2）Swap Out 仅 139 条，拒付、流动性、近期缺口等指标区间重叠；（3）健康分是合并样本内的相对分数，不等同于违约概率；（4）画像差异只能支持“可能原因”，不能证明模型真实决策逻辑。</div><details class="details"><summary>数据来源与口径</summary><div class="details-body"><p>输入：existing_swap_in_v1_2_with_feature_all.csv、existing_swap_out_v1_2_with_feature_all.csv；合并后 780 条申请。输出：analysis/swap_compare/out/。评分沿用 products/fundo.json 的 122 个注册指标与 46 个计分指标，断点由合并样本统一计算。</p><p>金额类指标取自原始特征并对哨兵值做同一清洗；未结清/已结清金额为六类拒付金额加总。分群、维度分与标签均直接读取 user_scores.csv，不重新定义底层指标。收入形态标准化以稳定工资、不稳定工资、多源/非工资三类在合并有流水样本中的占比为权重；福利依赖组 Swap Out 为 0 条，未纳入。</p><p>两组 sample_datetime 覆盖 2026-09-14 至 2026-10-13，均为 Old 用户；Swap Out 的 139 条申请来自 138 个 user_id，另 1 人为 2 条申请。</p></div></details></div></section></main><footer class="footer"><div class="wrap footer-inner"><span>Swap In × Swap Out 置换画像 · 合并统一评分</span><span>样本 780 条 · 生成 2026-10-27 19:31 · <a href="#basis">数据与口径</a></span></div></footer></body></html>
+        <div class="pd-values"><span class="in">IN 57.8</span><span class="out">OUT 50.5</span><b>-7.3 分</b></div></div><p class="table-note">IN = Swap In（圆点）；OUT = Swap Out（方点）。差值 = Swap Out − Swap In，单位：分。负债压力得分越高表示压力越低。</p><details class="pd-data"><summary>查看数据表</summary><table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th></tr></thead><tbody><tr><td>收入稳定性</td><td>50.9</td><td>60.7</td><td>+9.9 分</td></tr><tr><td>收支储蓄</td><td>51.0</td><td>53.7</td><td>+2.7 分</td></tr><tr><td>流动性缓冲</td><td>51.5</td><td>52.6</td><td>+1.1 分</td></tr><tr><td>负债压力</td><td>61.3</td><td>50.8</td><td>-10.4 分</td></tr><tr><td>消费活跃度</td><td>57.8</td><td>50.5</td><td>-7.3 分</td></tr></tbody></table></details></div><div class="callout"><strong>关键结论：</strong>新模型的置换边界与现有健康分不完全一致。它更像是在以“负债与拒付”为主要区分轴，而不是按现有健康分排序；两版模型的变量窗口与重心差异，为这种边界变化提供了相容解释，但不能证明方向；代价是置入组的现金流更脆弱。</div><div class="boundary"><h3>解释边界与后续验证</h3><ul class="clean-list"><li><b>只描述差异：</b>两组按置换结果划分，不是随机实验；Swap Out 仅 139 条，比例类指标 95% CI 较宽；duedate_1m_5 仅 83/641 与 31/139 有值（阳性 11/5），不能做结果对比。</li><li><b>原因仍是假设：</b>变量清单只说明模型能看什么，方向需模型评分、SHAP/特征重要度和拒绝原因码验证；也不能排除策略、名单或人工规则。</li><li><b>业务判断：</b>若目标是降低坏账，重点跟踪置入组的现金流断裂与小额拒付滚动；若目标是扩大覆盖，价值在覆盖非工资/多源收入人群，而不是风险更低。</li></ul></div><p class="table-note">补充：按收入形态标准化后，未结清拒付原始差 +7.0pp，加权后 +4.1pp；现金贷/工资贷原始差 +19.3pp，加权后仍 +18.6pp。收入结构解释一部分拒付差，但解释不了借贷差。</p><details class="details"><summary>数据来源与口径</summary><div class="details-body"><p>输入两份 v1_2 特征文件，合并 780 条申请；沿用 products/fundo.json 的 122 个注册指标与 46 个计分指标，断点由合并样本统一计算。金额类指标做同一哨兵值清洗；分群、维度分与标签直接读取 user_scores.csv。</p><p>收入形态标准化以稳定工资、不稳定工资、多源/非工资三类在合并有流水样本中的占比为权重；福利依赖组 Swap Out 为 0 条，未纳入。样本期 2026-09-14 至 2026-10-13，均为 Old 用户；Swap Out 的 139 条申请来自 138 个 user_id，另 1 人 2 条申请。</p></div></details></div></section></main><footer class="footer"><div class="wrap footer-inner"><span>Swap In × Swap Out 置换画像 · 合并统一评分</span><span>样本 780 条 · 生成 2026-10-27 19:43 · <a href="#summary">数据与口径</a></span></div></footer></body></html>
