@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Swap In vs Swap Out 客群画像对比（临时脚本）。
+"""Swap In vs Swap Out 置换画像（临时脚本）。
 
 独立放在 analysis/swap_compare/，不修改现有产品配置与分析引擎：
 1. 合并两份 v1_2 特征文件，加 cohort 列；
 2. 用 products/fundo.json 的同一套指标/阈值对合并样本统一评分；
-3. 按 cohort 聚合 user_scores 与原始金额特征，生成自包含 HTML 对比页。
+3. 按 cohort 聚合 user_scores 与原始金额特征，围绕“置入了谁、为什么可能置入、
+   置出了谁、为什么可能置出”生成自包含 HTML。
 
 运行：python analysis/swap_compare/run_swap_comparison.py
 """
@@ -40,7 +41,6 @@ from profile_analysis import (  # noqa: E402  (只读复用现有清洗口径)
 
 KEYS = ("swap_in", "swap_out")
 NAMES = ("Swap In", "Swap Out")
-COLORS = ["#0e7490", "#1e40af", "#64748b", "#b45309", "#dc2626", "#7c3aed", "#0891b2"]
 SEGMENTS = ["优质均衡", "稳健工薪", "均衡普通", "月光消费", "现金流紧张", "高风险承压"]
 ARCHETYPES = ["稳定工资", "不稳定工资", "多源/非工资", "福利依赖"]
 CROSS_GROUPS = ["稳定工资", "不稳定工资", "多源/非工资"]
@@ -84,6 +84,50 @@ RAW_COLS = {
     "en_active_days": "bank_txn_category_active_days_182d",
     "inc_wage_share": "bank_txn_worthiness_wage_income_amt_share_in_income_tag_182d",
     "db_dishonour_ratio": "bank_txn_dishonour_lender_ratio_182d",
+}
+# 两版入模变量按给定重要度从高到低排列；(中文标签, 原始变量名)
+MODEL_VARS = {
+    "old": [
+        ("债务类交易占比（168 天）", "bank_txn_category_cluster_debt_share_168d"),
+        ("拒付类入账笔数（168 天）", "bank_txn_category_dishonours_credit_cnt_168d"),
+        ("转账类交易占比（28 天）", "bank_txn_category_cluster_transfers_share_28d"),
+        ("最大现金贷/工资贷放款额", "bank_txn_lender_disburse_advance_amount_max"),
+        ("余额贷记总额（182 天）", "bank_txn_balance_credit_sum_182d"),
+        ("保险类借记笔数（56 天）", "bank_txn_category_insurance_debit_cnt_56d"),
+        ("全部贷记笔数（14 天）", "bank_txn_category_global_credit_cnt_14d"),
+        ("福利金（Centrelink）平均交易额（84 天）", "bank_txn_category_centrelink_avg_ticket_84d"),
+        ("余额最大降幅（84 天）", "bank_txn_balance_rate_dec_max_84d"),
+        ("风险义务类交易占比（182 天）", "bank_txn_category_cluster_risk_obligations_share_182d"),
+        ("余额贷记分布熵（182 天）", "bank_txn_balance_credit_entropy_182d"),
+        ("工资收入变异系数（过去 6 个月）", "bank_txn_income_wage_amountcv_past6months"),
+        ("SACC 贷款借记金额（182 天）", "bank_txn_category_sacc_loans_debit_amt_182d"),
+        ("贷款放款总额（184 天）", "bank_txn_lender_disburse_loan_amount_sum_184d"),
+        ("公用事业类交易占比（84 天）", "bank_txn_category_cluster_utilities_share_84d"),
+        ("BNPL 平均还款额（128 天）", "bank_txn_lender_repay_bnpl_amount_avg_128d"),
+        ("医疗类交易占比（84 天）", "bank_txn_category_cluster_healthcare_share_84d"),
+        ("还款总额（168 天）", "bank_txn_lender_repay_amount_sum_l168d"),
+        ("贷款还款总额（168 天）", "bank_txn_lender_repay_loan_amount_sum_l168d"),
+    ],
+    "new": [
+        ("债务类交易占比（182 天）", "bank_txn_category_cluster_debt_share_182d"),
+        ("拒付类入账笔数（56 天）", "bank_txn_category_dishonours_credit_cnt_56d"),
+        ("余额标准差（168 天）", "bank_txn_balance_std_168d"),
+        ("最小现金贷/工资贷放款额", "bank_txn_lender_disburse_advance_amount_min"),
+        ("余额分布峰度（182 天）", "bank_txn_balance_kurtosis_182d"),
+        ("保险支出占比（14 天）", "bank_txn_expense_insurance_ratio_14d"),
+        ("单日内部转账最大额（14 天）", "bank_txn_expense_internaltransfer_daily_max_14d"),
+        ("最长无借记间隔（182 天）", "bank_txn_balance_debit_gap_max_182d"),
+        ("内部转账最长连续天数", "bank_txn_expense_internaltransfer_max_consecutive_days"),
+        ("还款机构数", "bank_txn_lender_repay_jgs"),
+        ("工资收入变异系数（56 天）", "bank_txn_income_wages_cv_56d"),
+        ("工资收入平均消费率（14 天）", "bank_txn_income_wages_mean_consumption_rate_14d"),
+        ("内部转账贷记金额（182 天）", "bank_txn_category_internal_transfer_credit_amt_182d"),
+        ("非 SACC 贷款借记笔数（28 天）", "bank_txn_category_non_sacc_loans_debit_cnt_28d"),
+        ("BNPL 最小还款额（28 天）", "bank_txn_lender_repay_bnpl_amount_min_28d"),
+        ("外部转账占比（28 天）", "bank_txn_category_external_transfers_share_28d"),
+        ("MyPayNow 放款笔数（184 天）", "bank_txn_lender_disburse_competitor_MyPayNow_count_184d"),
+        ("余额分布偏度（182 天）", "bank_txn_balance_skewness_182d"),
+    ],
 }
 
 
@@ -259,88 +303,130 @@ def cards(items) -> str:
         f'<div class="card"><h3>{t}</h3><p>{b}</p></div>' for t, b in items) + "</div>"
 
 
-def compare(title: str, rows, caption: str = "统一 0–100% 刻度", maximum: float = 100) -> str:
-    out = (f'<div class="compare"><div class="compare-head"><h3>{title}</h3>'
-           f'<span>{caption}</span></div>')
-    out += ('<div class="chart-axis"><span></span><div class="bar-axis"><span></span><div>'
-            f'<span>0</span><span>{maximum / 2:g}</span><span>{maximum:g}</span></div>'
-            f'<span>{NAMES[0]} / {NAMES[1]}</span></div></div>')
-    for label, values, kind, detail in rows:
-        lines = "".join(
-            f'<div class="bar-line"><span class="bar-tag {c}">{tag}</span>'
-            f'<div class="track"><span class="fill {c}" style="width:{max(0, min(v / maximum * 100, 100)):.4f}%"></span></div>'
-            f'<span class="bar-val">{fmt(v, kind)}</span></div>'
-            for c, tag, v in zip(("f", "w"), ("I", "O"), values)
-        )
-        out += (f'<div class="compare-row"><div class="compare-label">{label}'
-                f'<small>{detail}</small></div><div class="bar-stack">{lines}</div></div>')
-    return out + "</div>"
+def model_list(title: str, rows, total: int) -> str:
+    items = "".join(f"<li>{esc(label)}</li>" for label, _ in rows[:10])
+    return (f'<div class="card model-list"><h3>{title}<span>前 10 / {total}</span></h3>'
+            f'<ol>{items}</ol></div>')
 
 
-def dumbbell(title: str, rows, caption: str, maximum: float = 100, suffix: str = "%") -> str:
-    out = (f'<div class="compare"><div class="compare-head"><h3>{title}</h3>'
-           f'<span>{caption}</span></div>')
-    out += (f'<div class="point-axis"><span>0{suffix}</span><span>{maximum / 2:g}{suffix}</span>'
-            f'<span>{maximum:g}{suffix}</span></div>')
+def chart_value(v: float, kind: str) -> str:
+    if kind == "pct":
+        return f"{v:.1f}%"
+    if kind == "int":
+        return f"{v:,.0f}"
+    if kind == "score":
+        return f"{v:.1f}"
+    return fmt(v, kind)
+
+
+def chart_axis(v: float, kind: str) -> str:
+    if kind == "pct":
+        return f"{v:g}%"
+    if kind == "int":
+        return f"{v:,.0f}"
+    if kind == "score":
+        return f"{v:g}"
+    return fmt(v, kind)
+
+
+def chart_delta(d: float, kind: str, diff_unit: str = "") -> str:
+    if kind == "pct":
+        return f"{d:+.1f}pp"
+    if kind == "int":
+        return f"{d:+,.0f}{diff_unit}"
+    if kind == "score":
+        return f"{d:+.1f}{diff_unit or ' 分'}"
+    return f"{d:+.1f}{diff_unit}"
+
+
+def paired(title: str, rows, caption: str = "统一 0–100% 刻度", maximum: float = 100,
+           kind: str = "pct", note: str = "", diff_unit: str = "",
+           axis_suffix: str | None = None) -> str:
+    rows = list(rows)
+    if axis_suffix is None:
+        axis_suffix = "%" if kind == "pct" else ""
+    out = (f'<div class="compare pd-chart"><div class="compare-head"><h3>{title}</h3>'
+           f'<span>{caption}</span></div>'
+           '<div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span>'
+           '<span><i class="pd-key out"></i>Swap Out</span></div>')
+    out += (f'<div class="pd-axis-row"><span></span><div class="pd-axis">'
+            f'<span>0{axis_suffix}</span><span>{chart_axis(maximum / 2, kind)}</span>'
+            f'<span>{chart_axis(maximum, kind)}</span></div><span></span></div>')
     for label, values, detail in rows:
-        a, b = values
-        out += f'''<div class="point-row"><div class="compare-label">{label}<small>{detail}</small></div>
-        <div class="point-track" role="img" aria-label="{esc(label)}：Swap In {a:.1f}{suffix}，Swap Out {b:.1f}{suffix}">
-        <span class="point-link" style="left:{min(a, b) / maximum * 100:.4f}%;width:{abs(b - a) / maximum * 100:.4f}%"></span>
-        <span class="point f" style="left:{a / maximum * 100:.4f}%"></span><span class="point w" style="left:{b / maximum * 100:.4f}%"></span></div>
-        <div class="point-values"><span class="f">IN {a:.1f}{suffix}</span><span class="w">OUT {b:.1f}{suffix}</span><b>{b - a:+.1f}{suffix.replace('%', 'pp')}</b></div></div>'''
-    return out + f'<p class="table-note">IN = Swap In（圆点）；OUT = Swap Out（方点）。差值均为 Swap Out − Swap In。</p></div>'
-
-
-def stack(title: str, categories, values, contexts, colors=None) -> str:
-    colors = colors or COLORS[: len(categories)]
-    out = f'<div class="stack-card"><h3>{title}</h3>'
-    for name, c, vals, ctx in zip(NAMES, ("f", "w"), values, contexts):
-        aria = "；".join(f"{cat} {fmt(v, 'pct')}" for cat, v in zip(categories, vals))
-        out += (f'<div class="stack-row"><div class="stack-meta"><b class="{c}">{name}</b>'
-                f'<span>{ctx}</span></div><div class="stack" role="img" aria-label="{esc(name + "：" + aria)}">')
-        for cat, v, color in zip(categories, vals, colors):
-            out += (f'<span class="seg" style="width:{v:.6f}%;background:{color}" '
-                    f'title="{esc(cat)}：{fmt(v, "pct")}">{fmt(v, "pct") if v >= 9 else ""}</span>')
-        out += "</div></div>"
-    out += '<div class="legend">' + "".join(
-        f'<span><i class="dot" style="background:{color}"></i>{esc(cat)}</span>'
-        for cat, color in zip(categories, colors)) + "</div>"
-    out += ('<p class="table-note">完整占比：' + "；".join(
-        f'{esc(cat)} {fmt(values[0][i], "pct")} / {fmt(values[1][i], "pct")}'
-        for i, cat in enumerate(categories)) + "（IN / OUT）。</p>")
-    return out + "</div>"
-
-
-def diffchart(title: str, rows, maximum: float, caption: str) -> str:
-    out = (f'<div class="diff-chart"><div class="diff-head"><h3>{title}</h3><span>{caption}</span></div>'
-           f'<div class="diff-legend"><span class="f">← Swap In 更高</span>'
-           f'<span class="w">Swap Out 更高 →</span></div>')
-    out += f'<div class="diff-axis"><span>−{maximum:g}pp</span><span>0</span><span>+{maximum:g}pp</span></div>'
-    for label, values in rows:
-        a, b = values
+        a, b = float(values[0]), float(values[1])
+        pa = max(0.0, min(a / maximum * 100, 100.0))
+        pb = max(0.0, min(b / maximum * 100, 100.0))
+        left, width = min(pa, pb), abs(pb - pa)
+        va, vb = chart_value(a, kind), chart_value(b, kind)
         d = b - a
-        cls = "pos" if d >= 0 else "neg"
-        out += (f'<div class="diff-row"><div class="diff-label">{label}'
-                f'<small>IN {a:.1f}% · OUT {b:.1f}%</small></div>'
-                f'<div class="diff-track"><span class="diff-fill {cls}" '
-                f'style="width:{min(abs(d) / maximum * 50, 50):.4f}%"></span></div>'
-                f'<div class="diff-val {cls}">{d:+.1f}pp</div></div>')
+        detail_html = f'<small>{esc(detail)}</small>' if detail else ""
+        out += f'''<div class="pd-row"><div class="compare-label">{esc(label)}{detail_html}</div>
+        <div class="pd-track" role="img" aria-label="{esc(label)}：Swap In {va}，Swap Out {vb}，差值 {chart_delta(d, kind, diff_unit)}">
+        <span class="pd-mid"></span><span class="pd-link" style="left:{left:.4f}%;width:{width:.4f}%"></span>
+        <span class="pd-point in" style="left:{pa:.4f}%" title="Swap In：{va}"></span>
+        <span class="pd-point out" style="left:{pb:.4f}%" title="Swap Out：{vb}"></span></div>
+        <div class="pd-values"><span class="in">IN {va}</span><span class="out">OUT {vb}</span><b>{chart_delta(d, kind, diff_unit)}</b></div></div>'''
+    if not note:
+        note = "IN = Swap In（圆点）；OUT = Swap Out（方点）。差值 = Swap Out − Swap In。"
+    out += f'<p class="table-note">{note}</p>'
+    body = "".join(
+        f'<tr><td>{esc(label)}</td><td>{chart_value(float(values[0]), kind)}</td>'
+        f'<td>{chart_value(float(values[1]), kind)}</td>'
+        f'<td>{chart_delta(float(values[1]) - float(values[0]), kind, diff_unit)}</td></tr>'
+        for label, values, _detail in rows
+    )
+    out += ('<details class="pd-data"><summary>查看数据表</summary>'
+            '<table><thead><tr><th>指标</th><th>Swap In</th><th>Swap Out</th><th>差值</th>'
+            f'</tr></thead><tbody>{body}</tbody></table></details>')
     return out + "</div>"
+
+
+def share_compare(title: str, categories, values, contexts, note: str = "") -> str:
+    rows = [(cat, [values[0][i], values[1][i]], "") for i, cat in enumerate(categories)]
+    ctx = (f"Swap In：{contexts[0]}；Swap Out：{contexts[1]}。"
+           "每类占比在各自客群内计算，两组分别合计 100%。")
+    if note:
+        ctx += " " + note
+    return paired(title, rows, caption="统一 0–100% 刻度 · 组内占比",
+                  kind="pct", note=ctx)
 
 
 def range_rows(rows) -> str:
-    out = ('<div class="compare"><div class="compare-head"><h3>健康分分布：中位数与中间 50%</h3>'
+    rows = list(rows)
+    out = ('<div class="compare pd-chart"><div class="compare-head"><h3>健康分分布：中位数与中间 50%</h3>'
            '<span>合并样本统一断点 · 同一 0–100 分刻度</span></div>'
-           '<div class="range-axis"><span>0 分</span><span>50 分</span><span>100 分</span></div>')
-    for name, c, (p25, p50, p75) in zip(NAMES, ("f", "w"), rows):
-        color = "var(--fundo)" if c == "f" else "var(--wagego)"
-        out += (f'<div class="range-row"><div class="range-label">{name}</div>'
-                f'<div class="range-track" role="img" aria-label="P25 {p25:.1f}，中位数 {p50:.1f}，P75 {p75:.1f}">'
-                f'<span class="range-iqr" style="left:{p25:.4f}%;width:{p75 - p25:.4f}%;background:{color}"></span>'
-                f'<span class="range-median" style="left:{p50:.4f}%;background:{color}"></span></div>'
-                f'<div class="range-value" style="color:{color}">{p50:.1f}</div></div>')
-    return out + '<p class="table-note">浅色区间为 P25–P75，竖线为中位数。区间反映分布，不是置信区间。</p></div>'
+           '<div class="pd-legend"><span><i class="pd-key in"></i>Swap In</span>'
+           '<span><i class="pd-key out"></i>Swap Out</span></div>'
+           '<div class="pd-axis-row"><span></span><div class="pd-axis">'
+           '<span>0 分</span><span>50 分</span><span>100 分</span></div><span></span></div>')
+    lanes = []
+    for _name, c, (p25, p50, p75) in zip(NAMES, ("f", "w"), rows):
+        color = "var(--series-in)" if c == "f" else "var(--wagego)"
+        top = 2 if c == "f" else 20
+        lanes.append(
+            f'<span class="pd-range-lane {c}" style="top:{top}px">'
+            f'<span class="range-iqr" style="left:{p25:.4f}%;width:{p75 - p25:.4f}%;background:{color}"></span>'
+            f'<span class="range-median" style="left:{p50:.4f}%;background:{color}"></span></span>'
+        )
+    aria = "；".join(
+        f"{name} P25 {p25:.1f}，中位数 {p50:.1f}，P75 {p75:.1f}"
+        for name, (p25, p50, p75) in zip(NAMES, rows)
+    )
+    med_in, med_out = rows[0][1], rows[1][1]
+    out += (f'<div class="pd-row pd-range-row"><div class="compare-label">健康分'
+            '<small>P25–P75 区间；竖线为中位数</small></div>'
+            f'<div class="pd-range" role="img" aria-label="{esc(aria)}">{"".join(lanes)}</div>'
+            f'<div class="pd-values"><span class="in">IN {med_in:.1f}</span>'
+            f'<span class="out">OUT {med_out:.1f}</span>'
+            f'<b>{med_out - med_in:+.1f} 分</b></div></div>')
+    out += ('<p class="table-note">浅色区间为 P25–P75，竖线为中位数；差值 = Swap Out − Swap In。'
+            '区间反映分布，不是置信区间。</p>')
+    out += ('<details class="pd-data"><summary>查看数据表</summary><table><thead><tr>'
+            '<th>客群</th><th>P25</th><th>中位数</th><th>P75</th></tr></thead><tbody>'
+            + "".join(f'<tr><td>{esc(name)}</td><td>{p25:.1f}</td><td>{p50:.1f}</td><td>{p75:.1f}</td></tr>'
+                      for name, (p25, p50, p75) in zip(NAMES, rows))
+            + '</tbody></table></details>')
+    return out + "</div>"
 
 
 def ci_text(ci: tuple[float, float]) -> str:
@@ -463,6 +549,10 @@ def main() -> int:
     def pct_pair(path, kind="pct"):
         return " / ".join(fmt(x, kind) for x in pv(path))
 
+    def inout(path, kind="pct"):
+        a, b = pv(path)
+        return f"置入 {fmt(a, kind)} / 置出 {fmt(b, kind)}"
+
     def pp(path):
         a, b = pv(path)
         return f"{b - a:+.1f}pp"
@@ -493,7 +583,7 @@ def main() -> int:
     css = CSS_SOURCE.read_text(encoding="utf-8").split("<style>", 1)[1].split("</style>", 1)[0]
     css += """
 /* Swap In / Swap Out overrides */
-:root{--fundo:#0f766e;--fundo-dark:#115e59;--fundo-soft:#ccfbf1;--wagego:#b45309;--wagego-dark:#92400e;--wagego-soft:#fef3c7}
+:root{--fundo:#0f766e;--fundo-dark:#115e59;--fundo-soft:#ccfbf1;--series-in:#0d9488;--wagego:#b45309;--wagego-dark:#92400e;--wagego-soft:#fef3c7}
 .flag-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
 .flag-table th,.flag-table td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 .flag-table th:first-child,.flag-table td:first-child{text-align:left}
@@ -501,18 +591,79 @@ def main() -> int:
 .flag-table td.ci{color:var(--muted);font-size:11.5px}
 .flag-table td.d{font-weight:700}
 .flag-table tr:hover td{background:#f8fafc}
+.logic-table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.logic-table th,.logic-table td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.logic-table th{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.03em}
+.logic-table td:first-child{font-weight:700;white-space:nowrap}
+.logic-table td:nth-child(2),.logic-table td:nth-child(3){font-variant-numeric:tabular-nums}
+@media(max-width:640px){.logic-table{font-size:12px}.logic-table th,.logic-table td{padding:7px 6px}.logic-table td:first-child{white-space:normal}}
+.model-list h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.model-list h3 span{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
+.model-list ol{margin:0;padding-left:20px;font-size:12.5px;line-height:1.9;color:var(--body)}
+.model-list li{padding-left:2px}
+.model-list li::marker{color:var(--faint);font-variant-numeric:tabular-nums}
+.model-table td:first-child{width:14%}
+.model-table td:nth-child(2),.model-table td:nth-child(3){width:34%}
+.var-list ol{margin:4px 0 0;padding-left:18px;font-size:12px;line-height:1.8;color:var(--body)}
+.var-list li{margin-bottom:5px}
+.var-list code{display:block;font-size:10.5px;line-height:1.5;color:var(--faint);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+@media(max-width:640px){.model-table td:first-child{width:auto}.model-table td:nth-child(2),.model-table td:nth-child(3){width:auto}}
 .cohort-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;margin-right:6px}
 .cohort-pill.in{background:var(--fundo-soft);color:var(--fundo-dark)}
 .cohort-pill.out{background:var(--wagego-soft);color:var(--wagego-dark)}
 @media(max-width:640px){.flag-table{font-size:12px}.flag-table th,.flag-table td{padding:7px 5px}}
+/* Same-row paired comparison */
+.pd-chart .compare-head{margin-bottom:10px}
+.pd-legend{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center;font-size:11.5px;color:var(--muted);margin:2px 0 8px}
+.pd-legend span{display:inline-flex;align-items:center;gap:6px}
+.pd-key{display:inline-block;width:10px;height:10px;border:2px solid #fff;box-shadow:0 0 0 1px currentColor}
+.pd-key.in{background:var(--series-in);color:var(--series-in);border-radius:50%}
+.pd-key.out{background:var(--wagego);color:var(--wagego);border-radius:2px}
+.pd-axis-row{display:grid;grid-template-columns:190px 1fr 184px;gap:18px;align-items:center;margin:8px 0 2px}
+.pd-axis{display:flex;justify-content:space-between;padding:0 7px;font-size:11px;color:var(--muted)}
+.pd-row{display:grid;grid-template-columns:190px 1fr 184px;gap:18px;align-items:center;padding:13px 0;border-bottom:1px dashed var(--line)}
+.pd-row:last-of-type{border-bottom:0}
+.pd-track{position:relative;height:34px;margin:0 7px}
+.pd-track:before{content:"";position:absolute;left:0;right:0;top:16px;height:2px;background:#e2e8f0}
+.pd-mid{position:absolute;left:50%;top:7px;bottom:7px;width:1px;background:#dbe3ec}
+.pd-link{position:absolute;top:15px;height:4px;border-radius:999px;background:#94a3b8}
+.pd-point{position:absolute;z-index:1;width:11px;height:11px;transform:translateX(-50%);border:2px solid #fff;box-shadow:0 0 0 1px currentColor}
+.pd-point.in{top:5px;background:var(--series-in);color:var(--series-in);border-radius:50%}
+.pd-point.out{top:18px;background:var(--wagego);color:var(--wagego);border-radius:2px}
+.pd-values{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 10px;font-size:11.5px;line-height:1.5;font-variant-numeric:tabular-nums;color:#334155}
+.pd-values .in,.pd-values .out{color:#334155}
+.pd-values b{min-width:58px;text-align:right;color:#475569}
+.pd-range{position:relative;height:36px;margin:0 7px}
+.pd-range-lane{position:absolute;left:0;right:0;height:14px;border-radius:999px;background:#f1f5f9}
+.pd-range-lane .range-iqr{top:3px;height:8px;border-radius:999px}
+.pd-range-lane .range-median{top:0;height:14px;width:3px}
+.pd-data{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.pd-data summary{cursor:pointer;font-size:11.5px;font-weight:700;color:var(--muted)}
+.pd-data table{width:100%;margin-top:8px;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
+.pd-data th,.pd-data td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right}
+.pd-data th:first-child,.pd-data td:first-child{text-align:left}
+.pd-data th{font-size:10.5px;color:var(--muted);font-weight:700}
+@media(max-width:960px){.pd-axis-row,.pd-row{grid-template-columns:155px 1fr 160px;gap:12px}}
+@media(max-width:640px){
+.pd-axis-row{grid-template-columns:1fr;gap:0}
+.pd-axis-row>span{display:none}
+.pd-axis{margin-top:8px}
+.pd-row{grid-template-columns:1fr;gap:6px}
+.pd-row .compare-label{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pd-row .compare-label small{margin:0}
+.pd-values{justify-content:flex-start}
+.pd-values b{margin-left:auto}
+.pd-data{font-size:11px}
+}
 """
 
-    in_p, out_p = S["swap_in"]["period"], S["swap_out"]["period"]
+    period_start = min(S[k]["period"][0] for k in KEYS)
+    period_end = max(S[k]["period"][1] for k in KEYS)
     hero_stats = [
-        ("健康分中位数", pv("health_median"), "two", "统一断点 · 0–100 分"),
-        ("高风险承压占比", [S[k]["segments"]["高风险承压"] for k in KEYS], "pct", "已评分申请"),
-        ("存在未结清拒付", [S[k]["flags"]["flag_unresolved_dishonour"][0] for k in KEYS], "pct", "全部有流水申请"),
-        ("三项压力交集", [S[k]["joint"] for k in KEYS], "pct", "现金贷 × 未结清 × 薄缓冲"),
+        ("申请数", [S[k]["apps"] for k in KEYS], "int", "置入 / 置出"),
+        ("工资收入占比中位数", pv("median.wage_share"), "pct", "每条申请先算占比，再取中位数"),
+        ("现金贷/工资贷使用", pv("flags.flag_payday.0"), "pct", "全部有流水申请"),
+        ("存在未结清拒付", pv("flags.flag_unresolved_dishonour.0"), "pct", "182 天窗口内识别"),
     ]
     hero = "".join(
         f'<div class="hero-stat"><div class="label">{label}</div>'
@@ -522,274 +673,376 @@ def main() -> int:
         for label, vals, kind, sub in hero_stats)
 
     header = f'''<header class="hero"><div class="wrap">
-<div class="eyebrow light">COHORT PROFILE COMPARISON · EXISTING CUSTOMER SWAP</div>
-<h1><span style="color:#0f766e">Swap In</span> <span class="x">×</span> <span style="color:#b45309">Swap Out</span><br>同一产品、同一版特征下的两组存量客群画像</h1>
-<p class="hero-lede"><strong>两组均为存量客户（user_type 全部为 Old），且均具备可用银行流水。</strong>合并 780 条申请后以统一断点评分：Swap Out 的工资型收入更集中，借贷与拒付活动更重；Swap In 的非工资/多源收入更多，近期收支缺口与薄缓冲更常见。</p>
+<div class="eyebrow light">EXISTING CUSTOMER SWAP · WHO MOVED IN / OUT</div>
+<h1><span style="color:#0f766e">Swap In</span> <span class="x">×</span> <span style="color:#b45309">Swap Out</span><br>新模型置入了谁，又置出了谁</h1>
+<p class="hero-lede"><strong>置入 641 条申请 / 641 人，置出 139 条申请 / 138 人；两组同产品、同版特征，合并统一评分。</strong>置换呈现出清晰的风险类型交换：置入组工资可见性更弱、现金流更薄，但负债与拒付更轻；置出组工资更稳定，但借贷与拒付更重。</p>
 <div class="hero-meta">
-<span><i class="dot f"></i>Swap In · {S["swap_in"]["apps"]:,} 条申请 · {S["swap_in"]["users"]:,} 人</span>
-<span><i class="dot w"></i>Swap Out · {S["swap_out"]["apps"]:,} 条申请 · {S["swap_out"]["users"]:,} 人</span>
-<span>user_type 均为 Old · 样本期 {in_p[0]:%Y-%m-%d} 至 {out_p[1]:%Y-%m-%d}</span>
+<span><i class="dot f"></i>Swap In · 置入 · {S["swap_in"]["apps"]:,} 条申请 · {S["swap_in"]["users"]:,} 人</span>
+<span><i class="dot w"></i>Swap Out · 置出 · {S["swap_out"]["apps"]:,} 条申请 · {S["swap_out"]["users"]:,} 人</span>
+<span>user_type 均为 Old · 样本期 {period_start:%Y-%m-%d} 至 {period_end:%Y-%m-%d}</span>
 </div>
 <div class="hero-grid">{hero}</div>
-<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。两组用户与申请均不重叠。健康分与维度分来自合并样本的统一断点，但仍是相对分数，不是违约概率。金额沿用 A$ 展示。</p>
+<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。健康分与维度分来自合并样本的统一断点，是相对分数，不是违约概率；置换原因结合画像差异与两版入模变量反推，变量重要度顺序不代表方向，也不能视为模型真实决策逻辑。</p>
 </div></header>'''
 
-    nav_items = [("basis", "样本与口径"), ("segments", "客群结构"), ("income", "收入"),
-                 ("lender", "负债"), ("dishonour", "拒付"), ("liquidity", "流动性"),
-                 ("trend", "近期变化"), ("flags", "风险标签"), ("summary", "结论")]
+    nav_items = [("basis", "置换结果"), ("profile_in", "置入画像"), ("why_in", "置入原因"),
+                 ("profile_out", "置出画像"), ("why_out", "置出原因"),
+                 ("model_focus", "模型变量"), ("logic", "交换逻辑"), ("conclusion", "结论与边界")]
     nav = ('<nav class="nav" aria-label="报告章节"><div class="nav-inner">'
            + "".join(f'<a href="#{k}">{label}</a>' for k, label in nav_items) + "</div></nav>")
 
+    seg_values = [[S[k]["segments"][s] for s in SEGMENTS] for k in KEYS]
+    arch_values = [[S[k]["archetypes"][s] for s in ARCHETYPES] for k in KEYS]
+    burn_values = [[S[k]["burn_bands"][s] for s in BURN_BANDS] for k in KEYS]
+    buf_values = [[S[k]["buffer_bands"][s] for s in BUFFER_BANDS] for k in KEYS]
+    lb_values = [[S[k]["lender_behaviors"][s] for s in LENDER_BEHAVIORS] for k in KEYS]
+    ds_values = [[S[k]["dishonour_status"][s] for s in DISHONOUR_STATUS] for k in KEYS]
+
     parts = []
 
-    # 00 样本与口径
-    content = ('<p class="lead">两份样本均来自同一产品的存量客群（<strong>user_type 全部为 Old</strong>），'
-               '用户与申请互不重叠，且均具备可用银行流水。合并后统一扫描 780 条申请，'
-               '断点、评分与分群只计算一次，因此下文的分数和分群占比基于<strong>同一套评分基准</strong>，可直接横向比较。</p>')
-    content += compare(
-        "样本规模（申请数）",
-        [("申请数", [S[k]["apps"] for k in KEYS], "int", "合并母本 780 条"),
-         ("用户数", [S[k]["users"] for k in KEYS], "int", "Swap Out 有 1 人 2 条申请")],
+    # 00 置换结果
+    content = (f'<p class="lead">新模型在这批存量客户中置入 <strong>{S["swap_in"]["apps"]:,} 条申请 / '
+               f'{S["swap_in"]["users"]:,} 人</strong>，置出 <strong>{S["swap_out"]["apps"]:,} 条申请 / '
+               f'{S["swap_out"]["users"]:,} 人</strong>。两组来自同一产品、同一版特征，'
+               '样本期相同，用户与申请互不重叠；合并 780 条后统一评分，'
+               '因此下文的分数与分群使用同一套断点。</p>')
+    content += paired(
+        "置换规模",
+        [("申请数", [S[k]["apps"] for k in KEYS], "合并母本 780 条"),
+         ("用户数", [S[k]["users"] for k in KEYS], "Swap Out 有 1 人 2 条申请")],
         caption=f"按较大组定标 · 最大 {max(S[k]['apps'] for k in KEYS):,} 条",
-        maximum=max(S[k]["apps"] for k in KEYS))
-    content += compare(
-        "评分覆盖",
-        [("有流水申请占比", [S[k]["obs"] / S[k]["apps"] * 100 for k in KEYS], "pct", "两组均为 100%"),
-         ("已评分占比", [S[k]["scored"] / S[k]["obs"] * 100 for k in KEYS], "pct", "健康分可用")],
-        caption="统一 0–100% 刻度")
-    content += cards([
-        ("Swap In · 进入组",
-         f'{in_p[0]:%Y-%m-%d} 至 {in_p[1]:%Y-%m-%d}，<strong>{S["swap_in"]["apps"]:,} 条申请 / {S["swap_in"]["users"]:,} 人</strong>，'
-         f'全部有流水。数据中不含分组规则，本报告仅作描述性对比。'),
-        ("Swap Out · 退出组",
-         f'{out_p[0]:%Y-%m-%d} 至 {out_p[1]:%Y-%m-%d}，<strong>{S["swap_out"]["apps"]:,} 条申请 / {S["swap_out"]["users"]:,} 人</strong>，'
-         f'全部有流水；样本量约为 Swap In 的 22%。'),
-    ])
-    content += ('<div class="callout warn"><strong>比较边界：</strong>两组是按置换结果划分的存量客群，不是随机分组；'
-                '差异可能来自客群本身、置换规则或两者共同作用，不能解释为因果。Swap Out 仅 139 条，'
-                '比例类指标的 95% Wilson 区间明显更宽，以下章节对区间重叠的差异仅作方向性参考。</div>')
-    content += ('<details class="details"><summary>合并与评分方式</summary><div class="details-body">'
-                '<p>两份文件列结构一致（13,363 个特征列，另有一列导出索引），合并后加上 cohort 标记。'
-                '特征清洗沿用现有引擎：数值哨兵 -999999.99999 视为缺失，lender 模块 -1 视为无匹配记录，'
-                '可加总金额/笔数/机构数的 -1 还原为 0。</p>'
-                '<p>统一评分只改变断点与百分位的参照人群，不改变指标定义、维度和权重；'
-                '因此本报告的健康分与分群可与合并样本内部互相对照，但不能与之前 Fundo 全量报告中的绝对分数直接对齐。</p>'
-                '</div></details>')
-    parts.append(section("basis", "00 · 样本与口径", "样本范围与评分口径", "合并 780 条申请统一评分；两组均为存量客户，且均有可用流水。", content))
-
-    # 01 客群结构
-    seg_values = [[S[k]["segments"][s] for s in SEGMENTS] for k in KEYS]
-    content = (f'<p class="lead">统一评分后，Swap Out 的<strong>高风险承压</strong>占比更高'
-               f'（{fmt(S["swap_in"]["segments"]["高风险承压"], "pct")} / {fmt(S["swap_out"]["segments"]["高风险承压"], "pct")}，'
-               f'{pp("segments.高风险承压")}），Swap In 更偏<strong>现金流紧张</strong>与<strong>月光消费</strong>。'
-               f'两组的健康分中位数接近（{fmt(S["swap_in"]["health_median"], "two")} / {fmt(S["swap_out"]["health_median"], "two")}），'
-               '说明总分接近并不等于压力类型相同。</p>')
-    content += stack("已评分申请的客群结构", SEGMENTS, seg_values,
-                     [f'已评分 · n = {S[k]["scored"]:,}' for k in KEYS])
+        maximum=max(S[k]["apps"] for k in KEYS), kind="int",
+        note="申请数按申请计；用户数按人去重。差值 = Swap Out − Swap In。")
+    content += share_compare("置换后的客群结构", SEGMENTS, seg_values,
+                             [f'已评分 · n = {S[k]["scored"]:,}' for k in KEYS])
     content += range_rows([S[k]["health"] for k in KEYS])
-    dim_pairs = [(DIM_LABELS[d], [S[k]["dims"][d] for k in KEYS],
-                  "得分越高越好；负债压力维度得分越高表示压力越低") for d in DIM_LABELS]
-    content += dumbbell("五维评分中位数：差异主要在收入与负债", dim_pairs,
-                        "合并样本统一断点 · 同一 0–100 分刻度")
-    content += ('<div class="callout"><strong>结构解读：</strong>分群同时受评分和风险标签数影响，'
-                '与五维得分不是独立证据。Swap Out 的负债与拒付标签更多，但收入稳定性得分更高，'
-                '两个方向共同把健康分拉得接近。</div>')
-    parts.append(section("segments", "01 · 客群结构", "客群结构：高风险承压与现金流紧张的分布差异",
-                         "统一评分后的分群结构、健康分分布与五维得分。", content))
+    content += cards([
+        ("Swap In · 置入组",
+         f'{S["swap_in"]["apps"]:,} 条申请 / {S["swap_in"]["users"]:,} 人。'
+         f'高风险承压占 {fmt(S["swap_in"]["segments"]["高风险承压"], "pct")}，'
+         f'现金流紧张占 {fmt(S["swap_in"]["segments"]["现金流紧张"], "pct")}；'
+         f'稳健工薪仅 {fmt(S["swap_in"]["segments"]["稳健工薪"], "pct")}。'),
+        ("Swap Out · 置出组",
+         f'{S["swap_out"]["apps"]:,} 条申请 / {S["swap_out"]["users"]:,} 人。'
+         f'高风险承压占 {fmt(S["swap_out"]["segments"]["高风险承压"], "pct")}，'
+         f'但稳健工薪占 {fmt(S["swap_out"]["segments"]["稳健工薪"], "pct")}，高于置入组；'
+         f'健康分中位数也略高（{fmt(S["swap_out"]["health_median"], "one")}）。'),
+    ])
+    content += (f'<div class="callout warn"><strong>先看一个反直觉结果：</strong>'
+                f'置出组的健康分中位数反而略高（{pct_pair("health_median", "one")}），'
+                f'高风险承压占比也更高（{pct_pair("segments.高风险承压")}）。'
+                '分群与总分给出的信号并不一致，说明新模型的置换边界不是简单按现有健康分从低到高切；'
+                '它可能使用了不同权重，或叠加了负债、拒付等否决项。</div>')
+    parts.append(section("basis", "00 · 置换结果", "置换结果：641 条申请置入，139 条置换出",
+                         "先看规模、分群与健康分，再分别看置入与置出的画像。", content))
 
-    # 02 收入
-    content = (f'<p class="lead">总收入规模接近（182 天中位数 {pct_pair("raw.inc_global_sum", "k")}），'
-               f'但收入来源结构差异很大：Swap Out 的工资收入中位数是 Swap In 的 '
-               f'{S["swap_out"]["raw"]["inc_wage_sum"] / S["swap_in"]["raw"]["inc_wage_sum"]:.2f} 倍，'
-               f'工资占比中位数 {pct_pair("median.wage_share")}。Swap In 的多源/非工资收入占 '
-               f'{fmt(S["swap_in"]["archetypes"]["多源/非工资"], "pct")}，Swap Out 为 '
-               f'{fmt(S["swap_out"]["archetypes"]["多源/非工资"], "pct")}。</p>')
+    # 01 置入画像
+    content = (f'<p class="lead">Swap In 的画像可以概括为：<strong>收入总量不低，但工资可见性弱；'
+               '现金流与流动性很薄；负债和拒付强度低于置出组。</strong>'
+               f'182 天总收入中位数 {inout("raw.inc_global_sum", "k")}，但工资收入只有 '
+               f'{inout("raw.inc_wage_sum", "k")}，工资占比中位数 {inout("median.wage_share")}；'
+               f'多源/非工资收入占 {fmt(S["swap_in"]["archetypes"]["多源/非工资"], "pct")}，'
+               f'无工资入账 {fmt(S["swap_in"]["flags"]["flag_no_wage"][0], "pct")}。</p>')
     content += grid(
         kpi("182 天总收入中位数", pv("raw.inc_global_sum"), "k", "原始金额特征"),
-        kpi("182 天工资收入中位数", pv("raw.inc_wage_sum"), "k", "原始金额特征"),
-        kpi("工资收入占比中位数", pv("median.wage_share"), "pct", "每条申请先算占比，再取中位数",
-            delta=pp("median.wage_share")),
+        kpi("工资收入中位数", pv("raw.inc_wage_sum"), "k", "原始金额特征"),
+        kpi("工资收入占比中位数", pv("median.wage_share"), "pct", "每条申请先算占比，再取中位数"),
+        kpi("多源/非工资收入", [S[k]["archetypes"]["多源/非工资"] for k in KEYS], "pct", "有流水申请"),
+        kpi("期末余额中位数", pv("median.balance"), "money", "逐申请余额中位数，再取样本中位数"),
+        kpi("缓冲天数中位数", pv("median.buffer_days"), "days", "期末余额可覆盖支出天数"),
+        kpi("现金贷/工资贷使用", pv("flags.flag_payday.0"), "pct", "全部有流水申请"),
+        kpi("存在未结清拒付", pv("flags.flag_unresolved_dishonour.0"), "pct", "182 天窗口内识别"),
     )
-    arch_values = [[S[k]["archetypes"][s] for s in ARCHETYPES] for k in KEYS]
-    content += stack("收入形态：工资型 vs 多源/非工资", ARCHETYPES, arch_values,
-                     [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS],
-                     ["#0e7490", "#1e40af", "#64748b", "#b45309"])
-    content += dumbbell("收入相关标签", [
-        ("无工资入账", pv("flags.flag_no_wage.0"), "观察性标签，不计入分群"),
-        ("福利收入依赖", pv("flags.flag_welfare_dependent.0"), "观察性标签，不计入分群"),
-        ("收入不稳定", pv("flags.flag_income_unstable.0"), "计入分群的风险标签"),
-    ], "分母：全部有流水申请 · 统一 0–100% 刻度")
-    content += ('<div class="callout"><strong>收入规模接近，差异集中在结构：</strong>两组总收入中位数只差约 3.5%；'
-                '真正的差异是工资的可见性和来源集中度。Swap In 有更多福利依赖和无工资入账，'
-                '这不等于收入更低，但会影响收入稳定性的识别与后续额度判断。'
-                '收入形态内部的标签对比与标准化见「07 · 风险标签」。</div>')
-    parts.append(section("income", "02 · 收入", "收入：总量接近，工资可见性与来源结构差异明显",
-                         "收入规模、来源结构、工资占比与相关标签。", content))
+    content += share_compare("收入形态：置入组更偏多源/非工资", ARCHETYPES, arch_values,
+                             [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
+    content += share_compare("近 28 天收支位置", BURN_BANDS, burn_values,
+                             [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
+    content += share_compare("期末余额覆盖支出天数", BUFFER_BANDS, buf_values,
+                             [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
+    content += ('<div class="callout"><strong>画像小结：</strong>'
+                '这不是“没有收入”的人群，而是“收入来源分散、工资痕迹弱、现金留存极薄”的人群。'
+                '置入组的负债和拒付绝对水平低于置出组，但现金流脆弱性更高；'
+                '这为下一节的“为什么可能被置入”提供了核心线索。</div>')
+    parts.append(section("profile_in", "01 · 置入画像", "置入的人：非工资/多源收入、低负债、薄缓冲",
+                         "Swap In 的收入、现金流、流动性与负债特征。", content))
 
-    # 03 负债
-    content = (f'<p class="lead">Swap Out 的借贷活动明显更重：有放款记录的比例 '
-               f'{pct_pair("disburse_rate")}，放款笔数中位数 {pct_pair("median.disburse_cnt", "int")}，'
-               f'放款金额中位数 {pct_pair("raw.db_disburse_sum", "money")}；'
-               f'现金贷/工资贷使用标签为 {pct_pair("flags.flag_payday.0")}（{pp("flags.flag_payday.0")}）。</p>')
-    content += grid(
-        kpi("有放款记录", pv("disburse_rate"), "pct", "历史 182 天 · 有流水申请", delta=pp("disburse_rate")),
-        kpi("放款笔数中位数", pv("median.disburse_cnt"), "int", "全部有流水申请，含 0", delta=pp("median.disburse_cnt")),
-        kpi("放款金额中位数", pv("raw.db_disburse_sum"), "money", "历史 182 天 · 原始金额特征"),
-        kpi("现金贷/工资贷放款中位数", pv("raw.db_cash_advance_sum"), "money", "历史 182 天 · 原始金额特征"),
-        kpi("还款金额中位数", pv("raw.db_repay_sum"), "money", "历史 182 天 · 原始金额特征"),
-        kpi("高负债压力标签", pv("flags.flag_high_debt.0"), "pct", "按合并样本评分触发", delta=pp("flags.flag_high_debt.0")),
-    )
-    lb_values = [[S[k]["lender_behaviors"][s] for s in LENDER_BEHAVIORS] for k in KEYS]
-    content += stack("借贷行为：Swap Out 更偏净借款", LENDER_BEHAVIORS, lb_values,
-                     [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
-    content += dumbbell("借款广度", [
-        ("至少 1 家活跃借贷机构", pv("active_lender_ge1"), "活跃机构按去重口径；全部有流水申请"),
-        ("名单内多头借贷", pv("flags.flag_multi_lender.0"), "仅竞品名单口径，触发率很低"),
-    ], "统一 0–100% 刻度")
-    content += ('<p class="table-note">“净借款/净融资扩张”描述窗口内借入与偿还的相对关系，不等于当前负债余额；'
-                '机构数只统计可识别的放款记录，未识别机构不会进入分子。</p>')
-    parts.append(section("lender", "03 · 负债", "负债：Swap Out 借贷参与更深，现金贷使用更集中",
-                         "借贷参与、借款广度、金额规模、近期行为与负债标签。", content))
-
-    # 04 拒付
-    content = (f'<p class="lead">未结清拒付比例 {pct_pair("flags.flag_unresolved_dishonour.0")}'
-               f'（{pp("flags.flag_unresolved_dishonour.0")}），但两组 95% Wilson 区间有重叠。'
-               f'Swap Out 的未结清笔数中位数为 {pct_pair("median.unresolved_cnt", "int")}，'
-               f'未结清金额中位数 {pct_pair("raw.unresolved_amt_p50", "money")}；'
-               f'按全部有流水申请折算的未结清金额均值 {pct_pair("raw.unresolved_amt_mean", "money")}。</p>')
-    content += grid(
-        kpi("存在未结清拒付", pv("flags.flag_unresolved_dishonour.0"), "pct",
-            "182 天窗口内未匹配到结清", delta=pp("flags.flag_unresolved_dishonour.0")),
-        kpi("未结清笔数中位数", pv("median.unresolved_cnt"), "int", "六类拒付加总"),
-        kpi("未结清金额中位数", pv("raw.unresolved_amt_p50"), "money", "每条申请口径"),
-        kpi("已结清金额占比", pv("raw.resolved_amt_ratio"), "pct",
-            "已结清金额 /（已结清 + 未结清）", delta=pp("raw.resolved_amt_ratio")),
-    )
-    ds_values = [[S[k]["dishonour_status"][s] for s in DISHONOUR_STATUS] for k in KEYS]
-    content += stack("拒付恢复状态", DISHONOUR_STATUS, ds_values,
-                     [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS],
-                     ["#0e7490", "#1e40af", "#b45309", "#dc2626"])
-    content += compare("未结清金额：仅受影响申请", [
-        ("未结清金额均值",
-         [S[k]["raw"]["unresolved_amt_affected_mean"] for k in KEYS],
-         "money",
-         f'仅存在未结清拒付的申请：IN {S["swap_in"]["raw"]["unresolved_amt_affected_n"]} / OUT {S["swap_out"]["raw"]["unresolved_amt_affected_n"]} 条'),
-    ], caption="金额均值 · 统一 0–A$3,000 刻度", maximum=3000)
-    content += ('<div class="callout warn"><strong>“未结清”是窗口内识别状态：</strong>'
-                '表示回溯窗口内没有匹配到补扣结清，不等同于当前违约。两组观察窗口相同（182 天），'
-                '但样本日期不同，后续表现仍需用同一追踪期限验证。</div>')
-    parts.append(section("dishonour", "04 · 拒付", "拒付：Swap Out 未结清比例更高，但差异区间有重叠",
-                         "未结清比例、笔数、金额、恢复状态与受影响申请强度。", content))
-
-    # 05 流动性
-    content = (f'<p class="lead">两组余额都很薄：余额中位数 {pct_pair("median.balance", "money")}，'
-               f'负余额天数占比中位数 {pct_pair("median.negative_share")}。'
-               f'Swap In 的<strong>流动性缓冲不足</strong>标签更高（{pct_pair("flags.flag_low_buffer.0")}，'
-               f'{pp("flags.flag_low_buffer.0")}），但两组 95% 区间同样有重叠；'
-               f'期末余额覆盖不足 7 天的比例都超过 96%。</p>')
-    content += grid(
-        kpi("余额中位数", pv("median.balance"), "money", "逐申请余额中位数，再取样本中位数"),
-        kpi("负余额天数占比中位数", pv("median.negative_share"), "pct", "182 天窗口"),
-        kpi("流动性缓冲不足", pv("flags.flag_low_buffer.0"), "pct",
-            "负余额占比高或余额中位数为负", delta=pp("flags.flag_low_buffer.0")),
-        kpi("固定支出备用月数中位数", pv("raw.lq_reserve_months"), "months", "原始特征有效值"),
-    )
-    buf_values = [[S[k]["buffer_bands"][s] for s in BUFFER_BANDS] for k in KEYS]
-    content += stack("期末余额覆盖支出天数", BUFFER_BANDS, buf_values,
-                     [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS],
-                     ["#dc2626", "#b45309", "#1e40af", "#0e7490"])
-    content += ('<div class="callout"><strong>共同短板：</strong>'
-                '“不足 7 天”在两组都接近或超过 99%，更适合作为共同跟踪项；'
-                '“流动性缓冲不足”标签的组间差为 '
-                f'{pp("flags.flag_low_buffer.0")}，方向明确但区间重叠，不宜当作稳定分层依据。</div>')
-    parts.append(section("liquidity", "05 · 流动性", "流动性：两组缓冲均薄，Swap In 压力略高",
-                         "余额水平、持续透支、缓冲标签与支出覆盖天数。", content))
-
-    # 06 近期变化
-    content = (f'<p class="lead">近 28 天<strong>支出达到或超过收入</strong>的比例为 '
-               f'{pct_pair("burn_bands.支出达到或超过收入")}（{pp("burn_bands.支出达到或超过收入")}），'
-               f'Swap In 更突出；收入下降超过 20% 的比例为 {pct_pair("income_decline")}，'
-               f'Swap Out 更高。两组的刚性支出占比都很低（高承诺支出/收入 ≥30%：{pct_pair("commit_ge30")}）。</p>')
-    content += grid(
-        kpi("近 28 天支出 ≥ 收入", [S[k]["burn_bands"]["支出达到或超过收入"] for k in KEYS], "pct",
-            "收入为零等缺失不计为正常", delta=pp("burn_bands.支出达到或超过收入")),
-        kpi("日均收入下降 >20%", pv("income_decline"), "pct", "近 28 天 vs 此前 154 天", delta=pp("income_decline")),
-        kpi("日均支出上升 ≥20%", pv("expense_rise"), "pct", "近 28 天 vs 此前 154 天", delta=pp("expense_rise")),
-        kpi("高承诺支出/收入 ≥30%", pv("commit_ge30"), "pct", "182 天 · 同一资质口径", delta=pp("commit_ge30")),
-    )
-    burn_values = [[S[k]["burn_bands"][s] for s in BURN_BANDS] for k in KEYS]
-    content += stack("近 28 天收支位置", BURN_BANDS, burn_values,
-                     [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS],
-                     ["#0e7490", "#1e40af", "#dc2626", "#94a3b8"])
-    content += ('<p class="table-note">近期比值是同一条申请内两个不重叠窗口的比较，不是逐月趋势；'
-                '一次性收入、窗口内新增账户和流水历史不足都会影响解释。'
-                f'支出上升 ≥20% 为 {pct_pair("expense_rise")}，'
-                f'固定账单/收入 ≥20% 为 {pct_pair("fixed_ge20")}。</p>')
-    parts.append(section("trend", "06 · 近期变化", "近期变化：Swap In 的收支缺口更常见",
-                         "近 28 天与此前 154 天的日均比较，以及刚性支出负担。", content))
-
-    # 07 风险标签
-    content = (f'<p class="lead">单项标签中差异最大的是<strong>现金贷/工资贷使用</strong>'
-               f'（{pct_pair("flags.flag_payday.0")}，{pp("flags.flag_payday.0")}）和'
-               f'<strong>无工资入账</strong>（{pct_pair("flags.flag_no_wage.0")}，{pp("flags.flag_no_wage.0")}）；'
-               f'与借贷相关的负债压力高、收入不稳定也更偏向 Swap Out。'
-               f'三项压力交集为 {pct_pair("joint")}（{pp("joint")}），方向与单项标签并不一致。</p>')
-    content += flag_table(S)
-    content += ('<p class="table-note">分母均为该组全部有流水申请。CI 为 95% Wilson 区间，'
-                '把当前 cohort 视为样本时的粗略不确定性参考；区间重叠的组间差仅作方向性参考。</p>')
-    for flag, title in (("flag_payday", "按收入形态分层：现金贷/工资贷使用"),
-                        ("flag_unresolved_dishonour", "按收入形态分层：未结清拒付")):
-        content += dumbbell(title, [
-            (grp, [cross[flag][grp][0][0], cross[flag][grp][1][0]],
-             f'组内有流水：IN {cross[flag][grp][0][1]} / OUT {cross[flag][grp][1][1]}')
-            for grp in CROSS_GROUPS], "各收入形态内分别比较 · 统一 0–100% 刻度")
-    content += (f'<div class="callout"><strong>收入形态标准化：</strong>'
-                f'未结清拒付原始差 {pp("flags.flag_unresolved_dishonour.0")}，'
-                f'按合并样本三类收入形态加权后为 {cross_std["flag_unresolved_dishonour"][0]:.1f}% / '
-                f'{cross_std["flag_unresolved_dishonour"][1]:.1f}%'
-                f'（差 {cross_std["flag_unresolved_dishonour"][1] - cross_std["flag_unresolved_dishonour"][0]:+.1f}pp）；'
-                f'现金贷/工资贷使用原始差 {pp("flags.flag_payday.0")}，标准化后为 '
-                f'{cross_std["flag_payday"][0]:.1f}% / {cross_std["flag_payday"][1]:.1f}%'
-                f'（差 {cross_std["flag_payday"][1] - cross_std["flag_payday"][0]:+.1f}pp）。'
-                '收入构成差异解释了部分拒付差，但解释不了现金贷使用差；'
-                '这是描述性标准化，不控制其他变量；福利依赖组 Swap Out 无样本，未纳入加权。</div>')
-    content += dumbbell("三项压力同时出现", [
-        ("现金贷/工资贷使用 × 未结清拒付 × 流动性缓冲不足",
-         pv("joint"),
-         f'交集计数：IN {S["swap_in"]["joint_n"]} / OUT {S["swap_out"]["joint_n"]}'),
-    ], "统一 0–100% 刻度")
-    content += (f'<p class="table-note">计入分群的风险标签数均值 {pct_pair("flag_count_mean", "two")}，'
-                f'3 个及以上为 {pct_pair("flag_count_ge3")}。标签密度与“高风险承压”分群高度重叠，'
-                '不作为独立证据。</p>')
-    parts.append(section("flags", "07 · 风险标签", "风险标签：债务型与收入可见性的分化",
-                         "单项标签、复合压力、标签密度与收入形态分层。", content))
-
-    # 08 结论
-    content = ('<p class="lead">综合各章节指标，两组差异可归纳为两类：'
-               '<strong>Swap Out 呈现为“借贷与拒付更重、工资更稳定”的债务型画像；'
-               'Swap In 呈现为“非工资收入更多、近期收支缺口更明显”的现金流型画像。</strong></p>')
+    # 02 置入原因
+    content = ('<p class="lead">数据中没有新模型的评分、特征重要度或拒绝原因，无法直接还原决策逻辑。'
+               '下面只能从置入组相对置出组的稳定差异，反推四个可能原因；'
+               '它们是<strong>画像假设</strong>，不是模型事实。</p>')
     content += cards([
-        ("Swap Out · 债务与拒付更集中",
-         f'现金贷/工资贷使用 {fmt(S["swap_out"]["flags"]["flag_payday"][0], "pct")}（{pp("flags.flag_payday.0")}）；'
-         f'高负债压力 {fmt(S["swap_out"]["flags"]["flag_high_debt"][0], "pct")}（{pp("flags.flag_high_debt.0")}）；'
-         f'放款笔数中位数 {fmt(S["swap_out"]["median"]["disburse_cnt"], "int")}；'
-         f'未结清拒付 {fmt(S["swap_out"]["flags"]["flag_unresolved_dishonour"][0], "pct")}。'),
-        ("Swap In · 收入可见性与近期缺口",
-         f'多源/非工资收入 {fmt(S["swap_in"]["archetypes"]["多源/非工资"], "pct")}（Swap Out 为 '
-         f'{fmt(S["swap_out"]["archetypes"]["多源/非工资"], "pct")}）；'
-         f'无工资入账 {fmt(S["swap_in"]["flags"]["flag_no_wage"][0], "pct")}；'
-         f'近 28 天支出 ≥ 收入 {fmt(S["swap_in"]["burn_bands"]["支出达到或超过收入"], "pct")}（{pp("burn_bands.支出达到或超过收入")}）；'
-         f'流动性缓冲不足 {fmt(S["swap_in"]["flags"]["flag_low_buffer"][0], "pct")}。'),
+        ("1. 非工资/多源收入被识别",
+         f'多源/非工资收入 {inout("archetypes.多源/非工资")}；'
+         f'工资占比 {inout("median.wage_share")}；'
+         f'无工资入账 {inout("flags.flag_no_wage.0")}。'
+         '模型可能更依赖交易流水识别收入，而不是工资标签。'),
+        ("2. 历史负债更轻",
+         f'有放款 {inout("disburse_rate")}；'
+         f'放款笔数中位 {inout("median.disburse_cnt", "int")}；'
+         f'放款金额中位 {inout("raw.db_disburse_sum", "money")}；'
+         f'现金贷/工资贷 {inout("flags.flag_payday.0")}；'
+         f'高负债 {inout("flags.flag_high_debt.0")}。'),
+        ("3. 拒付更轻",
+         f'未结清拒付 {inout("flags.flag_unresolved_dishonour.0")}；'
+         f'未结清笔数中位 {inout("median.unresolved_cnt", "int")}；'
+         f'金额中位 {inout("raw.unresolved_amt_p50", "money")}。'
+         '整体比例区间有重叠，但笔数和金额方向一致。'),
+        ("4. 用薄缓冲换低负债",
+         f'支出≥收入 {inout("burn_bands.支出达到或超过收入")}；'
+         f'低缓冲标签 {inout("flags.flag_low_buffer.0")}；'
+         f'负现金流 {inout("flags.flag_negative_cashflow.0")}。'
+         '这更像一次主动取舍：用更弱的工资可见性和更薄的缓冲，换更低的负债/拒付。'),
     ])
-    content += diffchart("风险标签差值排序：Swap Out − Swap In",
-                         [(label, vals) for label, vals, _ci, _gap in flag_gaps[:8]], 25,
-                         "按绝对差排序 · 统一 ±25pp")
+    content += (f'<div class="callout warn"><strong>排除几个直观但证据不足的解释：</strong>'
+                '收入规模接近（'
+                f'{pct_pair("raw.inc_global_sum", "k")}），不足以解释置换；'
+                f'交易活跃度也不更高（活跃天数中位 {pct_pair("median.active_days", "int")}）；'
+                f'健康分也不是更高（{pct_pair("health_median", "one")}）。'
+                '最可能的解释是：新模型把负债/拒付强度放在工资稳定性之前，'
+                '用“低负债 + 多源流水”换“工资可见性”。</div>')
+    parts.append(section("why_in", "02 · 置入原因", "为什么新模型可能让这批人进来",
+                         "从画像差异反推的四个可能驱动，不等于模型真实决策逻辑。", content))
+
+    # 03 置出画像
+    content = (f'<p class="lead">Swap Out 的画像与 Swap In 形成镜像：<strong>工资更稳定、现金流压力反而略低，'
+               '但历史借贷和拒付更重。</strong>'
+               f'工资收入中位数 {inout("raw.inc_wage_sum", "k")}，工资占比 {inout("median.wage_share")}，'
+               f'稳定工资形态占 {fmt(S["swap_out"]["archetypes"]["稳定工资"], "pct")}；'
+               f'但放款比例 {fmt(S["swap_out"]["disburse_rate"], "pct")}，'
+               f'现金贷/工资贷使用 {fmt(S["swap_out"]["flags"]["flag_payday"][0], "pct")}，'
+               f'未结清拒付 {fmt(S["swap_out"]["flags"]["flag_unresolved_dishonour"][0], "pct")}。</p>')
+    content += grid(
+        kpi("182 天工资收入中位数", pv("raw.inc_wage_sum"), "k", "原始金额特征"),
+        kpi("工资收入占比中位数", pv("median.wage_share"), "pct", "每条申请先算占比，再取中位数"),
+        kpi("稳定工资形态", [S[k]["archetypes"]["稳定工资"] for k in KEYS], "pct", "有流水申请"),
+        kpi("有放款记录", pv("disburse_rate"), "pct", "历史 182 天 · 有流水申请"),
+        kpi("放款笔数中位数", pv("median.disburse_cnt"), "int", "全部有流水申请，含 0"),
+        kpi("放款金额中位数", pv("raw.db_disburse_sum"), "money", "历史 182 天 · 原始金额特征"),
+        kpi("现金贷/工资贷使用", pv("flags.flag_payday.0"), "pct", "全部有流水申请"),
+        kpi("存在未结清拒付", pv("flags.flag_unresolved_dishonour.0"), "pct", "182 天窗口内识别"),
+    )
+    content += share_compare("借贷行为：置出组历史借得更重，但窗口内更多净偿还", LENDER_BEHAVIORS, lb_values,
+                             [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
+    content += share_compare("拒付恢复状态：置出组更多未解决/部分解决", DISHONOUR_STATUS, ds_values,
+                             [f'有流水申请 · n = {S[k]["obs"]:,}' for k in KEYS])
+    content += paired("收入与现金流：置出组并不更差", [
+        ("工资收入占比", pv("median.wage_share"), "每条申请先算占比，再取中位数"),
+        ("近 28 天支出 ≥ 收入", [S[k]["burn_bands"]["支出达到或超过收入"] for k in KEYS], "有流水申请"),
+        ("流动性缓冲不足", pv("flags.flag_low_buffer.0"), "负余额占比高或余额中位数为负"),
+    ], caption="统一 0–100% 刻度", kind="pct")
+    content += (f'<div class="callout"><strong>画像小结：</strong>置出组不是“现金流最差”的人——'
+                f'他们的支出≥收入比例（{fmt(S["swap_out"]["burn_bands"]["支出达到或超过收入"], "pct")}）'
+                f'和低缓冲标签（{fmt(S["swap_out"]["flags"]["flag_low_buffer"][0], "pct")}）都优于置入组；'
+                '真正把他们与置入组区分开的是更重的历史借贷和拒付。'
+                '工资更稳定，但没有抵消这两项。</div>')
+    parts.append(section("profile_out", "03 · 置出画像", "置出的人：工资更稳定，但借得更多、拒付更重",
+                         "Swap Out 的收入、负债、拒付与现金流特征。", content))
+
+    # 04 置出原因
+    content = ('<p class="lead">如果只看现金流，置出组并不比置入组差；真正拉开差距的是借贷与拒付。'
+               '以下同样是画像反推，不是模型事实。</p>')
+    content += cards([
+        ("1. 历史借贷更重",
+         f'有放款 {inout("disburse_rate")}；'
+         f'放款笔数中位 {inout("median.disburse_cnt", "int")}；'
+         f'金额中位 {inout("raw.db_disburse_sum", "money")}；'
+         f'现金贷/工资贷 {inout("flags.flag_payday.0")}；'
+         f'高负债 {inout("flags.flag_high_debt.0")}。'),
+        ("2. 拒付恢复更差",
+         f'未结清 {inout("flags.flag_unresolved_dishonour.0")}；'
+         f'未结清笔数中位 {inout("median.unresolved_cnt", "int")}；'
+         f'金额中位 {inout("raw.unresolved_amt_p50", "money")}；'
+         f'部分解决 {inout("dishonour_status.部分解决")}。'
+         '整体比例区间有重叠，但笔数、金额和恢复状态方向一致。'),
+        ("3. 高风险分群更集中",
+         f'高风险承压 {inout("segments.高风险承压")}（风险标签≥3）。'
+         f'但三项压力交集置出组反而更低（{inout("joint")}），'
+         '说明模型不是简单按复合标签排序。'),
+        ("4. 工资稳定没有抵消上述信号",
+         f'收入稳定性得分 {inout("dims.income", "one")}；'
+         f'健康分中位数 {inout("health_median", "one")}。'
+         '置出组靠收入维度把总分拉高；如果按现有健康分排序，置出组反而更高，'
+         '新模型可能用了不同权重或额外否决项。'),
+    ])
+    content += ('<div class="callout warn"><strong>最可能的解释：</strong>'
+                '新模型把“历史借贷强度 + 拒付恢复”当成更强的否决项；'
+                '工资稳定、现金流尚可，但不足以抵消这两项。'
+                '另一个不能排除的解释是策略/政策规则而非纯模型分数——仅凭画像无法区分。</div>')
+    parts.append(section("why_out", "04 · 置出原因", "为什么新模型可能把这批人换出",
+                         "从画像差异反推的可能原因，以及不能排除的替代解释。", content))
+
+    # 05 模型变量
+    content = ('<p class="lead">把两版模型的入模变量按重要度排在一起，训练重点的迁移比较清楚：'
+               '共同主线仍是负债与拒付，但旧模型更偏长期水平和生活结构，新模型更偏近期资金行为。</p>')
+    content += ('<div class="two-col">'
+                + model_list("旧模型 · 19 个变量", MODEL_VARS["old"], len(MODEL_VARS["old"]))
+                + model_list("新模型 · 18 个变量", MODEL_VARS["new"], len(MODEL_VARS["new"]))
+                + '</div>')
+    content += ('<div class="callout"><strong>共同主线：</strong>'
+                '两版模型的前两个变量都是“债务类交易占比 + 拒付类入账笔数”。'
+                '差异不在是否看负债/拒付，而在看多近、看多细：新模型把拒付窗口从 168 天缩到 56 天，'
+                '并加入非 SACC 贷款、BNPL 等更近期的负债信号，以及 MyPayNow 竞品放款使用。</div>')
+    model_rows = [
+        ("共同主线（Top 2）",
+         "债务类交易占比 #1；拒付类入账笔数 #2（168 天）",
+         "债务类交易占比 #1；拒付类入账笔数 #2（56 天）",
+         "都看负债/拒付；新模型更看近期"),
+        ("观察窗口",
+         "拒付 168 天；工资波动 6 个月；BNPL 平均还款 128 天；SACC 贷款借记额 182 天",
+         "拒付 56 天；工资波动 56 天；BNPL 最小还款 28 天；非 SACC 贷款借记笔数 28 天",
+         "从长期水平转向近期变化"),
+        ("变量重心",
+         "转账占比、保险笔数、福利金、公用事业、医疗、余额总额/熵",
+         "余额波动/尾部、内部/外部转账、工资消费率、MyPayNow、还款机构数",
+         "旧模型偏生活形态；新模型偏余额波动与资金行为"),
+        ("弱化/移除",
+         "保留更多生活形态与金额总量",
+         "不再使用福利金、公用事业、医疗、全局贷记笔数、放款/还款金额总量",
+         "减少“家庭画像/金额总量”，更看“钱怎么动”"),
+    ]
+    content += ('<table class="logic-table model-table"><thead><tr><th>对比维度</th><th>旧模型</th>'
+                '<th>新模型</th><th>读法</th></tr></thead><tbody>'
+                + "".join(f'<tr><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>'
+                          for a, b, c, d in model_rows)
+                + "</tbody></table>")
+    content += ('<div class="callout"><strong>与置换画像对照：</strong>'
+                '置出组工资更稳定，但近期借贷/拒付更重。新模型把拒付窗口缩短到 56 天，'
+                '并加入非 SACC 贷款、BNPL 等更近期的负债信号，以及 MyPayNow 竞品放款使用；'
+                '从变量选择上看，这与“置出组因近期债务/拒付被换出”相容。'
+                '置入组现金流更薄，但新模型加入余额波动/转账行为后，工资稳定性不再是唯一主轴；'
+                '这与其“低负债、多源收入”的画像相容。变量清单只能说明模型“能看什么”和相对重要度，不能证明方向。</div>')
+    old_items = "".join(f'<li>{esc(label)}<code>{esc(name)}</code></li>'
+                        for label, name in MODEL_VARS["old"])
+    new_items = "".join(f'<li>{esc(label)}<code>{esc(name)}</code></li>'
+                        for label, name in MODEL_VARS["new"])
+    content += ('<details class="details"><summary>完整入模变量清单（按重要度排序）</summary>'
+                '<div class="details-body"><p>变量名按原始清单展示；窗口和统计量保留在名称中。'
+                '部分窗口后缀（如 _l28d）需与实际字段名核对。</p>'
+                '<div class="two-col"><div class="var-list"><h4>旧模型 · 19 个</h4><ol>'
+                + old_items + '</ol></div><div class="var-list"><h4>新模型 · 18 个</h4><ol>'
+                + new_items + '</ol></div></div></div></details>')
+    parts.append(section("model_focus", "05 · 模型变量",
+                         "两版模型在看什么：旧模型偏长期水平与生活结构，新模型偏近期资金行为",
+                         "按给定重要度顺序对照；变量清单说明模型“能看什么”，不等于方向或因果。",
+                         content))
+
+    # 06 交换逻辑
+    content = ('<p class="lead">把两边放在一起，置换不是“好客户 vs 坏客户”，而是一次<strong>风险类型交换</strong>：'
+               '用工资稳定性换更低的负债/拒付，同时承担更高的现金流波动。</p>')
+    dim_pairs = [(DIM_LABELS[d], [S[k]["dims"][d] for k in KEYS], "") for d in DIM_LABELS]
+    content += paired("五维评分中位数：置出组收入更高，置入组负债得分更高", dim_pairs,
+                      "合并样本统一断点 · 0–100 分，越高越好；负债压力维度得分越高表示压力越低",
+                      kind="score",
+                      note="IN = Swap In（圆点）；OUT = Swap Out（方点）。差值 = Swap Out − Swap In，单位：分。")
+    logic_rows = [
+        ("收入形态",
+         f'多源/非工资 {fmt(S["swap_in"]["archetypes"]["多源/非工资"], "pct")}；'
+         f'工资占比 {fmt(S["swap_in"]["median"]["wage_share"], "pct")}',
+         f'多源/非工资 {fmt(S["swap_out"]["archetypes"]["多源/非工资"], "pct")}；'
+         f'工资占比 {fmt(S["swap_out"]["median"]["wage_share"], "pct")}',
+         "置入更依赖非工资流水"),
+        ("负债强度",
+         f'放款 {fmt(S["swap_in"]["disburse_rate"], "pct")}；'
+         f'{fmt(S["swap_in"]["median"]["disburse_cnt"], "int")} 笔；'
+         f'{fmt(S["swap_in"]["raw"]["db_disburse_sum"], "money")}；'
+         f'现金贷 {fmt(S["swap_in"]["flags"]["flag_payday"][0], "pct")}',
+         f'放款 {fmt(S["swap_out"]["disburse_rate"], "pct")}；'
+         f'{fmt(S["swap_out"]["median"]["disburse_cnt"], "int")} 笔；'
+         f'{fmt(S["swap_out"]["raw"]["db_disburse_sum"], "money")}；'
+         f'现金贷 {fmt(S["swap_out"]["flags"]["flag_payday"][0], "pct")}',
+         "置出借得更多"),
+        ("拒付",
+         f'未结清 {fmt(S["swap_in"]["flags"]["flag_unresolved_dishonour"][0], "pct")}；'
+         f'{fmt(S["swap_in"]["median"]["unresolved_cnt"], "int")} 笔；'
+         f'{fmt(S["swap_in"]["raw"]["unresolved_amt_p50"], "money")}',
+         f'未结清 {fmt(S["swap_out"]["flags"]["flag_unresolved_dishonour"][0], "pct")}；'
+         f'{fmt(S["swap_out"]["median"]["unresolved_cnt"], "int")} 笔；'
+         f'{fmt(S["swap_out"]["raw"]["unresolved_amt_p50"], "money")}',
+         "置出拒付更重"),
+        ("现金流",
+         f'支出≥收入 {fmt(S["swap_in"]["burn_bands"]["支出达到或超过收入"], "pct")}；'
+         f'负现金流 {fmt(S["swap_in"]["flags"]["flag_negative_cashflow"][0], "pct")}',
+         f'支出≥收入 {fmt(S["swap_out"]["burn_bands"]["支出达到或超过收入"], "pct")}；'
+         f'负现金流 {fmt(S["swap_out"]["flags"]["flag_negative_cashflow"][0], "pct")}',
+         "置入现金流更紧"),
+        ("流动性",
+         f'低缓冲 {fmt(S["swap_in"]["flags"]["flag_low_buffer"][0], "pct")}；'
+         f'余额 {fmt(S["swap_in"]["median"]["balance"], "money")}',
+         f'低缓冲 {fmt(S["swap_out"]["flags"]["flag_low_buffer"][0], "pct")}；'
+         f'余额 {fmt(S["swap_out"]["median"]["balance"], "money")}',
+         "置入缓冲更薄"),
+        ("分群与健康分",
+         f'高风险 {fmt(S["swap_in"]["segments"]["高风险承压"], "pct")}；'
+         f'健康分 {fmt(S["swap_in"]["health_median"], "one")}',
+         f'高风险 {fmt(S["swap_out"]["segments"]["高风险承压"], "pct")}；'
+         f'健康分 {fmt(S["swap_out"]["health_median"], "one")}',
+         "置出健康分反而更高"),
+    ]
+    content += ('<table class="logic-table"><thead><tr><th>维度</th><th>Swap In · 置入</th>'
+                '<th>Swap Out · 置出</th><th>交换方向</th></tr></thead><tbody>'
+                + "".join(f'<tr><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>'
+                          for a, b, c, d in logic_rows)
+                + "</tbody></table>")
+    content += paired("风险标签差值排序：Swap Out − Swap In",
+                      [(label, vals, "") for label, vals, _ci, _gap in flag_gaps[:8]],
+                      caption="按绝对差排序 · 统一 0–100% 刻度", kind="pct",
+                      note="按两组发生率的绝对差排序；圆点为 Swap In，方点为 Swap Out，右侧为 Swap Out − Swap In。")
+    content += (f'<p class="table-note">收入形态标准化：未结清拒付原始差 '
+                f'{pp("flags.flag_unresolved_dishonour.0")}，按合并样本三类收入形态加权后差 '
+                f'{cross_std["flag_unresolved_dishonour"][1] - cross_std["flag_unresolved_dishonour"][0]:+.1f}pp；'
+                f'现金贷/工资贷原始差 {pp("flags.flag_payday.0")}，标准化后仍 '
+                f'{cross_std["flag_payday"][1] - cross_std["flag_payday"][0]:+.1f}pp。'
+                '收入结构解释了一部分拒付差，但解释不了借贷差。</p>')
+    content += ('<div class="callout"><strong>关键结论：</strong>'
+                '新模型的置换边界与现有健康分不完全一致。'
+                '它更像是在以“负债与拒付”为主要区分轴，而不是按综合健康分排序；'
+                '代价是置入组的现金流更脆弱。</div>')
+    content += cards([
+        ("如果目标是降低坏账",
+         '需要验证低负债/低拒付能否抵消薄缓冲带来的逾期风险；'
+         '重点跟踪 Swap In 的现金流断裂与小额拒付滚动。'),
+        ("如果目标是扩大覆盖",
+         '置入组确实覆盖了传统工资模型不容易识别的非工资/多源收入人群；'
+         '价值在覆盖，而不是风险更低。'),
+    ])
+    parts.append(section("logic", "06 · 交换逻辑", "模型在用什么换什么",
+                         "把两边放在一起看：这不是“好客户 vs 坏客户”，而是一次风险类型交换。", content))
+
+    # 07 结论
+    content = ('<p class="lead">一句话总结：新模型置入的是<strong>“负债更轻、工资更不可见、现金流更紧”</strong>的人；'
+               '置出的是<strong>“工资更稳定、但借贷与拒付更重”</strong>的人。</p>')
+    content += cards([
+        ("置入侧 · 为什么可能进",
+         f'多源/非工资 {fmt(S["swap_in"]["archetypes"]["多源/非工资"], "pct")}；'
+         f'负债轻（放款 {fmt(S["swap_in"]["disburse_rate"], "pct")}、'
+         f'现金贷 {fmt(S["swap_in"]["flags"]["flag_payday"][0], "pct")}）；'
+         f'拒付轻（{fmt(S["swap_in"]["flags"]["flag_unresolved_dishonour"][0], "pct")}）；'
+         f'代价是现金流薄（支出≥收入 {fmt(S["swap_in"]["burn_bands"]["支出达到或超过收入"], "pct")}、'
+         f'低缓冲 {fmt(S["swap_in"]["flags"]["flag_low_buffer"][0], "pct")}）。'),
+        ("置出侧 · 为什么可能出",
+         f'工资更稳定（工资占比 {fmt(S["swap_out"]["median"]["wage_share"], "pct")}）；'
+         f'但借贷重（放款 {fmt(S["swap_out"]["disburse_rate"], "pct")}、'
+         f'{fmt(S["swap_out"]["median"]["disburse_cnt"], "int")} 笔、'
+         f'{fmt(S["swap_out"]["raw"]["db_disburse_sum"], "money")}）；'
+         f'拒付重（{fmt(S["swap_out"]["flags"]["flag_unresolved_dishonour"][0], "pct")}、'
+         f'{fmt(S["swap_out"]["median"]["unresolved_cnt"], "int")} 笔、'
+         f'{fmt(S["swap_out"]["raw"]["unresolved_amt_p50"], "money")}）。'),
+    ])
+    content += cards([
+        ("验证模型原因",
+         '两版入模变量已核对：新模型更偏近期余额/转账/负债行为；'
+         '下一步拉取模型评分、SHAP/特征重要度与拒绝原因码，核对方向与强度。'),
+        ("验证置换效果",
+         '等 duedate_1m_5 等表现标签成熟，比较 Swap In / Swap Out 的逾期与还款；'
+         '当前标签仅 83/641 与 31/139 有值，阳性 11/5，不能做结果对比。'),
+        ("验证策略属性",
+         '确认置出是否包含政策、名单或人工规则；仅凭画像无法区分“模型分数”与“策略规则”。'),
+    ])
     content += ('<div class="callout warn"><strong>结论适用边界：</strong>'
                 '（1）两组按置换结果划分，不是随机实验，差异不能归因于置换动作本身；'
                 '（2）Swap Out 仅 139 条，拒付、流动性、近期缺口等指标区间重叠；'
                 '（3）健康分是合并样本内的相对分数，不等同于违约概率；'
-                '（4）逾期标签仍不成熟：Swap In 仅 83/641、Swap Out 仅 31/139 有 duedate_1m_5，'
-                '阳性分别 11 与 5，不能做结果对比。'
+                '（4）画像差异只能支持“可能原因”，不能证明模型真实决策逻辑。'
                 '</div>')
     content += ('<details class="details"><summary>数据来源与口径</summary><div class="details-body">'
                 '<p>输入：existing_swap_in_v1_2_with_feature_all.csv、existing_swap_out_v1_2_with_feature_all.csv；'
@@ -802,18 +1055,18 @@ def main() -> int:
                 '<p>两组 sample_datetime 覆盖 2026-09-14 至 2026-10-13，均为 Old 用户；'
                 'Swap Out 的 139 条申请来自 138 个 user_id，另 1 人为 2 条申请。</p>'
                 '</div></details>')
-    parts.append(section("summary", "08 · 结论", "核心差异与结论",
-                         "两组客群的主要差异、可解释范围与后续验证方向。", content))
+    parts.append(section("conclusion", "07 · 结论与边界", "结论：置入了谁，为什么；置出了谁，为什么",
+                         "一页总结，以及需要后续验证的边界。", content))
 
     footer = ('<footer class="footer"><div class="wrap footer-inner">'
-              f'<span>Swap In × Swap Out 客群画像对比 · 合并统一评分</span>'
+              f'<span>Swap In × Swap Out 置换画像 · 合并统一评分</span>'
               f'<span>样本 780 条 · 生成 {pd.Timestamp.now():%Y-%m-%d %H:%M} · '
               '<a href="#basis">数据与口径</a></span></div></footer>')
 
     output = ('<!DOCTYPE html>\n<html lang="zh-CN"><head><meta charset="utf-8">'
               '<meta name="viewport" content="width=device-width, initial-scale=1">'
-              '<meta name="description" content="Swap In 与 Swap Out 存量客群画像对比：收入、负债、拒付、流动性与风险标签。">'
-              f'<title>Swap In × Swap Out 客群画像对比</title><style>{css}</style></head>'
+              '<meta name="description" content="新模型置入了谁、置出了谁：Swap In / Swap Out 的画像、可能原因与交换逻辑。">'
+              f'<title>新模型置入了谁，又置出了谁 · Swap In × Swap Out</title><style>{css}</style></head>'
               f'<body>{header}{nav}<main>{"".join(parts)}</main>{footer}</body></html>\n')
     REPORT.write_text(output, encoding="utf-8")
     print(f"report: {REPORT} ({REPORT.stat().st_size / 1024:,.0f} KB)")
