@@ -1072,7 +1072,7 @@ h1 { font-size: 30px; line-height: 1.25; margin: 8px 0 6px; letter-spacing: -.02
 }
 .chip b { color: var(--ink); font-weight: 650; }
 .kpi-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
 }
 .kpi {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -1092,6 +1092,8 @@ h2 .num {
   background: var(--ink); color: #fff; font-size: 12px; font-weight: 650;
 }
 .lede { color: var(--ink2); margin: 0 0 14px; font-size: 13.5px; }
+.goal { color: var(--muted); font-size: 12.5px; margin: -1px 0 10px; }
+.goal b { color: var(--ink2); font-weight: 600; }
 h3 {
   font-size: 13px; font-weight: 650; color: var(--ink);
   margin: 18px 0 4px; padding-left: 9px; border-left: 3px solid var(--blue);
@@ -1209,9 +1211,10 @@ def build_html(
         f"<b>收支缺口是常态，支出端为主、偿债进一步扩大缺口。</b> {fmt_pct(m['pre_debt_neg'])} 的用户在偿债前已收不抵支，计入还本付息后升至 {fmt_pct(m['sur_neg'])}，中位月盈余 {fmt_money(m['sur_p50'])}。重压型收入中位 {fmt_money(seg_val('重压型', 'inc_m'))}，高于平衡型的 {fmt_money(seg_val('平衡型', 'inc_m'))}，缺口并非单纯收入不足。",
         f"<b>工资覆盖广，但入账金额高度依赖其他来源。</b> {fmt_pct(m['wage_incidence'])} 有工资收入，工资中位 {fmt_money(m['wage_median_m'])}/月，但工资仅占入账金额 {fmt_pct(m['wage_share_agg'])}，“其他入账”占 {fmt_pct(m['other_share_agg'])}。总入账 CV 中位 {num(m['income_cv_p50'])}，收入来源数中位 {num(m['income_source_p50'], 0)} 个；{fmt_pct(m['wage_3m6m_decline'])} 的用户近 3 月工资较近 6 月下降超 10%。",
         f"<b>流动性缓冲接近于零。</b> 中位账户余额仅 {fmt_money(m['bal_p50'])}，只能覆盖 {m['buffer_p50']:.1f} 天支出；{fmt_pct(m['buffer_lt7'])} 的用户缓冲不足 7 天，小额意外支出即可直接转为透支。",
-        f"<b>支出刚性高，风险类支出渗透广。</b> 外部转账占全部支出 {fmt_pct(m['ext_share_agg'])}，债务相关支出占 {fmt_pct(m['debt_share_p50'])}，高承诺支出占收入中位 {fmt_pct(m['high_commit_share_p50'])}；可识别消费中位仅占总支出 {fmt_pct(m['cons_share_exp_p50'])}。同时，{fmt_pct(m['gamb_incidence'])} 有赌博交易、占可识别消费 {fmt_pct(m['gamb_share_cons'])}，手续费/透支类交易发生率达 {fmt_pct(m['fees_ticket_incidence'])}。",
+        f"<b>支出刚性强，可压缩空间有限。</b> 外部转账占全部支出 {fmt_pct(m['ext_share_agg'])}，债务相关支出占 {fmt_pct(m['debt_share_p50'])}，高承诺支出占收入中位 {fmt_pct(m['high_commit_share_p50'])}；可识别消费中位仅占总支出 {fmt_pct(m['cons_share_exp_p50'])}，支出端可压缩余地不大。",
         f"<b>借贷以短期现金贷为主，借款扩张快于还款。</b> 放款金额结构为 {m['product_mix_text'] or '—'}；近 1 月/近 3 月新增借款比中位 {num(m['draw_trend_p50'])}，高于还款比的 {num(m['rep_trend_p50'])}，{fmt_pct(m['net_borrow_share'])} 为净借款人，债务滚动特征明显。",
         f"<b>拒付处置能力弱，风险可能继续累积。</b> {fmt_pct(m['dish_unres'])} 的用户存在未解决拒付，未解决金额合计 {fmt_money(m['dish_unres_amt_total'], compact=True)}，解决率仅 {fmt_pct(m['dish_resolution_rate'])}；未解决机构数中位 {num(m['dish_institution_p50'], 0)} 家，处置渠道集中但进展有限。",
+        f"<b>赌博与手续费渗透广，行为风险不可忽视。</b> {fmt_pct(m['gamb_incidence'])} 有赌博交易，占可识别消费 {fmt_pct(m['gamb_share_cons'])}，P99 单笔达 {fmt_money(m['gamb_p99'])}；{fmt_pct(m['fees_incidence'])} 有手续费支出，手续费/透支类交易发生率达 {fmt_pct(m['fees_ticket_incidence'])}。",
         f"<b>人群分化明显，尾部压力集中。</b> 重压型占 {fmt_pct(seg_val('重压型', 'share'))}，月支出中位 {fmt_money(seg_val('重压型', 'exp_m'))} 高于收入 {fmt_money(seg_val('重压型', 'inc_m'))}，现金贷使用率 {fmt_pct(seg_val('重压型', 'adv_use'))}、拒付率 {fmt_pct(seg_val('重压型', 'dishon'))}；盈余型仅占 {fmt_pct(seg_val('盈余型', 'share'))}，整体均值掩盖了尾部风险。",
     ]
 
@@ -1231,6 +1234,7 @@ def build_html(
         ("余额不足 7 天支出", fmt_pct(m["buffer_lt7"]), f"中位 {m['buffer_p50']:.1f} 天"),
         ("有借贷放款", fmt_pct(m["any_disburse"]), f"净借款人 {fmt_pct(m['net_borrow_share'])}"),
         ("有拒付记录", fmt_pct(m["dish_any"]), f"未解决金额 {fmt_money(m['dish_unres_amt_total'], compact=True)}"),
+        ("有赌博交易", fmt_pct(m["gamb_incidence"]), f"占可识别消费 {fmt_pct(m['gamb_share_cons'])} · 手续费/透支 {fmt_pct(m['fees_ticket_incidence'])}"),
     ]
     kpi_html = "".join(
         f'<div class="kpi"><div class="label">{label}</div><div class="value">{value}</div><div class="sub">{sub}</div></div>'
@@ -1261,7 +1265,8 @@ def build_html(
   <div class="kpi-grid">{kpi_html}</div>
 
   <section class="section">
-    <h2><span class="num">1</span>收入画像</h2>
+    <h2><span class="num">1</span>收入与就业</h2>
+    <p class="goal"><b>分析目标</b>：判断还款来源是否充足、稳定、可持续。</p>
     <p class="lede">工资覆盖面广，但入账金额主要由“其他入账”贡献；整体入账波动大、来源分散，工资趋势总体平稳，就业信息可识别度有限。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['income']}" alt="收入来源与收入形态"></div>
     <h3>收入水平与来源</h3>
@@ -1289,26 +1294,24 @@ def build_html(
   </section>
 
   <section class="section">
-    <h2><span class="num">2</span>支出结构</h2>
-    <p class="lede">支出以高频、小额交易为主，但真正占用资金的是转账与还贷等资金流动；可识别消费占比有限、类目分散，固定负担与风险类支出需单独关注。</p>
+    <h2><span class="num">2</span>支出与消费</h2>
+    <p class="goal"><b>分析目标</b>：判断资金流向、消费刚性与可压缩空间。</p>
+    <p class="lede">支出中真正占用资金的是转账与刚性负担，可识别消费占比有限、类目分散，支出端可压缩空间有限。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['consumption']}" alt="可识别消费结构"></div>
     <h3>支出规模与形态</h3>
     <ul class="notes">
-      <li>月支出中位 <b>{fmt_money(m['exp_p50'])}</b>，月交易笔数中位 <b>{m['median_txn_pm']:.0f}</b> 笔；单笔中位 <b>{fmt_money(m['exp_ticket_p50'])}</b>，单笔金额 CV 中位 <b>{num(m['exp_cv_p50'])}</b>。</li>
+      <li>月支出中位 <b>{fmt_money(m['exp_p50'])}</b>，单笔中位 <b>{fmt_money(m['exp_ticket_p50'])}</b>，单笔金额 CV 中位 <b>{num(m['exp_cv_p50'])}</b>，支出呈小额、高波动特征。</li>
       <li>可识别消费中位 <b>{fmt_money(m['cons_p50'])}/月</b>，用户层面中位占总支出 <b>{fmt_pct(m['cons_share_exp_p50'])}</b>；外部转账占全部支出 <b>{fmt_pct(m['ext_share_agg'])}</b>（用户层面中位 {fmt_pct(m['ext_share_p50'])}），是资金流出的主要通道。</li>
       <li>支出趋势：近 1 月/近 3 月中位 <b>{num(m['exp_trend_1m3m_p50'])}</b>、近 3 月/近 6 月 <b>{num(m['exp_trend_3m6m_p50'])}</b>，<b>{fmt_pct(m['exp_trend_up'])}</b> 近 1 月支出较近 3 月上升超 10%。</li>
     </ul>
-    <h3>消费结构与节奏</h3>
+    <h3>消费结构与集中度</h3>
     <ul class="notes">
       <li>主要消费类目：{top5_text}。</li>
       <li>必需品（超市/公用/房租/交通/医疗）占可识别消费 <b>{fmt_pct(m['ess_share_cons'])}</b>，可选消费占 <b>{fmt_pct(m['dis_share_cons'])}</b>；前 3 类占 <b>{fmt_pct(m['cat_top3_p50'])}</b>（HHI {num(m['cat_hhi_p50'])}），集中度中等。</li>
-      <li>周末消费占比中位 <b>{fmt_pct(m['weekend_share_p50'])}</b>，交易间隔 P90 中位 <b>{num(m['txn_gap_p90_p50'], 0)} 天</b>，交易频率较高。</li>
     </ul>
-    <h3>固定负担与风险支出</h3>
+    <h3>刚性支出与固定负担</h3>
     <ul class="notes">
-      <li>债务相关支出占 <b>{fmt_pct(m['debt_share_p50'])}</b>，<b>{fmt_pct(m['collections_inc'])}</b> 有催收/坏账类交易，<b>{fmt_pct(m['debt_consolidation_inc'])}</b> 有债务整合；高承诺支出占收入中位 <b>{fmt_pct(m['high_commit_share_p50'])}</b>。</li>
-      <li>最大单笔支出中位 <b>{fmt_money(m['large_expense_p50'])}</b>、P90 <b>{fmt_money(m['large_expense_p90'])}</b>；日常消费最大单笔中位 <b>{fmt_money(m['daily_living_p50'])}</b>。</li>
-      <li>赌博：<b>{fmt_pct(m['gamb_incidence'])}</b> 有交易，有记录用户 6 个月中位支出 <b>{fmt_money(m['gamb_median_pos'])}</b>，单笔中位 <b>{fmt_money(m['gamb_ticket_p50'])}</b>，P99 <b>{fmt_money(m['gamb_p99'])}</b>。手续费：<b>{fmt_pct(m['fees_incidence'])}</b> 有支出，有支出用户中位 <b>{fmt_money(m['fees_median_pos'])}</b>；手续费/透支类交易发生率 <b>{fmt_pct(m['fees_ticket_incidence'])}</b>，单笔中位 <b>{fmt_money(m['fees_ticket_p50'])}</b>。</li>
+      <li>债务相关支出占 <b>{fmt_pct(m['debt_share_p50'])}</b>，高承诺支出占收入中位 <b>{fmt_pct(m['high_commit_share_p50'])}</b>；固定负担绝对水平不高，但叠加转账后压缩了可识别消费空间。</li>
     </ul>
     <details>
       <summary>查看图表数据（全部消费类别）</summary>
@@ -1318,11 +1321,12 @@ def build_html(
   </section>
 
   <section class="section">
-    <h2><span class="num">3</span>负债与借贷</h2>
+    <h2><span class="num">3</span>负债与信用履约</h2>
+    <p class="goal"><b>分析目标</b>：判断借贷依赖、偿债压力、债务滚动与违约处置。</p>
     <p class="lede">借贷使用面广，短期现金贷是主要资金来源；新增借款增速高于还款，债务滚动特征明显。拒付规模大、解决率低，是负债端最突出的风险点。</p>
-    <h3>借贷使用与规模</h3>
+    <h3>借贷使用与产品结构</h3>
     <ul class="notes">
-      <li>有放款 <b>{fmt_pct(m['any_disburse'])}</b>、有还款 <b>{fmt_pct(m['any_repay'])}</b>；放款笔数中位 <b>{num(m['disb_count_p50'], 0)} 笔</b>、还款笔数中位 <b>{num(m['repay_count_p50'], 0)} 笔</b>，平均单笔 <b>{fmt_money(m['disb_ticket_p50'])}</b>、最大单笔中位 <b>{fmt_money(m['disb_max_p50'])}</b>，涉及 <b>{num(m['lender_cnt_p50'], 0)} 家</b> lender。</li>
+      <li>有放款 <b>{fmt_pct(m['any_disburse'])}</b>、有还款 <b>{fmt_pct(m['any_repay'])}</b>；放款笔数中位 <b>{num(m['disb_count_p50'], 0)} 笔</b>、还款笔数中位 <b>{num(m['repay_count_p50'], 0)} 笔</b>，平均单笔 <b>{fmt_money(m['disb_ticket_p50'])}</b>、最大单笔中位 <b>{fmt_money(m['disb_max_p50'])}</b>，涉及 <b>{num(m['lender_cnt_p50'], 0)} 家</b> 放款机构。</li>
     </ul>
     <div class="table-card">
       {html_table(["借贷产品", "使用率", "放款金额占比", "有拒付用户占比"], liability_rows)}
@@ -1333,15 +1337,17 @@ def build_html(
       <li>月还款中位 <b>{fmt_money(m['rep_m_p50'])}</b>，偿债/收入中位 <b>{fmt_pct(m['rep_rate_p50'])}</b>、P90 <b>{fmt_pct(m['rep_rate_p90'])}</b>。</li>
       <li>月新增借款中位 <b>{fmt_money(m['draw_m_p50'])}</b>，近 1 月/近 3 月借款比中位 <b>{num(m['draw_trend_p50'])}</b>，高于还款比的 <b>{num(m['rep_trend_p50'])}</b>；<b>{fmt_pct(m['net_borrow_share'])}</b> 为净借款人。</li>
     </ul>
-    <h3>拒付与处置</h3>
+    <h3>信用履约与债务处置</h3>
     <ul class="notes">
       <li><b>{fmt_pct(m['dish_any'])}</b> 有拒付记录，<b>{fmt_pct(m['dish_unres'])}</b> 未解决；已解决 <b>{m['dish_resolved_cnt_total']:,.0f}</b> 笔、未解决 <b>{m['dish_unresolved_cnt_total']:,.0f}</b> 笔，解决率 <b>{fmt_pct(m['dish_resolution_rate'])}</b>，追补发生率 <b>{fmt_pct(m['dish_catchup_inc'])}</b>。</li>
       <li>已解决金额 <b>{fmt_money(m['dish_resolved_amt_total'], compact=True)}</b>、未解决金额 <b>{fmt_money(m['dish_unres_amt_total'], compact=True)}</b>；未解决拒付涉及机构数中位 <b>{num(m['dish_institution_p50'], 0)} 家</b>，处置渠道集中但进展有限。</li>
+      <li><b>{fmt_pct(m['collections_inc'])}</b> 有催收/坏账类交易，<b>{fmt_pct(m['debt_consolidation_inc'])}</b> 有债务整合，债务处置已从拒付延伸到催收与整合环节。</li>
     </ul>
   </section>
 
   <section class="section">
-    <h2><span class="num">4</span>资金结余</h2>
+    <h2><span class="num">4</span>现金流与流动性</h2>
+    <p class="goal"><b>分析目标</b>：判断收支是否平衡、账户能否缓冲冲击。</p>
     <p class="lede">偿债前已有大量用户收不抵支，计入还本付息后缺口进一步扩大；盈余边际略有改善，但账户缓冲极薄，收入中断或意外支出都可能直接转为透支。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['health']}" alt="月度盈余与账户余额分布"></div>
     <h3>收支结余</h3>
@@ -1364,7 +1370,26 @@ def build_html(
   </section>
 
   <section class="section">
-    <h2><span class="num">5</span>用户分层</h2>
+    <h2><span class="num">5</span>交易行为与风险信号</h2>
+    <p class="goal"><b>分析目标</b>：识别交易节奏、异常交易与高风险行为。</p>
+    <p class="lede">交易频率高、节奏集中，大额支出与赌博、手续费/透支等行为构成传统收支指标之外的风险信号。</p>
+    <h3>交易节奏</h3>
+    <ul class="notes">
+      <li>月交易笔数中位 <b>{m['median_txn_pm']:.0f}</b> 笔；周末消费占比中位 <b>{fmt_pct(m['weekend_share_p50'])}</b>，交易间隔 P90 中位 <b>{num(m['txn_gap_p90_p50'], 0)} 天</b>，交易频率较高。</li>
+    </ul>
+    <h3>异常与大额交易</h3>
+    <ul class="notes">
+      <li>最大单笔支出中位 <b>{fmt_money(m['large_expense_p50'])}</b>、P90 <b>{fmt_money(m['large_expense_p90'])}</b>；日常消费最大单笔中位 <b>{fmt_money(m['daily_living_p50'])}</b>，大额支出对月度现金流的扰动不容忽视。</li>
+    </ul>
+    <h3>高风险行为</h3>
+    <ul class="notes">
+      <li>赌博：<b>{fmt_pct(m['gamb_incidence'])}</b> 有交易，占可识别消费 <b>{fmt_pct(m['gamb_share_cons'])}</b>；有记录用户 6 个月中位支出 <b>{fmt_money(m['gamb_median_pos'])}</b>，单笔中位 <b>{fmt_money(m['gamb_ticket_p50'])}</b>，P99 <b>{fmt_money(m['gamb_p99'])}</b>。</li>
+      <li>手续费/透支：<b>{fmt_pct(m['fees_incidence'])}</b> 有手续费支出，有支出用户中位 <b>{fmt_money(m['fees_median_pos'])}</b>；手续费/透支类交易发生率 <b>{fmt_pct(m['fees_ticket_incidence'])}</b>，单笔中位 <b>{fmt_money(m['fees_ticket_p50'])}</b>。</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">6</span>用户分层</h2>
     <p class="lede">按偿债后盈余率分为四层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 &lt;-20%。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['segments']}" alt="用户分层构成"></div>
     <div class="table-card">
@@ -1378,7 +1403,7 @@ def build_html(
   </section>
 
   <section class="section">
-    <h2><span class="num">6</span>主要发现</h2>
+    <h2><span class="num">7</span>主要发现</h2>
     <div class="findings">
       {''.join(f'<div class="finding"><div class="n">{i+1:02d}</div><p>{text}</p></div>' for i, text in enumerate(findings))}
     </div>
@@ -1387,7 +1412,7 @@ def build_html(
   <div class="footer">
     <p><b>口径说明</b>：样本为 {html.escape(str(m['sample_month']))} 的{html.escape(str(m['user_type_label']))}样本；同一 user_id 保留交易笔数最多的申请。有效样本要求 txn_raw_input_cnt &gt; 0，且收入/支出/盈余非缺失、收入 &gt; 0，共 {m['n_valid']:,} 人（{fmt_pct(m['coverage'])}）。观察窗口 {WINDOW_DAYS} 天，月度指标按 6 个月折算。</p>
     <p><b>缺失处理</b>：金额类字段的 −999,999.99999 与 lender 类字段的 −1 视为缺失；未做插补。无有效流水用户（{m['n_no_data']:,} 人）未纳入画像指标。</p>
-    <p><b>指标定义</b>：盈余 = 收入 − 支出 − 还本付息 − 拒付费 + 新增借款；可识别消费 = {len(CONSUMPTION_CATS)} 个消费类目的 debit 金额之和；拒付率 = 拒付笔数 /（拒付笔数 + 还款笔数），解决率 = 已解决笔数 /（已解决 + 未解决）；CV = 交易级金额变异系数；HHI = 各消费类目份额平方和；高承诺支出 = 房租/保险/教育/医疗/健身类支出加总。分位数均为各自分布独立计算，不可直接相减。</p>
+    <p><b>指标定义</b>：盈余 = 收入 − 支出 − 还本付息 − 拒付费 + 新增借款；可识别消费 = {len(CONSUMPTION_CATS)} 个消费类目的 debit 金额之和；拒付率 = 拒付笔数 /（拒付笔数 + 还款笔数），解决率 = 已解决笔数 /（已解决 + 未解决）；CV = 交易级金额变异系数；HHI = 各消费类目份额平方和；高承诺支出 = 房租/保险/教育/医疗/健身类支出加总；赌博占比 = 赌博类支出 / 可识别消费；手续费/透支类交易发生率 = 有该类交易的用户占比；催收/债务整合 = 有对应类目交易的用户占比。分位数均为各自分布独立计算，不可直接相减。</p>
     <p><b>数据源</b>：fundo_sample_with_feature_all.csv（共 {n_fields:,} 个字段，本次加载 {len(ALL_COLUMNS) - len(missing)} 个）；每类指标只保留 182d / l182d 主窗口，趋势使用 1m_vs_3m 与 3m_vs_6m 比率，未加载 7/14/28/56/84/168d 等重复窗口。变量口径来自 txn_tool。{missing_note}</p>
     <p>本报告为描述性画像，不构成信用评估结论。生成时间：{html.escape(generated_at)}</p>
   </div>
