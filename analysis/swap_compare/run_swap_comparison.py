@@ -85,50 +85,6 @@ RAW_COLS = {
     "inc_wage_share": "bank_txn_worthiness_wage_income_amt_share_in_income_tag_182d",
     "db_dishonour_ratio": "bank_txn_dishonour_lender_ratio_182d",
 }
-# 两版入模变量按给定重要度从高到低排列；(中文标签, 原始变量名)
-MODEL_VARS = {
-    "old": [
-        ("债务类交易占比（168 天）", "bank_txn_category_cluster_debt_share_168d"),
-        ("拒付类入账笔数（168 天）", "bank_txn_category_dishonours_credit_cnt_168d"),
-        ("转账类交易占比（28 天）", "bank_txn_category_cluster_transfers_share_28d"),
-        ("最大现金贷/工资贷放款额", "bank_txn_lender_disburse_advance_amount_max"),
-        ("余额贷记总额（182 天）", "bank_txn_balance_credit_sum_182d"),
-        ("保险类借记笔数（56 天）", "bank_txn_category_insurance_debit_cnt_56d"),
-        ("全部贷记笔数（14 天）", "bank_txn_category_global_credit_cnt_14d"),
-        ("福利金（Centrelink）平均交易额（84 天）", "bank_txn_category_centrelink_avg_ticket_84d"),
-        ("余额最大降幅（84 天）", "bank_txn_balance_rate_dec_max_84d"),
-        ("风险义务类交易占比（182 天）", "bank_txn_category_cluster_risk_obligations_share_182d"),
-        ("余额贷记分布熵（182 天）", "bank_txn_balance_credit_entropy_182d"),
-        ("工资收入变异系数（过去 6 个月）", "bank_txn_income_wage_amountcv_past6months"),
-        ("SACC 贷款借记金额（182 天）", "bank_txn_category_sacc_loans_debit_amt_182d"),
-        ("贷款放款总额（184 天）", "bank_txn_lender_disburse_loan_amount_sum_184d"),
-        ("公用事业类交易占比（84 天）", "bank_txn_category_cluster_utilities_share_84d"),
-        ("BNPL 平均还款额（128 天）", "bank_txn_lender_repay_bnpl_amount_avg_128d"),
-        ("医疗类交易占比（84 天）", "bank_txn_category_cluster_healthcare_share_84d"),
-        ("还款总额（168 天）", "bank_txn_lender_repay_amount_sum_l168d"),
-        ("贷款还款总额（168 天）", "bank_txn_lender_repay_loan_amount_sum_l168d"),
-    ],
-    "new": [
-        ("债务类交易占比（182 天）", "bank_txn_category_cluster_debt_share_182d"),
-        ("拒付类入账笔数（56 天）", "bank_txn_category_dishonours_credit_cnt_56d"),
-        ("余额标准差（168 天）", "bank_txn_balance_std_168d"),
-        ("最小现金贷/工资贷放款额", "bank_txn_lender_disburse_advance_amount_min"),
-        ("余额分布峰度（182 天）", "bank_txn_balance_kurtosis_182d"),
-        ("保险支出占比（14 天）", "bank_txn_expense_insurance_ratio_14d"),
-        ("单日内部转账最大额（14 天）", "bank_txn_expense_internaltransfer_daily_max_14d"),
-        ("最长无借记间隔（182 天）", "bank_txn_balance_debit_gap_max_182d"),
-        ("内部转账最长连续天数", "bank_txn_expense_internaltransfer_max_consecutive_days"),
-        ("还款机构数", "bank_txn_lender_repay_jgs"),
-        ("工资收入变异系数（56 天）", "bank_txn_income_wages_cv_56d"),
-        ("工资收入平均消费率（14 天）", "bank_txn_income_wages_mean_consumption_rate_14d"),
-        ("内部转账贷记金额（182 天）", "bank_txn_category_internal_transfer_credit_amt_182d"),
-        ("非 SACC 贷款借记笔数（28 天）", "bank_txn_category_non_sacc_loans_debit_cnt_28d"),
-        ("BNPL 最小还款额（28 天）", "bank_txn_lender_repay_bnpl_amount_min_28d"),
-        ("外部转账占比（28 天）", "bank_txn_category_external_transfers_share_28d"),
-        ("MyPayNow 放款笔数（184 天）", "bank_txn_lender_disburse_competitor_MyPayNow_count_184d"),
-        ("余额分布偏度（182 天）", "bank_txn_balance_skewness_182d"),
-    ],
-}
 
 
 # ---------------------------------------------------------------------------
@@ -301,12 +257,6 @@ def grid(*items: str) -> str:
 def cards(items) -> str:
     return '<div class="two-col">' + "".join(
         f'<div class="card"><h3>{t}</h3><p>{b}</p></div>' for t, b in items) + "</div>"
-
-
-def model_list(title: str, rows, total: int) -> str:
-    items = "".join(f"<li>{esc(label)}</li>" for label, _ in rows[:10])
-    return (f'<div class="card model-list"><h3>{title}<span>前 10 / {total}</span></h3>'
-            f'<ol>{items}</ol></div>')
 
 
 def chart_value(v: float, kind: str) -> str:
@@ -597,17 +547,6 @@ def main() -> int:
 .logic-table td:first-child{font-weight:700;white-space:nowrap}
 .logic-table td:nth-child(2),.logic-table td:nth-child(3){font-variant-numeric:tabular-nums}
 @media(max-width:640px){.logic-table{font-size:12px}.logic-table th,.logic-table td{padding:7px 6px}.logic-table td:first-child{white-space:normal}}
-.model-list h3{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-.model-list h3 span{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
-.model-list ol{margin:0;padding-left:20px;font-size:12.5px;line-height:1.9;color:var(--body)}
-.model-list li{padding-left:2px}
-.model-list li::marker{color:var(--faint);font-variant-numeric:tabular-nums}
-.model-table td:first-child{width:14%}
-.model-table td:nth-child(2),.model-table td:nth-child(3){width:34%}
-.var-list ol{margin:4px 0 0;padding-left:18px;font-size:12px;line-height:1.8;color:var(--body)}
-.var-list li{margin-bottom:5px}
-.var-list code{display:block;font-size:10.5px;line-height:1.5;color:var(--faint);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-@media(max-width:640px){.model-table td:first-child{width:auto}.model-table td:nth-child(2),.model-table td:nth-child(3){width:auto}}
 .cohort-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;margin-right:6px}
 .cohort-pill.in{background:var(--fundo-soft);color:var(--fundo-dark)}
 .cohort-pill.out{background:var(--wagego-soft);color:var(--wagego-dark)}
@@ -682,12 +621,12 @@ def main() -> int:
 <span>user_type 均为 Old · 样本期 {period_start:%Y-%m-%d} 至 {period_end:%Y-%m-%d}</span>
 </div>
 <div class="hero-grid">{hero}</div>
-<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。健康分与维度分来自合并样本的统一断点，是相对分数，不是违约概率；置换原因结合画像差异与两版入模变量反推，变量重要度顺序不代表方向，也不能视为模型真实决策逻辑。</p>
+<p class="hero-note">所有成对数值按 <strong>Swap In / Swap Out</strong> 排列。健康分与维度分来自合并样本的统一断点，是相对分数，不是违约概率；置换原因结合画像差异与两版入模变量反推，变量只说明模型能看什么，不代表作用方向，也不能视为模型真实决策逻辑。</p>
 </div></header>'''
 
     nav_items = [("basis", "置换结果"), ("profile_in", "置入画像"), ("why_in", "置入原因"),
                  ("profile_out", "置出画像"), ("why_out", "置出原因"),
-                 ("model_focus", "模型变量"), ("logic", "交换逻辑"), ("conclusion", "结论与边界")]
+                 ("logic", "交换逻辑"), ("conclusion", "结论与边界")]
     nav = ('<nav class="nav" aria-label="报告章节"><div class="nav-inner">'
            + "".join(f'<a href="#{k}">{label}</a>' for k, label in nav_items) + "</div></nav>")
 
@@ -767,8 +706,8 @@ def main() -> int:
                          "Swap In 的收入、现金流、流动性与负债特征。", content))
 
     # 02 置入原因
-    content = ('<p class="lead">数据中没有新模型的评分、特征重要度或拒绝原因，无法直接还原决策逻辑。'
-               '下面只能从置入组相对置出组的稳定差异，反推四个可能原因；'
+    content = ('<p class="lead">数据中没有新模型的评分、SHAP 值或拒绝原因，无法直接还原决策逻辑。'
+               '下面只能从置入组相对置出组的稳定差异，结合入模变量线索，反推四个可能原因；'
                '它们是<strong>画像假设</strong>，不是模型事实。</p>')
     content += cards([
         ("1. 非工资/多源收入被识别",
@@ -793,6 +732,11 @@ def main() -> int:
          f'负现金流 {inout("flags.flag_negative_cashflow.0")}。'
          '这更像一次主动取舍：用更弱的工资可见性和更薄的缓冲，换更低的负债/拒付。'),
     ])
+    content += ('<p><strong>从入模变量看：</strong>新模型并没有把“工资稳定”当成唯一主轴。'
+                '两版模型的前两个变量都是债务类交易占比和拒付类入账笔数，但新模型把拒付窗口从 168 天缩短到 56 天，'
+                '并加入余额波动、内部/外部转账、工资消费率、非 SACC 贷款和 BNPL 等近期信号。'
+                '置入组的非工资流水、余额波动和现金流缺口，正好落在这些变量的观察范围内；'
+                '工资痕迹弱，不再等于收入不可见。这只是变量层面的相容解释，不能证明模型实际按这些方向打分。</p>')
     content += (f'<div class="callout warn"><strong>排除几个直观但证据不足的解释：</strong>'
                 '收入规模接近（'
                 f'{pct_pair("raw.inc_global_sum", "k")}），不足以解释置换；'
@@ -801,7 +745,7 @@ def main() -> int:
                 '最可能的解释是：新模型把负债/拒付强度放在工资稳定性之前，'
                 '用“低负债 + 多源流水”换“工资可见性”。</div>')
     parts.append(section("why_in", "02 · 置入原因", "为什么新模型可能让这批人进来",
-                         "从画像差异反推的四个可能驱动，不等于模型真实决策逻辑。", content))
+                         "结合画像差异与入模变量线索反推的四个可能驱动，不等于模型真实决策逻辑。", content))
 
     # 03 置出画像
     content = (f'<p class="lead">Swap Out 的画像与 Swap In 形成镜像：<strong>工资更稳定、现金流压力反而略低，'
@@ -840,7 +784,7 @@ def main() -> int:
 
     # 04 置出原因
     content = ('<p class="lead">如果只看现金流，置出组并不比置入组差；真正拉开差距的是借贷与拒付。'
-               '以下同样是画像反推，不是模型事实。</p>')
+               '以下同样是画像与变量线索的反推，不是模型事实。</p>')
     content += cards([
         ("1. 历史借贷更重",
          f'有放款 {inout("disburse_rate")}；'
@@ -864,69 +808,19 @@ def main() -> int:
          '置出组靠收入维度把总分拉高；如果按现有健康分排序，置出组反而更高，'
          '新模型可能用了不同权重或额外否决项。'),
     ])
+    content += ('<p><strong>从入模变量看：</strong>两版模型都看债务和拒付，差别更可能在“看多近、看多细”。'
+                '新模型把拒付窗口缩短到 56 天，并加入非 SACC 贷款、BNPL 和 MyPayNow 竞品使用等更近期的负债信号；'
+                '旧模型保留更多福利金、公用事业、医疗、金额总量等长期生活结构变量。'
+                '置出组“工资更稳定、但近期借贷和拒付更重”的画像，与这种变量重心变化相容；'
+                '它可能解释为什么这类人在两版模型下得到不同边界，但不能证明模型的实际方向。</p>')
     content += ('<div class="callout warn"><strong>最可能的解释：</strong>'
                 '新模型把“历史借贷强度 + 拒付恢复”当成更强的否决项；'
                 '工资稳定、现金流尚可，但不足以抵消这两项。'
                 '另一个不能排除的解释是策略/政策规则而非纯模型分数——仅凭画像无法区分。</div>')
     parts.append(section("why_out", "04 · 置出原因", "为什么新模型可能把这批人换出",
-                         "从画像差异反推的可能原因，以及不能排除的替代解释。", content))
+                         "结合画像差异与入模变量线索反推的可能原因，以及不能排除的替代解释。", content))
 
-    # 05 模型变量
-    content = ('<p class="lead">把两版模型的入模变量按重要度排在一起，训练重点的迁移比较清楚：'
-               '共同主线仍是负债与拒付，但旧模型更偏长期水平和生活结构，新模型更偏近期资金行为。</p>')
-    content += ('<div class="two-col">'
-                + model_list("旧模型 · 19 个变量", MODEL_VARS["old"], len(MODEL_VARS["old"]))
-                + model_list("新模型 · 18 个变量", MODEL_VARS["new"], len(MODEL_VARS["new"]))
-                + '</div>')
-    content += ('<div class="callout"><strong>共同主线：</strong>'
-                '两版模型的前两个变量都是“债务类交易占比 + 拒付类入账笔数”。'
-                '差异不在是否看负债/拒付，而在看多近、看多细：新模型把拒付窗口从 168 天缩到 56 天，'
-                '并加入非 SACC 贷款、BNPL 等更近期的负债信号，以及 MyPayNow 竞品放款使用。</div>')
-    model_rows = [
-        ("共同主线（Top 2）",
-         "债务类交易占比 #1；拒付类入账笔数 #2（168 天）",
-         "债务类交易占比 #1；拒付类入账笔数 #2（56 天）",
-         "都看负债/拒付；新模型更看近期"),
-        ("观察窗口",
-         "拒付 168 天；工资波动 6 个月；BNPL 平均还款 128 天；SACC 贷款借记额 182 天",
-         "拒付 56 天；工资波动 56 天；BNPL 最小还款 28 天；非 SACC 贷款借记笔数 28 天",
-         "从长期水平转向近期变化"),
-        ("变量重心",
-         "转账占比、保险笔数、福利金、公用事业、医疗、余额总额/熵",
-         "余额波动/尾部、内部/外部转账、工资消费率、MyPayNow、还款机构数",
-         "旧模型偏生活形态；新模型偏余额波动与资金行为"),
-        ("弱化/移除",
-         "保留更多生活形态与金额总量",
-         "不再使用福利金、公用事业、医疗、全局贷记笔数、放款/还款金额总量",
-         "减少“家庭画像/金额总量”，更看“钱怎么动”"),
-    ]
-    content += ('<table class="logic-table model-table"><thead><tr><th>对比维度</th><th>旧模型</th>'
-                '<th>新模型</th><th>读法</th></tr></thead><tbody>'
-                + "".join(f'<tr><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>'
-                          for a, b, c, d in model_rows)
-                + "</tbody></table>")
-    content += ('<div class="callout"><strong>与置换画像对照：</strong>'
-                '置出组工资更稳定，但近期借贷/拒付更重。新模型把拒付窗口缩短到 56 天，'
-                '并加入非 SACC 贷款、BNPL 等更近期的负债信号，以及 MyPayNow 竞品放款使用；'
-                '从变量选择上看，这与“置出组因近期债务/拒付被换出”相容。'
-                '置入组现金流更薄，但新模型加入余额波动/转账行为后，工资稳定性不再是唯一主轴；'
-                '这与其“低负债、多源收入”的画像相容。变量清单只能说明模型“能看什么”和相对重要度，不能证明方向。</div>')
-    old_items = "".join(f'<li>{esc(label)}<code>{esc(name)}</code></li>'
-                        for label, name in MODEL_VARS["old"])
-    new_items = "".join(f'<li>{esc(label)}<code>{esc(name)}</code></li>'
-                        for label, name in MODEL_VARS["new"])
-    content += ('<details class="details"><summary>完整入模变量清单（按重要度排序）</summary>'
-                '<div class="details-body"><p>变量名按原始清单展示；窗口和统计量保留在名称中。'
-                '部分窗口后缀（如 _l28d）需与实际字段名核对。</p>'
-                '<div class="two-col"><div class="var-list"><h4>旧模型 · 19 个</h4><ol>'
-                + old_items + '</ol></div><div class="var-list"><h4>新模型 · 18 个</h4><ol>'
-                + new_items + '</ol></div></div></div></details>')
-    parts.append(section("model_focus", "05 · 模型变量",
-                         "两版模型在看什么：旧模型偏长期水平与生活结构，新模型偏近期资金行为",
-                         "按给定重要度顺序对照；变量清单说明模型“能看什么”，不等于方向或因果。",
-                         content))
-
-    # 06 交换逻辑
+    # 05 交换逻辑
     content = ('<p class="lead">把两边放在一起，置换不是“好客户 vs 坏客户”，而是一次<strong>风险类型交换</strong>：'
                '用工资稳定性换更低的负债/拒付，同时承担更高的现金流波动。</p>')
     dim_pairs = [(DIM_LABELS[d], [S[k]["dims"][d] for k in KEYS], "") for d in DIM_LABELS]
@@ -996,6 +890,7 @@ def main() -> int:
     content += ('<div class="callout"><strong>关键结论：</strong>'
                 '新模型的置换边界与现有健康分不完全一致。'
                 '它更像是在以“负债与拒付”为主要区分轴，而不是按综合健康分排序；'
+                '两版模型的变量窗口与重心差异，为这种边界变化提供了相容解释，但不能证明方向；'
                 '代价是置入组的现金流更脆弱。</div>')
     content += cards([
         ("如果目标是降低坏账",
@@ -1005,10 +900,10 @@ def main() -> int:
          '置入组确实覆盖了传统工资模型不容易识别的非工资/多源收入人群；'
          '价值在覆盖，而不是风险更低。'),
     ])
-    parts.append(section("logic", "06 · 交换逻辑", "模型在用什么换什么",
+    parts.append(section("logic", "05 · 交换逻辑", "模型在用什么换什么",
                          "把两边放在一起看：这不是“好客户 vs 坏客户”，而是一次风险类型交换。", content))
 
-    # 07 结论
+    # 06 结论
     content = ('<p class="lead">一句话总结：新模型置入的是<strong>“负债更轻、工资更不可见、现金流更紧”</strong>的人；'
                '置出的是<strong>“工资更稳定、但借贷与拒付更重”</strong>的人。</p>')
     content += cards([
@@ -1030,7 +925,7 @@ def main() -> int:
     ])
     content += cards([
         ("验证模型原因",
-         '两版入模变量已核对：新模型更偏近期余额/转账/负债行为；'
+         '画像差异与两版入模变量的窗口/重心变化相容：新模型更偏近期余额、转账和负债行为；'
          '下一步拉取模型评分、SHAP/特征重要度与拒绝原因码，核对方向与强度。'),
         ("验证置换效果",
          '等 duedate_1m_5 等表现标签成熟，比较 Swap In / Swap Out 的逾期与还款；'
@@ -1055,7 +950,7 @@ def main() -> int:
                 '<p>两组 sample_datetime 覆盖 2026-09-14 至 2026-10-13，均为 Old 用户；'
                 'Swap Out 的 139 条申请来自 138 个 user_id，另 1 人为 2 条申请。</p>'
                 '</div></details>')
-    parts.append(section("conclusion", "07 · 结论与边界", "结论：置入了谁，为什么；置出了谁，为什么",
+    parts.append(section("conclusion", "06 · 结论与边界", "结论：置入了谁，为什么；置出了谁，为什么",
                          "一页总结，以及需要后续验证的边界。", content))
 
     footer = ('<footer class="footer"><div class="wrap footer-inner">'
