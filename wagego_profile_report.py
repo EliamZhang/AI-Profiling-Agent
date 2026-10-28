@@ -1069,6 +1069,160 @@ def chart_consumption(m: dict, top_n: int = 10) -> str:
     return fig_html(fig)
 
 
+def chart_liability(m: dict) -> str:
+    raw = [
+        ("现金贷 / 工资预支", m["adv_use"], m["adv_amt_share"], m["dish_advance"]),
+        ("个人贷款 / 分期贷", m["loan_use"], m["loan_amt_share"], m["dish_personal_loan"]),
+        ("BNPL", m["bnpl_use"], m["bnpl_amt_share"], m["dish_bnpl"]),
+        ("银行", m["bank_use"], m["bank_amt_share"], np.nan),
+    ]
+    rows = [
+        (name, float(use) * 100, float(amt) * 100, float(dish))
+        for name, use, amt, dish in raw
+        if np.isfinite(use) and np.isfinite(amt)
+    ]
+    rows.sort(key=lambda row: row[2])
+    labels = [row[0] for row in rows]
+    usage = [row[1] for row in rows]
+    amounts = [row[2] for row in rows]
+    dish_text = [fmt_pct(row[3]) if np.isfinite(row[3]) else "—" for row in rows]
+
+    left = go.Figure()
+    for name, use, amt, _ in rows:
+        left.add_trace(
+            go.Scatter(
+                x=[use, amt],
+                y=[name, name],
+                mode="lines",
+                line=dict(color=BASELINE, width=2.5),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+    left.add_trace(
+        go.Scatter(
+            x=usage,
+            y=labels,
+            mode="markers+text",
+            name="使用率",
+            marker=dict(color=SERIES[0], size=10, line=dict(color=SURFACE, width=2)),
+            text=[f"{v:.0f}%" for v in usage],
+            textposition="bottom center",
+            textfont=dict(color=INK2, size=10.5),
+            cliponaxis=False,
+            customdata=[[t] for t in dish_text],
+            hovertemplate=(
+                "%{y}<br>使用率 %{x:.1f}%<br>有拒付用户占比 %{customdata[0]}<extra></extra>"
+            ),
+        )
+    )
+    left.add_trace(
+        go.Scatter(
+            x=amounts,
+            y=labels,
+            mode="markers+text",
+            name="放款金额占比",
+            marker=dict(color=SERIES[1], size=10, line=dict(color=SURFACE, width=2)),
+            text=[f"{v:.0f}%" for v in amounts],
+            textposition="top center",
+            textfont=dict(color=INK2, size=10.5),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>放款金额占比 %{x:.1f}%<extra></extra>",
+        )
+    )
+    base_layout(left, height=430, margin=dict(l=156, r=40, t=64, b=64), showlegend=True)
+    left.update_layout(
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=-0.16,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    xmax = max(usage + amounts) if rows else 1
+    left.update_xaxes(range=[0, xmax * 1.22 if xmax else 1], ticksuffix="%")
+    left.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
+    top = rows[-1] if rows else None
+    add_title(
+        left,
+        f"借贷产品：{top[0]} 占放款金额 {top[2]:.0f}%" if top else "借贷产品结构",
+        xref="paper",
+    )
+
+    res_cnt = float(m["dish_resolved_cnt_total"])
+    unres_cnt = float(m["dish_unresolved_cnt_total"])
+    res_amt = float(m["dish_resolved_amt_total"])
+    unres_amt = float(m["dish_unres_amt_total"])
+    cnt_total = res_cnt + unres_cnt
+    amt_total = res_amt + unres_amt
+    res_pct = [
+        100 * res_cnt / cnt_total if cnt_total else 0.0,
+        100 * res_amt / amt_total if amt_total else 0.0,
+    ]
+    unres_pct = [100 - value for value in res_pct]
+
+    right = go.Figure()
+    right.add_trace(
+        go.Bar(
+            y=["笔数", "金额"],
+            x=res_pct,
+            orientation="h",
+            name="已解决",
+            marker=dict(color=STATUS["good"], line=dict(color=SURFACE, width=1.5)),
+            text=[f"已解决<br>{v:.0f}%" if v >= 12 else f"{v:.0f}%" for v in res_pct],
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(color="#ffffff", size=11),
+            customdata=[[f"{res_cnt:,.0f} 笔"], [fmt_money(res_amt, compact=True)]],
+            hovertemplate="%{y}<br>已解决 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
+        )
+    )
+    right.add_trace(
+        go.Bar(
+            y=["笔数", "金额"],
+            x=unres_pct,
+            orientation="h",
+            name="未解决",
+            marker=dict(color=STATUS["critical"], line=dict(color=SURFACE, width=1.5)),
+            text=[f"未解决<br>{v:.0f}%" if v >= 12 else f"{v:.0f}%" for v in unres_pct],
+            textposition="inside",
+            insidetextanchor="middle",
+            textfont=dict(color="#ffffff", size=11),
+            customdata=[[f"{unres_cnt:,.0f} 笔"], [fmt_money(unres_amt, compact=True)]],
+            hovertemplate="%{y}<br>未解决 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
+        )
+    )
+    base_layout(right, height=430, margin=dict(l=72, r=28, t=64, b=64), showlegend=True)
+    right.update_layout(
+        barmode="stack",
+        bargap=0.45,
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=-0.16,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    right.update_xaxes(
+        range=[0, 100],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
+    )
+    right.update_yaxes(categoryorder="array", categoryarray=["金额", "笔数"], showgrid=False)
+    add_title(right, f"拒付处置：解决率 {fmt_pct(m['dish_resolution_rate'])}")
+
+    return (
+        f'<div class="chart-grid even"><div>{fig_html(left)}</div>'
+        f"<div>{fig_html(right)}</div></div>"
+    )
+
+
 def chart_health(d: pd.DataFrame, m: dict) -> str:
     sur = d["sur_m"].dropna()
     lo = q(sur, 0.01)
@@ -1087,7 +1241,7 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
         column_widths=[1.35, 1.0],
         horizontal_spacing=0.12,
     )
-    bin_size = (hi - lo) / 60
+    bin_size = (hi - lo) / 36
     fig.add_trace(
         go.Histogram(
             x=neg,
@@ -1342,7 +1496,8 @@ h3 {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
   padding: 10px 12px 8px; margin: 4px 0 12px;
 }
-.chart-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; align-items: start; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; align-items: start; }
+.chart-grid.even { grid-template-columns: 1fr 1fr; }
 .notes { margin: 0; padding-left: 18px; }
 .notes li { margin: 4px 0; color: var(--ink2); }
 .notes b { color: var(--ink); }
@@ -1370,7 +1525,8 @@ details table { margin-top: 8px; }
 .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--baseline); color: var(--muted); font-size: 11.5px; }
 .footer p { margin: 4px 0; }
 .note { color: var(--muted); font-size: 11.5px; margin: 6px 0 0; }
-@media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } .chart-grid { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
+@media (max-width: 900px) { .chart-grid, .chart-grid.even { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
 @media print { .wrap { max-width: none; } .chart, .kpi, .finding { break-inside: avoid; } }
 """
 
@@ -1578,13 +1734,15 @@ def build_html(
     <p class="goal"><b>分析目标</b>：判断借贷依赖、偿债压力、债务滚动与违约处置。</p>
     <p class="lede">借贷使用面广，短期现金贷是主要资金来源；新增借款增速高于还款，债务滚动特征明显。拒付规模大、解决率低，是负债端最突出的风险点。</p>
     <h3>借贷使用与产品结构</h3>
+    <div class="chart">{figs['liability']}<p class="note">n = {m['n_valid']:,}；产品图展示使用率与放款金额占比，拒付图展示笔数与金额的解决构成；使用率与拒付占比以有效用户为分母，金额占比以全部放款金额为分母。</p></div>
     <ul class="notes">
       <li>有放款 <b>{fmt_pct(m['any_disburse'])}</b>、有还款 <b>{fmt_pct(m['any_repay'])}</b>；放款笔数中位 <b>{num(m['disb_count_p50'], 0)} 笔</b>、还款笔数中位 <b>{num(m['repay_count_p50'], 0)} 笔</b>，平均单笔 <b>{fmt_money(m['disb_ticket_p50'])}</b>、最大单笔中位 <b>{fmt_money(m['disb_max_p50'])}</b>，涉及 <b>{num(m['lender_cnt_p50'], 0)} 家</b> 放款机构。</li>
     </ul>
-    <div class="table-card">
+    <details>
+      <summary>查看产品明细</summary>
       {html_table(["借贷产品", "使用率", "放款金额占比", "有拒付用户占比"], liability_rows)}
-    </div>
-    <p class="note">使用率与拒付占比均以有效用户为分母；金额占比以全部放款金额为分母，其余为未单列产品。</p>
+      <p class="note">使用率与拒付占比均以有效用户为分母；金额占比以全部放款金额为分母，其余为未单列产品。</p>
+    </details>
     <h3>还款压力与借款滚动</h3>
     <ul class="notes">
       <li>月还款中位 <b>{fmt_money(m['rep_m_p50'])}</b>，偿债/收入中位 <b>{fmt_pct(m['rep_rate_p50'])}</b>、P90 <b>{fmt_pct(m['rep_rate_p90'])}</b>。</li>
@@ -1721,6 +1879,7 @@ def main() -> None:
     figs = {
         "income": chart_income(m),
         "consumption": chart_consumption(m, top_n=args.top_n),
+        "liability": chart_liability(m),
         "health": chart_health(d, m),
         "segments": chart_segments(seg),
     }
