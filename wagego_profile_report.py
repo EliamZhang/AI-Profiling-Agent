@@ -17,7 +17,6 @@ WageGo 用户画像报告生成器（精简版）
 from __future__ import annotations
 
 import argparse
-import base64
 import html
 import sys
 import time
@@ -34,14 +33,11 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 try:
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Patch
-    from matplotlib.ticker import FuncFormatter
+    import plotly.graph_objects as go
+    from plotly.offline import get_plotlyjs
+    from plotly.subplots import make_subplots
 except ImportError as exc:  # pragma: no cover
-    raise SystemExit("缺少 matplotlib，请先执行: pip install matplotlib") from exc
+    raise SystemExit("缺少 plotly，请先执行: pip install plotly") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -329,10 +325,6 @@ def cond_share(cond: pd.Series, s: pd.Series | None = None) -> float:
         return float(cond.mean())
     ok = s.notna()
     return float((cond & ok).sum() / ok.sum()) if ok.any() else np.nan
-
-
-def label_color(hex_color: str) -> str:
-    return INK if hex_color.lower() == "#eda100" else "#ffffff"
 
 
 def html_table(headers: list[str], rows: list[list[str]], cls: str = "", raw_cols: tuple[int, ...] = ()) -> str:
@@ -842,198 +834,309 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
 
 
 # ---------------------------------------------------------------------------
-# 图表
+# 图表（Plotly 交互式）
 # ---------------------------------------------------------------------------
-def setup_matplotlib() -> None:
-    plt.rcParams.update(
-        {
-            "font.sans-serif": ["Microsoft YaHei", "SimHei", "Arial"],
-            "font.family": "sans-serif",
-            "axes.unicode_minus": False,
-            "figure.facecolor": SURFACE,
-            "axes.facecolor": SURFACE,
-            "savefig.facecolor": SURFACE,
-            "text.color": INK,
-            "axes.labelcolor": INK2,
-            "xtick.color": MUTED,
-            "ytick.color": MUTED,
-            "axes.edgecolor": BASELINE,
-            "axes.linewidth": 0.8,
-            "grid.color": GRID,
-            "grid.linewidth": 0.7,
-            "grid.linestyle": "-",
-        }
+CHART_FONT = "Microsoft YaHei, PingFang SC, Noto Sans SC, Arial, sans-serif"
+NEUTRAL = "#76746d"
+PLOTLY_CONFIG = {
+    "responsive": True,
+    "displaylogo": False,
+    "scrollZoom": False,
+    "modeBarButtonsToRemove": ["lasso2d", "select2d", "autoScale2d"],
+}
+
+
+def base_layout(
+    fig,
+    height: int = 430,
+    margin: dict | None = None,
+    showlegend: bool = False,
+) -> None:
+    fig.update_layout(
+        height=height,
+        autosize=True,
+        paper_bgcolor=SURFACE,
+        plot_bgcolor=SURFACE,
+        font=dict(family=CHART_FONT, color=INK2, size=12),
+        margin=margin or dict(l=96, r=24, t=56, b=48),
+        showlegend=showlegend,
+        hovermode="closest",
+        hoverlabel=dict(
+            bgcolor="#ffffff",
+            bordercolor=BASELINE,
+            font=dict(family=CHART_FONT, color=INK, size=12),
+        ),
+    )
+    fig.update_xaxes(
+        gridcolor=GRID,
+        zerolinecolor=BASELINE,
+        linecolor=BASELINE,
+        tickfont=dict(color=MUTED, size=11),
+        title_font=dict(color=INK2, size=11),
+        automargin=True,
+    )
+    fig.update_yaxes(
+        gridcolor=GRID,
+        zerolinecolor=BASELINE,
+        linecolor=BASELINE,
+        tickfont=dict(color=INK2, size=12),
+        title_font=dict(color=INK2, size=11),
+        automargin=True,
     )
 
 
-def style_ax(ax, grid_axis: str = "x") -> None:
-    for spine in ("top", "right", "left"):
-        ax.spines[spine].set_visible(False)
-    ax.spines["bottom"].set_color(BASELINE)
-    ax.spines["bottom"].set_linewidth(0.8)
-    ax.tick_params(axis="both", length=0, labelsize=9, colors=INK2)
-    ax.grid(axis=grid_axis, color=GRID, linewidth=0.7, alpha=1)
-    ax.set_axisbelow(True)
+def add_title(fig, text: str, xref: str = "x domain", y: float = 1.16) -> None:
+    fig.add_annotation(
+        x=0,
+        y=y,
+        xref=xref,
+        yref="y domain",
+        text=text,
+        showarrow=False,
+        xanchor="left",
+        yanchor="bottom",
+        font=dict(family=CHART_FONT, color=INK, size=14),
+    )
 
 
-def save_fig(fig, path: Path) -> str:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path, dpi=180, bbox_inches="tight", facecolor=SURFACE)
-    plt.close(fig)
-    return base64.b64encode(path.read_bytes()).decode("ascii")
+def fig_html(fig, height: int = 430) -> str:
+    return fig.to_html(
+        full_html=False,
+        include_plotlyjs=False,
+        config=PLOTLY_CONFIG,
+        default_height=f"{height}px",
+    )
 
 
-def chart_income(m: dict, path: Path) -> str:
-    fig = plt.figure(figsize=(11.2, 4.5))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.3, 1.0], wspace=0.32)
-
-    ax1 = fig.add_subplot(gs[0, 0])
+def chart_income(m: dict) -> str:
     labels = ["工资", "福利", "其他入账"]
-    inc_vals = np.array([m["wage_incidence"], m["cent_incidence"], m["other_incidence"]]) * 100
-    amt_vals = np.array([m["wage_share_agg"], m["cent_share_agg"], m["other_share_agg"]]) * 100
-    y = np.arange(len(labels))
-    h = 0.30
-    ax1.barh(y + 0.18, inc_vals, height=h, color=SERIES[0], label="有该类收入的用户占比")
-    ax1.barh(y - 0.18, amt_vals, height=h, color=SERIES[1], label="收入金额占比")
-    for yi, v in zip(y + 0.18, inc_vals):
-        ax1.text(v + 1.2, yi, f"{v:.0f}%", va="center", fontsize=9, color=INK2)
-    for yi, v in zip(y - 0.18, amt_vals):
-        ax1.text(v + 1.2, yi, f"{v:.0f}%", va="center", fontsize=9, color=INK2)
-    ax1.set_yticks(y)
-    ax1.set_yticklabels(labels, fontsize=10, color=INK)
-    ax1.set_xlim(0, 112)
-    ax1.set_xticks([0, 25, 50, 75, 100])
-    ax1.set_xticklabels(["0", "25%", "50%", "75%", "100%"])
-    ax1.set_title(
-        f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他入账",
-        fontsize=11.5,
-        fontweight="bold",
-        loc="left",
-        pad=12,
-    )
-    style_ax(ax1, "x")
-    ax1.legend(
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.36),
-        ncol=2,
-        frameon=False,
-        fontsize=8.5,
-        handlelength=1.2,
-        handletextpad=0.5,
-    )
+    inc_vals = [
+        float(m["wage_incidence"]) * 100,
+        float(m["cent_incidence"]) * 100,
+        float(m["other_incidence"]) * 100,
+    ]
+    amt_vals = [
+        float(m["wage_share_agg"]) * 100,
+        float(m["cent_share_agg"]) * 100,
+        float(m["other_share_agg"]) * 100,
+    ]
 
-    ax2 = fig.add_subplot(gs[0, 1])
-    arch_vals = np.array(
-        [m["arch_wage_only"], m["arch_both"], m["arch_cent_only"], m["arch_neither"]]
-    ) * 100
-    arch_labels = ["仅工资", "工资+福利", "仅福利", "无工资/福利"]
-    arch_colors = SERIES[:4]
-    left = 0.0
-    for v, lab, col in zip(arch_vals, arch_labels, arch_colors):
-        ax2.barh([0], [v], left=left, height=0.42, color=col, edgecolor=SURFACE, linewidth=1.0)
-        if v >= 15:
-            ax2.text(
-                left + v / 2,
-                0,
-                f"{lab}\n{v:.0f}%",
-                ha="center",
-                va="center",
-                fontsize=8.5,
-                color=label_color(col),
-                linespacing=1.15,
+    left = go.Figure()
+    left.add_trace(
+        go.Bar(
+            y=labels,
+            x=inc_vals,
+            orientation="h",
+            name="有该类收入的用户占比",
+            marker=dict(color=SERIES[0]),
+            text=[f"{v:.0f}%" for v in inc_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="有该类收入的用户占比 %{x:.1f}%<br>%{y}<extra></extra>",
+        )
+    )
+    left.add_trace(
+        go.Bar(
+            y=labels,
+            x=amt_vals,
+            orientation="h",
+            name="收入金额占比",
+            marker=dict(color=SERIES[1]),
+            text=[f"{v:.0f}%" for v in amt_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="收入金额占比 %{x:.1f}%<br>%{y}<extra></extra>",
+        )
+    )
+    base_layout(left, height=430, margin=dict(l=82, r=18, t=64, b=76), showlegend=True)
+    left.update_layout(
+        barmode="group",
+        bargap=0.32,
+        bargroupgap=0.08,
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=-0.18,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    left.update_xaxes(
+        range=[0, 112],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
+    )
+    left.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
+    add_title(left, f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他入账")
+
+    pct = lambda x: float(x) * 100 if np.isfinite(x) else 0.0
+    labor = pct(m["wage_share_agg"] + m["cent_share_agg"])
+    ext_inc = pct(m["other_ext_share"] * m["other_share_agg"])
+    int_inc = pct(m["other_internal_share"] * m["other_share_agg"])
+    rest_inc = max(0.0, pct(m["other_share_agg"]) - ext_inc - int_inc)
+    ext_dbt = pct(m["ext_transfer_share_global"])
+    int_dbt = pct(m["internal_transfer_share_global"])
+    rest_dbt = max(0.0, 100.0 - ext_dbt - int_dbt)
+
+    right = go.Figure()
+    seg_defs = [
+        ("工资+福利", ["入账构成"], [labor], SERIES[0], "#ffffff"),
+        ("外部转账", ["入账构成", "借记构成"], [ext_inc, ext_dbt], SERIES[1], "#ffffff"),
+        ("内部转账", ["入账构成", "借记构成"], [int_inc, int_dbt], SERIES[3], INK),
+        ("其他", ["入账构成", "借记构成"], [rest_inc, rest_dbt], NEUTRAL, "#ffffff"),
+    ]
+    for name, ys, xs, color, text_color in seg_defs:
+        shown = [
+            "其他借记" if name == "其他" and y == "借记构成" else name for y in ys
+        ]
+        right.add_trace(
+            go.Bar(
+                y=ys,
+                x=xs,
+                orientation="h",
+                name=name,
+                marker=dict(color=color, line=dict(color=SURFACE, width=1.5)),
+                text=[f"{lab}<br>{v:.0f}%" for lab, v in zip(shown, xs)],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(color=text_color, size=11),
+                customdata=[[lab, v] for lab, v in zip(shown, xs)],
+                hovertemplate="%{y}<br>%{customdata[0]}：%{customdata[1]:.1f}%<extra></extra>",
             )
-        left += v
-    ax2.set_xlim(0, 100)
-    ax2.set_ylim(-0.55, 0.55)
-    ax2.set_yticks([])
-    ax2.set_xticks([])
-    for spine in ax2.spines.values():
-        spine.set_visible(False)
-    ax2.set_title(
-        f"工资/福利组合：{fmt_pct(m['arch_wage_only'], 0)} 仅工资",
-        fontsize=11.5,
-        fontweight="bold",
-        loc="left",
-        pad=12,
+        )
+    base_layout(right, height=430, margin=dict(l=84, r=18, t=64, b=76))
+    right.update_layout(barmode="stack", bargap=0.45)
+    right.update_xaxes(
+        range=[0, 100],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
     )
-    handles = [Patch(facecolor=c, label=l) for c, l in zip(arch_colors, arch_labels)]
-    ax2.legend(
-        handles=handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.22),
-        ncol=4,
-        frameon=False,
-        fontsize=7.8,
-        handlelength=0.9,
-        columnspacing=0.8,
-        handletextpad=0.35,
+    right.update_yaxes(
+        categoryorder="array",
+        categoryarray=["借记构成", "入账构成"],
+        showgrid=False,
     )
-    return save_fig(fig, path)
+    add_title(
+        right,
+        f"转账主导：占入账 {fmt_pct(m['transfer_inc_share'], 0)}、占借记 {fmt_pct(m['ext_transfer_share_global'] + m['internal_transfer_share_global'], 0)}",
+    )
+
+    return (
+        f'<div class="chart-grid"><div>{fig_html(left)}</div>'
+        f"<div>{fig_html(right)}</div></div>"
+    )
 
 
-def chart_consumption(m: dict, path: Path, top_n: int = 10) -> str:
+def chart_consumption(m: dict, top_n: int = 10) -> str:
     items = sorted(m["cat_shares"].items(), key=lambda kv: kv[1])[-top_n:]
-    labels = [CONSUMPTION_CATS[k] for k, _ in items]
-    vals = [v * 100 for _, v in items]
+    labels = [
+        CONSUMPTION_CATS[k] + ("（风险类）" if k == "gambling" else "") for k, _ in items
+    ]
+    vals = [float(v) * 100 for _, v in items]
     colors = [STATUS["critical"] if k == "gambling" else SERIES[0] for k, _ in items]
+    totals = [fmt_money(m["cat_totals"][k], compact=True) for k, _ in items]
 
-    fig, ax = plt.subplots(figsize=(9.6, 4.5))
-    bars = ax.barh(labels, vals, color=colors, height=0.55)
-    xmax = max(vals) if vals else 1
-    for b, v in zip(bars, vals):
-        ax.text(v + xmax * 0.015, b.get_y() + b.get_height() / 2, f"{v:.1f}%", va="center", fontsize=9, color=INK2)
-    ax.set_xlim(0, xmax * 1.22)
-    ax.set_xlabel("占可识别消费比例", fontsize=9, color=INK2)
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.0f}%"))
+    fig = go.Figure(
+        go.Bar(
+            y=labels,
+            x=vals,
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v:.1f}%" for v in vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            customdata=[[t] for t in totals],
+            hovertemplate="%{y}<br>占可识别消费 %{x:.1f}%<br>6 个月总额 %{customdata[0]}<extra></extra>",
+        )
+    )
+    base_layout(fig, height=430, margin=dict(l=124, r=34, t=64, b=48))
+    fig.update_xaxes(
+        range=[0, max(vals) * 1.22 if vals else 1],
+        ticksuffix="%",
+        title="占可识别消费比例",
+    )
+    fig.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
     top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
-    ax.set_title(
+    add_title(
+        fig,
         f"可识别消费结构：{top3}居前（仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}）",
-        fontsize=11.5,
-        fontweight="bold",
-        loc="left",
-        pad=12,
     )
-    style_ax(ax, "x")
-    ax.tick_params(axis="y", labelsize=10)
-    handles = [Patch(facecolor=SERIES[0], label="消费类别")]
-    if any(k == "gambling" for k, _ in items):
-        handles.append(Patch(facecolor=STATUS["critical"], label="风险类（赌博）"))
-    ax.legend(handles=handles, loc="lower right", frameon=False, fontsize=8.5)
-    return save_fig(fig, path)
+    return fig_html(fig)
 
 
-def chart_health(d: pd.DataFrame, m: dict, path: Path) -> str:
-    fig, (ax1, ax2) = plt.subplots(
-        1, 2, figsize=(11.2, 4.3), gridspec_kw={"width_ratios": [1.35, 1.0], "wspace": 0.32}
-    )
-
-    vals = d["sur_m"].dropna().clip(-4000, 2000)
-    bins = np.linspace(-4000, 2000, 61)
+def chart_health(d: pd.DataFrame, m: dict) -> str:
+    sur = d["sur_m"].dropna()
+    lo = q(sur, 0.01)
+    hi = q(sur, 0.99)
+    lo = float(np.floor(lo / 500) * 500) if np.isfinite(lo) else -4000.0
+    hi = float(np.ceil(hi / 500) * 500) if np.isfinite(hi) else 2000.0
+    if not hi > lo:
+        lo, hi = -4000.0, 2000.0
+    vals = sur[(sur >= lo) & (sur <= hi)]
     neg = vals[vals < 0]
     pos = vals[vals >= 0]
-    ax1.hist(neg, bins=bins, color=STATUS["critical"], edgecolor=SURFACE, linewidth=0.35)
-    ax1.hist(pos, bins=bins, color=SERIES[0], edgecolor=SURFACE, linewidth=0.35)
-    ax1.axvline(0, color=BASELINE, lw=1.0)
-    med = m["sur_p50"]
-    ax1.axvline(med, color=INK2, lw=1.3)
-    ymax = ax1.get_ylim()[1]
-    ax1.text(med - 110, ymax * 0.93, f"中位\n{fmt_money(med)}", ha="right", va="top", fontsize=8.5, color=INK2)
-    ax1.text(-3800, ymax * 0.55, f"{fmt_pct(m['sur_neg'])}\n为负", ha="left", va="top", fontsize=10, color=STATUS["critical"], fontweight="bold")
-    ax1.set_xlim(-4000, 2000)
-    ax1.set_xticks([-4000, -3000, -2000, -1000, 0, 1000, 2000])
-    ax1.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"${x/1000:.0f}k" if x else "$0"))
-    ax1.set_xlabel("月度盈余（截尾至 [-$4k, $2k]）", fontsize=9, color=INK2)
-    ax1.set_ylabel("用户数", fontsize=9, color=INK2)
-    ax1.set_title(
-        f"月度盈余分布：{fmt_pct(m['sur_neg'])} 为负",
-        fontsize=11.5,
-        fontweight="bold",
-        loc="left",
-        pad=12,
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[1.35, 1.0],
+        horizontal_spacing=0.12,
     )
-    style_ax(ax1, "y")
-    handles = [Patch(facecolor=STATUS["critical"], label="负盈余"), Patch(facecolor=SERIES[0], label="正盈余")]
-    ax1.legend(handles=handles, loc="upper right", frameon=False, fontsize=8.5)
+    bin_size = (hi - lo) / 60
+    fig.add_trace(
+        go.Histogram(
+            x=neg,
+            xbins=dict(start=lo, end=hi, size=bin_size),
+            name="负盈余",
+            marker=dict(color=STATUS["critical"], line=dict(width=0.5, color=SURFACE)),
+            hovertemplate="月度盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+    fig.add_trace(
+        go.Histogram(
+            x=pos,
+            xbins=dict(start=lo, end=hi, size=bin_size),
+            name="正盈余",
+            marker=dict(color=SERIES[0], line=dict(width=0.5, color=SURFACE)),
+            hovertemplate="月度盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+
+    med = m["sur_p50"]
+    fig.add_vline(x=0, line_color=BASELINE, line_width=1, row=1, col=1)
+    fig.add_vline(x=med, line_color=INK2, line_width=1.4, row=1, col=1)
+    right_side = med >= (lo + hi) / 2
+    fig.add_annotation(
+        x=med,
+        y=1,
+        xref="x",
+        yref="y domain",
+        text=f"中位 {fmt_money(med)}",
+        showarrow=False,
+        xanchor="right" if right_side else "left",
+        yanchor="bottom",
+        font=dict(color=INK2, size=11),
+    )
+    fig.add_annotation(
+        x=lo + (hi - lo) * 0.02,
+        y=0.55,
+        xref="x",
+        yref="y domain",
+        text=f"{fmt_pct(m['sur_neg'])}<br>为负",
+        showarrow=False,
+        xanchor="left",
+        yanchor="top",
+        font=dict(color=STATUS["critical"], size=12),
+    )
 
     bal = d["bal"]
     bucket_labels = ["透支 (<$0)", "$0–100", "$100–500", "$500–1k", "≥$1k"]
@@ -1045,70 +1148,125 @@ def chart_health(d: pd.DataFrame, m: dict, path: Path) -> str:
         bal >= 1000,
     ]
     bucket_vals = [cond_share(mask, bal) * 100 for mask in bucket_masks]
-    bucket_colors = ["#104281", "#1c5cab", "#2a78d6", "#5598e7", "#86b6ef"]
-    bars = ax2.barh(bucket_labels, bucket_vals, color=bucket_colors, height=0.55)
-    for b, v in zip(bars, bucket_vals):
-        ax2.text(v + 1.0, b.get_y() + b.get_height() / 2, f"{v:.1f}%", va="center", fontsize=9, color=INK2)
-    ax2.invert_yaxis()
-    ax2.set_xlim(0, max(bucket_vals) * 1.25)
-    ax2.set_xlabel("用户占比", fontsize=9, color=INK2)
-    ax2.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.0f}%"))
-    ax2.set_title(
-        f"账户余额分布：中位 {fmt_money(m['bal_p50'])}",
-        fontsize=11.5,
-        fontweight="bold",
-        loc="left",
-        pad=12,
+    fig.add_trace(
+        go.Bar(
+            y=bucket_labels,
+            x=bucket_vals,
+            orientation="h",
+            marker=dict(color=SEQ_BLUE[::-1]),
+            text=[f"{v:.1f}%" for v in bucket_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>用户占比 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
     )
-    style_ax(ax2, "x")
-    ax2.tick_params(axis="y", labelsize=9.5)
-    return save_fig(fig, path)
+
+    base_layout(fig, height=430, margin=dict(l=110, r=28, t=78, b=52), showlegend=True)
+    fig.update_layout(
+        barmode="overlay",
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=1.02,
+            yanchor="bottom",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_xaxes(
+        range=[lo, hi],
+        tickformat="$,.0f",
+        title="月度盈余（显示 P1–P99，剔除两端各 1%）",
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(title="用户数", row=1, col=1)
+    fig.update_xaxes(
+        range=[0, max(bucket_vals) * 1.25 if bucket_vals else 1],
+        ticksuffix="%",
+        title="用户占比",
+        row=1,
+        col=2,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=bucket_labels,
+        autorange="reversed",
+        showgrid=False,
+        row=1,
+        col=2,
+    )
+    add_title(fig, f"月度盈余分布：{fmt_pct(m['sur_neg'])} 为负", xref="x domain")
+    add_title(fig, f"账户余额分布：中位 {fmt_money(m['bal_p50'])}", xref="x2 domain")
+    return fig_html(fig)
 
 
-def chart_segments(seg: pd.DataFrame, path: Path) -> str:
-    fig, ax = plt.subplots(figsize=(9.6, 1.9))
+def chart_segments(seg: pd.DataFrame) -> str:
     colors = {
         "盈余型": STATUS["good"],
         "平衡型": STATUS["warning"],
         "赤字型": STATUS["serious"],
         "重压型": STATUS["critical"],
     }
-    left = 0.0
+    fig = go.Figure()
     for name, row in seg.iterrows():
-        v = row["share"] * 100
+        share = row["share"]
+        if not np.isfinite(share) or share <= 0:
+            continue
+        v = float(share) * 100
         col = colors.get(name, SERIES[0])
-        ax.barh([0], [v], left=left, height=0.42, color=col, edgecolor=SURFACE, linewidth=1.0)
-        if v >= 7:
-            ax.text(
-                left + v / 2,
-                0,
-                f"{name}\n{v:.0f}%",
-                ha="center",
-                va="center",
-                fontsize=8.5,
-                color=INK if col == STATUS["warning"] else "#ffffff",
-                linespacing=1.15,
+        fig.add_trace(
+            go.Bar(
+                y=["用户分层"],
+                x=[v],
+                orientation="h",
+                name=name,
+                marker=dict(color=col, line=dict(color=SURFACE, width=1.5)),
+                text=[f"{name}<br>{v:.0f}%"] if v >= 7 else [f"{v:.0f}%"],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(
+                    color=INK if col == STATUS["warning"] else "#ffffff",
+                    size=11,
+                ),
+                customdata=[
+                    [
+                        fmt_pct(share),
+                        fmt_money(row["inc_m"]),
+                        fmt_money(row["exp_m"]),
+                        fmt_money(row["sur_m"]),
+                        fmt_money(row["bal"]),
+                        fmt_pct(row["rep_rate"]),
+                    ]
+                ],
+                hovertemplate=(
+                    "<b>%{name}</b><br>占比 %{customdata[0]}<br>收入中位 %{customdata[1]}"
+                    "<br>支出中位 %{customdata[2]}<br>盈余中位 %{customdata[3]}"
+                    "<br>余额中位 %{customdata[4]}<br>还款率中位 %{customdata[5]}<extra></extra>"
+                ),
             )
-        left += v
-    ax.set_xlim(0, 100)
-    ax.set_ylim(-0.55, 0.55)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-    handles = [Patch(facecolor=colors[n], label=n) for n in seg.index if n in colors]
-    ax.legend(
-        handles=handles,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.36),
-        ncol=4,
-        frameon=False,
-        fontsize=8.2,
-        handlelength=0.9,
-        columnspacing=0.9,
-        handletextpad=0.35,
+        )
+    base_layout(fig, height=240, margin=dict(l=12, r=12, t=12, b=58), showlegend=True)
+    fig.update_layout(
+        barmode="stack",
+        bargap=0.35,
+        legend=dict(
+            orientation="h",
+            x=0.5,
+            xanchor="center",
+            y=-0.10,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
     )
-    return save_fig(fig, path)
+    fig.update_xaxes(range=[0, 100], visible=False)
+    fig.update_yaxes(visible=False)
+    return fig_html(fig, 240)
 
 
 # ---------------------------------------------------------------------------
@@ -1184,7 +1342,7 @@ h3 {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
   padding: 10px 12px 8px; margin: 4px 0 12px;
 }
-.chart img { width: 100%; height: auto; display: block; }
+.chart-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; align-items: start; }
 .notes { margin: 0; padding-left: 18px; }
 .notes li { margin: 4px 0; color: var(--ink2); }
 .notes b { color: var(--ink); }
@@ -1212,7 +1370,7 @@ details table { margin-top: 8px; }
 .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--baseline); color: var(--muted); font-size: 11.5px; }
 .footer p { margin: 4px 0; }
 .note { color: var(--muted); font-size: 11.5px; margin: 6px 0 0; }
-@media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
+@media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } .chart-grid { grid-template-columns: 1fr; } h1 { font-size: 25px; } }
 @media print { .wrap { max-width: none; } .chart, .kpi, .finding { break-inside: avoid; } }
 """
 
@@ -1232,6 +1390,7 @@ def build_html(
     n_fields: int,
     generated_at: str,
 ) -> str:
+    plotly_js = get_plotlyjs()
     # 图表数据表
     income_rows = [
         ["工资", fmt_pct(m["wage_incidence"]), fmt_pct(m["wage_share_agg"]), fmt_money(m["wage_median_m"])],
@@ -1335,6 +1494,7 @@ def build_html(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WageGo 用户画像报告（精简版）</title>
+<script>{plotly_js}</script>
 <style>{CSS}</style>
 </head>
 <body>
@@ -1349,6 +1509,7 @@ def build_html(
     <span class="chip">无有效流水 <b>{m['n_no_data']:,}</b>（{fmt_pct(m['n_no_data']/m['n_users'])}）</span>
     <span class="chip">生成时间 <b>{html.escape(generated_at)}</b></span>
   </div>
+  <p class="note">图表可交互：悬停查看明细，右上角工具栏支持缩放、平移与下载。</p>
 
   <div class="kpi-grid">{kpi_html}</div>
 
@@ -1356,7 +1517,7 @@ def build_html(
     <h2><span class="num">1</span>收入与就业</h2>
     <p class="goal"><b>分析目标</b>：判断还款来源是否充足、稳定、可持续。</p>
     <p class="lede">工资覆盖面广，但入账金额主要由“其他入账”贡献，且其中转账类占比较高；整体入账波动大、来源分散，工资趋势总体平稳，就业信息可识别度有限。</p>
-    <div class="chart"><img src="data:image/png;base64,{figs['income']}" alt="收入来源与收入形态"></div>
+    <div class="chart">{figs['income']}<p class="note">n = {m['n_valid']:,}；入账构成以分项收入（工资+福利+其他入账）为分母，借记构成以全部借记流水为分母；工资与福利合并展示。</p></div>
     <h3>收入水平与来源</h3>
     <ul class="notes">
       <li><b>{fmt_pct(m['wage_incidence'])}</b> 有工资收入，工资中位 <b>{fmt_money(m['wage_median_m'])}/月</b>，但工资仅占入账金额 <b>{fmt_pct(m['wage_share_agg'])}</b>；<b>{fmt_pct(m['cent_incidence'])}</b> 有福利收入，中位 <b>{fmt_money(m['cent_median_m'])}/月</b>；“其他入账”占全部入账 <b>{fmt_pct(m['other_share_agg'])}</b>，是入账金额的主要来源。</li>
@@ -1389,7 +1550,7 @@ def build_html(
     <h2><span class="num">2</span>支出与消费</h2>
     <p class="goal"><b>分析目标</b>：判断资金流向、消费刚性与可压缩空间。</p>
     <p class="lede">支出中真正占用资金的是外部/内部转账与刚性负担，可识别消费占比有限、类目分散，支出端可压缩空间有限。</p>
-    <div class="chart"><img src="data:image/png;base64,{figs['consumption']}" alt="可识别消费结构"></div>
+    <div class="chart">{figs['consumption']}<p class="note">n = {m['n_valid']:,}；占比以可识别消费为分母，可识别消费仅覆盖总支出 {fmt_pct(m['cons_share_exp_agg'])}。</p></div>
     <h3>支出规模与形态</h3>
     <ul class="notes">
       <li>月支出中位 <b>{fmt_money(m['exp_p50'])}</b>，单笔中位 <b>{fmt_money(m['exp_ticket_p50'])}</b>，单笔金额 CV 中位 <b>{num(m['exp_cv_p50'])}</b>，支出呈小额、高波动特征。</li>
@@ -1442,7 +1603,7 @@ def build_html(
     <h2><span class="num">4</span>现金流与流动性</h2>
     <p class="goal"><b>分析目标</b>：判断收支是否平衡、账户能否缓冲冲击。</p>
     <p class="lede">偿债前已有大量用户收不抵支，计入还本付息后缺口进一步扩大；盈余边际略有改善，但账户缓冲极薄，收入中断或意外支出都可能直接转为透支。</p>
-    <div class="chart"><img src="data:image/png;base64,{figs['health']}" alt="月度盈余与账户余额分布"></div>
+    <div class="chart">{figs['health']}<p class="note">n = {m['n_valid']:,}；盈余直方图显示 P1–P99 范围（剔除两端各 1%），余额取最近快照。</p></div>
     <h3>收支结余</h3>
     <ul class="notes">
       <li>偿债前现金流中位 <b>{fmt_money(m['pre_debt_cf_p50'])}/月</b>，<b>{fmt_pct(m['pre_debt_neg'])}</b> 为负；偿债后盈余中位 <b>{fmt_money(m['sur_p50'])}/月</b>，<b>{fmt_pct(m['sur_neg'])}</b> 为负。</li>
@@ -1484,7 +1645,7 @@ def build_html(
   <section class="section">
     <h2><span class="num">6</span>用户分层</h2>
     <p class="lede">按偿债后盈余率分为四层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 &lt;-20%。</p>
-    <div class="chart"><img src="data:image/png;base64,{figs['segments']}" alt="用户分层构成"></div>
+    <div class="chart">{figs['segments']}<p class="note">n = {m['n_valid']:,}；分层按偿债后盈余率划分，阈值见本章说明；悬停可查看各层收入、支出、余额与还款率。</p></div>
     <div class="table-card">
       {html_table(
         ["分层", "占比", "月收入", "月支出", "月盈余", "中位余额", "偿债/收入", "现金贷使用率", "拒付率"],
@@ -1538,9 +1699,6 @@ def main() -> None:
     data_path = Path(args.data)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    charts_dir = out / "charts"
-
-    setup_matplotlib()
 
     df_raw, missing, n_fields = load_data(data_path)
     df_raw, n_apps = clean_frame(df_raw)
@@ -1561,10 +1719,10 @@ def main() -> None:
 
     print("生成图表 ...")
     figs = {
-        "income": chart_income(m, charts_dir / "01_income.png"),
-        "consumption": chart_consumption(m, charts_dir / "02_consumption.png", top_n=args.top_n),
-        "health": chart_health(d, m, charts_dir / "03_health.png"),
-        "segments": chart_segments(seg, charts_dir / "04_segments.png"),
+        "income": chart_income(m),
+        "consumption": chart_consumption(m, top_n=args.top_n),
+        "health": chart_health(d, m),
+        "segments": chart_segments(seg),
     }
 
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -1581,7 +1739,7 @@ def main() -> None:
     print(f"收入: 月收入中位 {fmt_money(m['inc_p50'])} | 月支出中位 {fmt_money(m['exp_p50'])} | 月盈余中位 {fmt_money(m['sur_p50'])}")
     print(f"风险: 负盈余 {fmt_pct(m['sur_neg'])} | 中位余额 {fmt_money(m['bal_p50'])} | 有借贷 {fmt_pct(m['any_disburse'])} | 有拒付 {fmt_pct(m['dish_any'])}")
     print(f"\n报告: {report_path}")
-    print(f"图表: {charts_dir}")
+    print("图表: 已内嵌 Plotly（支持悬停、缩放、下载）")
     print(f"指标: {out / 'profile_metrics.csv'}")
     print(f"分层: {out / 'segment_summary.csv'}")
 
