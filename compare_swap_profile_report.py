@@ -32,7 +32,6 @@ from existing_swap_in_profile_report import (
     INK,
     INK2,
     SEQ_BLUE,
-    SERIES,
     STATUS,
     SURFACE,
     base_layout,
@@ -57,7 +56,8 @@ DEFAULT_SWAP_IN = ROOT / "data" / "existing_swap_in_v1_2_with_feature_all.csv"
 DEFAULT_SWAP_OUT = ROOT / "data" / "existing_swap_out_v1_2_with_feature_all.csv"
 DEFAULT_OUT = ROOT / "output"
 
-POP_COLORS = {"Swap In": SERIES[0], "Swap Out": SERIES[1]}
+POP_COLORS = {"Swap In": "#1c5cab", "Swap Out": "#d14b45"}
+# 人群色：深蓝 / 砖红。经 dataviz 校验（相邻 CVD ΔE 18.1，远高于 8 的目标线）。
 POP_Y_ORDER = ["Swap Out", "Swap In"]  # 水平图中 Swap In 在上
 SEG_COLORS = {
     "盈余型": (STATUS["good"], "#ffffff"),
