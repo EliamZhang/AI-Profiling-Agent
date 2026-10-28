@@ -203,8 +203,9 @@ def comp_table(rows: list, pf: Profile, pw: Profile) -> str:
             continue
         label, key, kind = row
         fv, wv = metric_value(pf, key), metric_value(pw, key)
+        row_cls = ' class="hl"' if key in KEY_METRICS else ""
         body.append(
-            "<tr>"
+            f"<tr{row_cls}>"
             f"<td>{html.escape(label)}</td>"
             f"<td>{fmt_metric(fv, kind)}</td>"
             f"<td>{fmt_metric(wv, kind)}</td>"
@@ -298,8 +299,10 @@ def segment_table(pf: Profile, pw: Profile) -> str:
     body = []
     for name, level in meta.items():
         fs, ws = seg_val(pf, name, "share"), seg_val(pw, name, "share")
+        is_key = f"seg:{name}:share" in KEY_METRICS
+        row_cls = ' class="hl"' if is_key else ""
         body.append(
-            "<tr>"
+            f"<tr{row_cls}>"
             f"<td>{status_chip(level, name)}</td>"
             f"<td>{fmt_pct(fs)}</td>"
             f"<td>{fmt_pct(ws)}</td>"
@@ -446,6 +449,26 @@ KPI_SPECS = [
     ("流动性缓冲 < 7 天", "buffer_lt7", "pct"),
 ]
 
+# 关键数据：明细表中高亮这些指标行
+KEY_METRICS = {
+    "n_valid",
+    "inc_p50",
+    "exp_p50",
+    "wage_incidence",
+    "wage_share_agg",
+    "any_disburse",
+    "adv_use",
+    "rep_rate_p50",
+    "dish_any",
+    "dish_unres",
+    "sur_neg",
+    "buffer_lt7",
+    "gamb_share_cons",
+    "seg:重压型:share",
+    "seg:盈余型:share",
+}
+HILITE = "#d9a441"  # 图表关键数据描边
+
 DIFF_OVERVIEW = [
     ("负盈余占比", "sur_neg"),
     ("缓冲 < 7 天", "buffer_lt7"),
@@ -477,7 +500,9 @@ def add_grouped_bars(
     kind: str = "pct",
     digits: int = 0,
     showlegend: bool = True,
+    highlight: set[str] | None = None,
 ) -> None:
+    highlight = highlight or set()
     for name, vals in (("Swap In", f_vals), ("Swap Out", w_vals)):
         texts = []
         for v in vals:
@@ -491,12 +516,18 @@ def add_grouped_bars(
             hover = f"{name}：%{{x:$,.0f}}<extra>%{{y}}</extra>"
         else:
             hover = f"{name}：%{{x:.{digits}f}}%<extra>%{{y}}</extra>"
+        marker = dict(color=POP_COLORS[name], cornerradius=3)
+        if highlight:
+            marker["line"] = dict(
+                color=[HILITE if lab in highlight else "rgba(0,0,0,0)" for lab in labels],
+                width=[2.5 if lab in highlight else 0 for lab in labels],
+            )
         trace = go.Bar(
             y=labels,
             x=[float(v) if valid(v) else None for v in vals],
             orientation="h",
             name=name,
-            marker=dict(color=POP_COLORS[name], cornerradius=3),
+            marker=marker,
             text=texts,
             textposition="outside",
             cliponaxis=False,
@@ -525,8 +556,8 @@ def chart_income_mix(pf: Profile, pw: Profile) -> str:
         horizontal_spacing=0.16,
         subplot_titles=("有该类收入的用户占比", "收入金额占比"),
     )
-    add_grouped_bars(fig, labels, f_inc, w_inc, row=1, col=1, showlegend=True)
-    add_grouped_bars(fig, labels, f_amt, w_amt, row=1, col=2, showlegend=False)
+    add_grouped_bars(fig, labels, f_inc, w_inc, row=1, col=1, showlegend=True, highlight={"工资"})
+    add_grouped_bars(fig, labels, f_amt, w_amt, row=1, col=2, showlegend=False, highlight={"工资"})
 
     mx = max([v for v in f_inc + w_inc + f_amt + w_amt if valid(v)] + [0]) * 1.22
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
@@ -689,7 +720,10 @@ def chart_consumption_dumbbell(pf: Profile, pw: Profile, top_n: int = 12) -> str
                 marker=dict(
                     color=POP_COLORS[name],
                     size=9,
-                    line=dict(color=SURFACE, width=2),
+                    line=dict(
+                        color=[HILITE if lab in {"房租", "赌博"} else SURFACE for lab in labels],
+                        width=[2.8 if lab in {"房租", "赌博"} else 2 for lab in labels],
+                    ),
                 ),
                 hovertemplate=f"{name}：%{{x:.1f}}%<extra>%{{y}}</extra>",
             )
@@ -743,8 +777,10 @@ def chart_liability(pf: Profile, pw: Profile) -> str:
         horizontal_spacing=0.22,
         subplot_titles=("借贷使用率", "拒付发生率（有对应记录的用户占比）"),
     )
-    add_grouped_bars(fig, use_labels, f_use, w_use, row=1, col=1, showlegend=True)
-    add_grouped_bars(fig, dish_labels, f_dish, w_dish, row=1, col=2, showlegend=False)
+    add_grouped_bars(fig, use_labels, f_use, w_use, row=1, col=1, showlegend=True,
+                     highlight={"有放款", "现金贷"})
+    add_grouped_bars(fig, dish_labels, f_dish, w_dish, row=1, col=2, showlegend=False,
+                     highlight={"任一拒付", "未解决拒付"})
 
     mx = max([v for v in f_use + w_use + f_dish + w_dish if valid(v)] + [0]) * 1.24
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
@@ -787,7 +823,7 @@ def chart_cashflow(pf: Profile, pw: Profile) -> str:
     w_vals = [pw.m[k] * 100 for k in keys]
 
     fig = go.Figure()
-    add_grouped_bars(fig, labels, f_vals, w_vals)
+    add_grouped_bars(fig, labels, f_vals, w_vals, highlight={"负盈余", "缓冲 < 7 天"})
     mx = max([v for v in f_vals + w_vals if valid(v)] + [0]) * 1.22
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
     fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
@@ -847,13 +883,17 @@ def chart_segments(pf: Profile, pw: Profile) -> str:
     for segment, (color, text_color) in SEG_COLORS.items():
         f_share = seg_val(pf, segment, "share")
         w_share = seg_val(pw, segment, "share")
+        is_key = segment == "重压型"
         fig.add_trace(
             go.Bar(
                 y=POP_Y_ORDER,
                 x=[w_share * 100, f_share * 100],
                 orientation="h",
                 name=segment,
-                marker=dict(color=color, line=dict(color=SURFACE, width=2)),
+                marker=dict(
+                    color=color,
+                    line=dict(color=HILITE if is_key else SURFACE, width=2.8 if is_key else 2),
+                ),
                 text=[
                     f"{v:.0f}%" if valid(v) and v >= 4 else ""
                     for v in (w_share * 100, f_share * 100)
@@ -883,7 +923,7 @@ def chart_segment_surplus(pf: Profile, pw: Profile) -> str:
     w_vals = [seg_val(pw, s, "sur_m") for s in labels]
 
     fig = go.Figure()
-    add_grouped_bars(fig, labels, f_vals, w_vals, kind="money")
+    add_grouped_bars(fig, labels, f_vals, w_vals, kind="money", highlight={"重压型"})
     values = [v for v in f_vals + w_vals if valid(v)]
     if values:
         lo, hi = min(values), max(values)
@@ -930,7 +970,7 @@ def chart_risk(pf: Profile, pw: Profile) -> str:
     w_vals = [pw.m[k] * 100 for k in keys]
 
     fig = go.Figure()
-    add_grouped_bars(fig, labels, f_vals, w_vals)
+    add_grouped_bars(fig, labels, f_vals, w_vals, highlight={"赌博占消费"})
     mx = max([v for v in f_vals + w_vals if valid(v)] + [0]) * 1.22
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
     fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
@@ -958,6 +998,7 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
     diffs = [r[1] for r in rows]
     pos = [d if d > 0 else None for d in diffs]
     neg = [d if d < 0 else None for d in diffs]
+    top = set(labels[:3])
 
     fig = go.Figure()
     fig.add_trace(
@@ -966,7 +1007,14 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
             x=pos,
             orientation="h",
             name="Swap Out 更高",
-            marker=dict(color=POP_COLORS["Swap Out"], cornerradius=3),
+            marker=dict(
+                color=POP_COLORS["Swap Out"],
+                cornerradius=3,
+                line=dict(
+                    color=[HILITE if lab in top else "rgba(0,0,0,0)" for lab in labels],
+                    width=[2.5 if lab in top else 0 for lab in labels],
+                ),
+            ),
             text=[f"{d:+.1f}pp" if d is not None else "" for d in pos],
             textposition="outside",
             cliponaxis=False,
@@ -980,7 +1028,14 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
             x=neg,
             orientation="h",
             name="Swap In 更高",
-            marker=dict(color=POP_COLORS["Swap In"], cornerradius=3),
+            marker=dict(
+                color=POP_COLORS["Swap In"],
+                cornerradius=3,
+                line=dict(
+                    color=[HILITE if lab in top else "rgba(0,0,0,0)" for lab in labels],
+                    width=[2.5 if lab in top else 0 for lab in labels],
+                ),
+            ),
             text=[f"{d:+.1f}pp" if d is not None else "" for d in neg],
             textposition="outside",
             cliponaxis=False,
@@ -1118,6 +1173,23 @@ table.cmp tr.group td {
 table.cmp tbody tr:hover td { background: #f4f4f1; }
 table.seg-table th, table.seg-table td { white-space: nowrap; }
 .chart-grid.even { grid-template-columns: 1fr 1fr; }
+.star { color: #a16207; font-size: 12px; line-height: 1; margin-right: 4px; }
+h2 { flex-wrap: wrap; }
+.key-conclusion {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin: 4px 0 14px; padding: 9px 12px;
+  border-left: 3px solid #d9a441; background: #fdf9ec;
+  border-radius: 0 8px 8px 0; color: var(--ink);
+  font-size: 13.5px; line-height: 1.6;
+}
+.key-conclusion .star { margin-top: 2px; flex: none; font-size: 14px; }
+mark.hl {
+  background: #fbeec4; color: inherit; padding: 0 2px;
+  border-radius: 3px; font-weight: 650;
+}
+table.cmp tr.hl td { background: #fdf9ec; }
+table.cmp tr.hl td:first-child { font-weight: 650; }
+table.cmp tbody tr.hl:hover td { background: #f7efd7; }
 @media (max-width: 900px) { .chart-grid.even { grid-template-columns: 1fr; } }
 """
 
@@ -1165,22 +1237,20 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
     <span class="chip"><span class="dot" style="background:{POP_COLORS['Swap Out']}"></span>Swap Out 申请 <b>{pw.m['n_apps']:,}</b> · 用户 <b>{pw.m['n_users']:,}</b> · 有效 <b>{pw.m['n_valid']:,}</b>（{fmt_pct(pw.m['coverage'])}）</span>
     <span class="chip">生成时间 <b>{html.escape(generated_at)}</b></span>
   </div>
-  <p class="note">提示：两组均为 2026-09 至 2026-10 的存量（Old）用户样本；Swap Out 有效样本仅 {pw.m['n_valid']:,} 人，分位数与分层结果波动较大，解读需谨慎；图表可悬停查看明细。</p>
+  <p class="note">提示：两组均为 2026-09 至 2026-10 的存量（Old）用户样本；Swap Out 有效样本仅 {pw.m['n_valid']:,} 人，分位数与分层结果波动较大，解读需谨慎；图表可悬停查看明细。<span class="star">★</span>各节开头的金色结论框为该节结论；金色高亮为支撑结论的数据。</p>
 
   <div class="kpi-grid compare" style="margin-top:18px">{kpi_html(pf, pw)}</div>
 
   <section class="section">
     <h2><span class="num">0</span>样本概览</h2>
-    <p class="goal"><b>分析目标</b>：确认两组样本的规模、有效性与观察窗口是否可比。</p>
-    <p class="lede">两组有效率均为 100%；Swap Out 有效样本仅 {pw.m['n_valid']:,} 人，约为 Swap In 的 {pw.m['n_valid'] / pf.m['n_valid']:.0%}，后续差异需结合样本量解读。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>两组有效率均为 100%；Swap Out 有效样本仅 <mark class="hl">{pw.m['n_valid']:,} 人</mark>，约为 Swap In 的 <mark class="hl">{pw.m['n_valid'] / pf.m['n_valid']:.0%}</mark>，分位数与分层结果波动较大。</div></div>
     <div class="table-card">{comp_table(OVERVIEW_ROWS, pf, pw)}</div>
     <p class="note">有效样本要求 txn_raw_input_cnt &gt; 0，且收入 / 支出 / 盈余非缺失、收入 &gt; 0；同一 user_id 保留交易笔数最多的申请。</p>
   </section>
 
   <section class="section">
     <h2><span class="num">1</span>核心财务指标分布</h2>
-    <p class="goal"><b>分析目标</b>：比较两组核心金额与盈余的分布位置和尾部。</p>
-    <p class="lede">Swap Out 的收入与支出分布整体高于 Swap In，但盈余分布同样位于零以下；两组账户余额都集中在低位。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 的收入与支出分布整体更高（中位月收入 <mark class="hl">{fmt_money(pw.m['inc_p50'])} vs {fmt_money(pf.m['inc_p50'])}</mark>、月支出 <mark class="hl">{fmt_money(pw.m['exp_p50'])} vs {fmt_money(pf.m['exp_p50'])}</mark>），但两组盈余同样位于零以下，余额集中在低位。</div></div>
     <div class="chart">{figs['distributions']}<p class="note">箱体为 P25–P75，横线为中位数，须线为 1.5×IQR；为便于阅读，横轴裁至两组合并后的 P1–P99。</p></div>
     <details>
       <summary>查看指标明细</summary>
@@ -1190,11 +1260,10 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">2</span>收入与就业</h2>
-    <p class="goal"><b>分析目标</b>：判断还款来源的规模、结构与稳定性差异。</p>
-    <p class="lede">Swap Out 收入更高且工资覆盖接近全覆盖；Swap In 的入账更依赖“其他入账”，内部转账类入账也更普遍。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 收入更高，工资覆盖 <mark class="hl">{fmt_pct(pw.m['wage_incidence'])}</mark>（Swap In <mark class="hl">{fmt_pct(pf.m['wage_incidence'])}</mark>）、工资占入账 <mark class="hl">{fmt_pct(pw.m['wage_share_agg'])} vs {fmt_pct(pf.m['wage_share_agg'])}</mark>；Swap In 更依赖“其他入账”和内部转账。</div></div>
     <div class="chart">{figs['income_mix']}<p class="note">n = Swap In {pf.m['n_valid']:,} / Swap Out {pw.m['n_valid']:,}；发生率以有效用户为分母，金额占比以分项收入（工资 + 福利 + 其他入账）加总为分母。</p></div>
     <ul class="notes">
-      <li>有工资收入：Swap In <b>{fmt_pct(pf.m['wage_incidence'])}</b>、Swap Out <b>{fmt_pct(pw.m['wage_incidence'])}</b>；工资占入账金额 <b>{fmt_pct(pf.m['wage_share_agg'])}</b> vs <b>{fmt_pct(pw.m['wage_share_agg'])}</b>。</li>
+      <li>有工资收入：Swap In <mark class="hl">{fmt_pct(pf.m['wage_incidence'])}</mark>、Swap Out <mark class="hl">{fmt_pct(pw.m['wage_incidence'])}</mark>；工资占入账金额 <mark class="hl">{fmt_pct(pf.m['wage_share_agg'])}</mark> vs <mark class="hl">{fmt_pct(pw.m['wage_share_agg'])}</mark>。</li>
       <li>有福利收入：Swap In <b>{fmt_pct(pf.m['cent_incidence'])}</b>、Swap Out <b>{fmt_pct(pw.m['cent_incidence'])}</b>；其他入账占入账金额 <b>{fmt_pct(pf.m['other_share_agg'])}</b> vs <b>{fmt_pct(pw.m['other_share_agg'])}</b>。</li>
       <li>入账 CV 中位：Swap In <b>{fmt_metric(pf.m['income_cv_p50'], 'num')}</b>、Swap Out <b>{fmt_metric(pw.m['income_cv_p50'], 'num')}</b>；工资 CV 中位 <b>{fmt_metric(pf.m['wage_cv_p50'], 'num')}</b> vs <b>{fmt_metric(pw.m['wage_cv_p50'], 'num')}</b>，两组入账波动都偏高。</li>
       <li>可识别雇主占比：Swap In <b>{fmt_pct(metric_value(pf, 'employer_share'))}</b>、Swap Out <b>{fmt_pct(metric_value(pw, 'employer_share'))}</b>；主行业分别为 <b>{fmt_metric(pf.m['industry_top_text'], 'text')}</b> 与 <b>{fmt_metric(pw.m['industry_top_text'], 'text')}</b>。</li>
@@ -1207,8 +1276,7 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">3</span>支出与消费</h2>
-    <p class="goal"><b>分析目标</b>：比较资金流向、消费刚性与可压缩空间。</p>
-    <p class="lede">Swap Out 支出更高，房租与赌博占可识别消费的比重更大；Swap In 的超市消费与内部转账占比更高。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 支出更高，房租占可识别消费 <mark class="hl">{fmt_pct(pw.m['cat_shares']['rent'])}</mark>（Swap In <mark class="hl">{fmt_pct(pf.m['cat_shares']['rent'])}</mark>）、赌博 <mark class="hl">{fmt_pct(pw.m['cat_shares']['gambling'])}</mark>（<mark class="hl">{fmt_pct(pf.m['cat_shares']['gambling'])}</mark>）；Swap In 的超市消费和内部转账占比更高。</div></div>
     <div class="chart">{figs['expense_structure']}<p class="note">外部 / 内部转账占比以全部借记流水为分母；其余占比的分母见指标名。</p></div>
     <div class="chart">{figs['consumption']}<p class="note">仅展示份额最高的 12 个消费类目；Δ 为 Swap Out − Swap In（百分点）；完整类目见明细表。</p></div>
     <ul class="notes">
@@ -1227,13 +1295,12 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">4</span>负债与信用履约</h2>
-    <p class="goal"><b>分析目标</b>：比较借贷依赖、偿债压力与拒付处置。</p>
-    <p class="lede">Swap Out 的借贷参与度、偿债负担和拒付暴露均高于 Swap In，但拒付解决率也更高。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 的杠杆和拒付暴露更高：有借贷放款 <mark class="hl">{fmt_pct(pw.m['any_disburse'])}</mark>（Swap In <mark class="hl">{fmt_pct(pf.m['any_disburse'])}</mark>）、现金贷 <mark class="hl">{fmt_pct(pw.m['adv_use'])}</mark>（<mark class="hl">{fmt_pct(pf.m['adv_use'])}</mark>）、偿债/收入 <mark class="hl">{fmt_pct(pw.m['rep_rate_p50'])}</mark>（<mark class="hl">{fmt_pct(pf.m['rep_rate_p50'])}</mark>）；拒付解决率也更高。</div></div>
     <div class="chart">{figs['liability']}<p class="note">使用率与拒付发生率均以有效用户为分母。</p></div>
     <ul class="notes">
-      <li>有借贷放款：Swap In <b>{fmt_pct(pf.m['any_disburse'])}</b>、Swap Out <b>{fmt_pct(pw.m['any_disburse'])}</b>；现金贷使用率 <b>{fmt_pct(pf.m['adv_use'])}</b> vs <b>{fmt_pct(pw.m['adv_use'])}</b>，分期贷 <b>{fmt_pct(pf.m['loan_use'])}</b> vs <b>{fmt_pct(pw.m['loan_use'])}</b>，BNPL <b>{fmt_pct(pf.m['bnpl_use'])}</b> vs <b>{fmt_pct(pw.m['bnpl_use'])}</b>。</li>
+      <li>有借贷放款：Swap In <mark class="hl">{fmt_pct(pf.m['any_disburse'])}</mark>、Swap Out <mark class="hl">{fmt_pct(pw.m['any_disburse'])}</mark>；现金贷使用率 <mark class="hl">{fmt_pct(pf.m['adv_use'])}</mark> vs <mark class="hl">{fmt_pct(pw.m['adv_use'])}</mark>，分期贷 <b>{fmt_pct(pf.m['loan_use'])}</b> vs <b>{fmt_pct(pw.m['loan_use'])}</b>，BNPL <b>{fmt_pct(pf.m['bnpl_use'])}</b> vs <b>{fmt_pct(pw.m['bnpl_use'])}</b>。</li>
       <li>偿债 / 收入中位：Swap In <b>{fmt_pct(pf.m['rep_rate_p50'])}</b>、Swap Out <b>{fmt_pct(pw.m['rep_rate_p50'])}</b>；月还款中位 <b>{fmt_money(pf.m['rep_m_p50'])}</b> vs <b>{fmt_money(pw.m['rep_m_p50'])}</b>，净借款人占比 <b>{fmt_pct(pf.m['net_borrow_share'])}</b> vs <b>{fmt_pct(pw.m['net_borrow_share'])}</b>。</li>
-      <li>有拒付记录：Swap In <b>{fmt_pct(pf.m['dish_any'])}</b>、Swap Out <b>{fmt_pct(pw.m['dish_any'])}</b>；未解决拒付 <b>{fmt_pct(pf.m['dish_unres'])}</b> vs <b>{fmt_pct(pw.m['dish_unres'])}</b>，解决率 <b>{fmt_pct(pf.m['dish_resolution_rate'])}</b> vs <b>{fmt_pct(pw.m['dish_resolution_rate'])}</b>。</li>
+      <li>有拒付记录：Swap In <mark class="hl">{fmt_pct(pf.m['dish_any'])}</mark>、Swap Out <mark class="hl">{fmt_pct(pw.m['dish_any'])}</mark>；未解决拒付 <mark class="hl">{fmt_pct(pf.m['dish_unres'])}</mark> vs <mark class="hl">{fmt_pct(pw.m['dish_unres'])}</mark>，解决率 <b>{fmt_pct(pf.m['dish_resolution_rate'])}</b> vs <b>{fmt_pct(pw.m['dish_resolution_rate'])}</b>；点估计更高，但样本量下置信区间有重叠。</li>
       <li>放款金额结构：Swap In <b>{fmt_metric(pf.m['product_mix_text'], 'text')}</b>；Swap Out <b>{fmt_metric(pw.m['product_mix_text'], 'text')}</b>。</li>
     </ul>
     <details>
@@ -1244,13 +1311,12 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">5</span>现金流与流动性</h2>
-    <p class="goal"><b>分析目标</b>：比较收支结余与账户缓冲。</p>
-    <p class="lede">两组几乎全部为负盈余，账户缓冲普遍不足 7 天；Swap Out 的盈余率中位略好，但缓冲不足 7 天的占比更高。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>两组几乎全部负盈余（<mark class="hl">{fmt_pct(pf.m['sur_neg'])} vs {fmt_pct(pw.m['sur_neg'])}</mark>），缓冲不足 7 天占比 <mark class="hl">{fmt_pct(pf.m['buffer_lt7'])} vs {fmt_pct(pw.m['buffer_lt7'])}</mark>；流动性是共同短板，Swap Out 更接近全覆盖。</div></div>
     <div class="chart">{figs['cashflow']}<p class="note">占比均以有效用户为分母；缓冲天数 = 账户余额 /（月支出 / 30）。</p></div>
     <div class="chart">{figs['balance_buckets']}<p class="note">余额取最近快照；两组各自归一化为 100%。</p></div>
     <ul class="notes">
       <li>中位月盈余：Swap In <b>{fmt_money(pf.m['sur_p50'])}</b>、Swap Out <b>{fmt_money(pw.m['sur_p50'])}</b>；负盈余占比 <b>{fmt_pct(pf.m['sur_neg'])}</b> vs <b>{fmt_pct(pw.m['sur_neg'])}</b>，偿债前收不抵支 <b>{fmt_pct(pf.m['pre_debt_neg'])}</b> vs <b>{fmt_pct(pw.m['pre_debt_neg'])}</b>。</li>
-      <li>中位账户余额：Swap In <b>{fmt_money(pf.m['bal_p50'])}</b>、Swap Out <b>{fmt_money(pw.m['bal_p50'])}</b>；缓冲 &lt; 7 天占比 <b>{fmt_pct(pf.m['buffer_lt7'])}</b> vs <b>{fmt_pct(pw.m['buffer_lt7'])}</b>，透支用户占比 <b>{fmt_pct(pf.m['bal_neg'])}</b> vs <b>{fmt_pct(pw.m['bal_neg'])}</b>。</li>
+      <li>中位账户余额：Swap In <b>{fmt_money(pf.m['bal_p50'])}</b>、Swap Out <b>{fmt_money(pw.m['bal_p50'])}</b>；缓冲 &lt; 7 天占比 <mark class="hl">{fmt_pct(pf.m['buffer_lt7'])}</mark> vs <mark class="hl">{fmt_pct(pw.m['buffer_lt7'])}</mark>，透支用户占比 <b>{fmt_pct(pf.m['bal_neg'])}</b> vs <b>{fmt_pct(pw.m['bal_neg'])}</b>。</li>
     </ul>
     <details>
       <summary>查看指标明细</summary>
@@ -1262,8 +1328,7 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">6</span>用户分层</h2>
-    <p class="goal"><b>分析目标</b>：比较风险分层结构及层内表现。</p>
-    <p class="lede">Swap Out 无盈余型用户，但平衡型占比更高、重压型占比更低；Swap In 重压型接近三成。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 无盈余型用户，但重压型占比 <mark class="hl">{fmt_pct(seg_val(pw, "重压型", "share"))}</mark>（Swap In <mark class="hl">{fmt_pct(seg_val(pf, "重压型", "share"))}</mark>）、平衡型 <mark class="hl">{fmt_pct(seg_val(pw, "平衡型", "share"))}</mark>（<mark class="hl">{fmt_pct(seg_val(pf, "平衡型", "share"))}</mark>）；Swap In 的尾部压力更集中。</div></div>
     <div class="chart-grid even">
       <div class="chart">{figs['segments']}<p class="note">各分层占比，组内归一化为 100%。</p></div>
       <div class="chart">{figs['segment_surplus']}<p class="note">各分层中位月盈余。</p></div>
@@ -1274,8 +1339,7 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">7</span>风险信号</h2>
-    <p class="goal"><b>分析目标</b>：比较赌博、手续费与异常交易暴露。</p>
-    <p class="lede">两组赌博与手续费发生率接近；Swap Out 的赌博消费占比与周末消费占比更高。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>两组赌博与手续费发生率接近；Swap Out 赌博消费占比 <mark class="hl">{fmt_pct(pw.m['gamb_share_cons'])}</mark>（Swap In <mark class="hl">{fmt_pct(pf.m['gamb_share_cons'])}</mark>）、周末消费占比 <mark class="hl">{fmt_pct(pw.m['weekend_share_p50'])}</mark>（<mark class="hl">{fmt_pct(pf.m['weekend_share_p50'])}</mark>）更高。</div></div>
     <div class="chart">{figs['risk']}<p class="note">“赌博占消费”为样本加总口径，其余为有效用户发生率。</p></div>
     <details>
       <summary>查看指标明细</summary>
@@ -1285,8 +1349,7 @@ def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str
 
   <section class="section">
     <h2><span class="num">8</span>主要差异</h2>
-    <p class="goal"><b>分析目标</b>：汇总可比的份额类指标差异，定位两组画像的主要分化点。</p>
-    <p class="lede">Swap Out 在收入、借贷、拒付与赌博消费占比上更高；Swap In 在内部转账与重压型占比上更高。</p>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 在收入、借贷、拒付和赌博消费占比上更高；Swap In 在内部转账和重压型占比上更高。</div></div>
     <div class="chart">{figs['difference']}<p class="note">差值 = Swap Out − Swap In，单位为百分点；仅列可比的比例类指标，按差值绝对值排序。</p></div>
     <div class="findings" style="margin-top:14px">{findings}</div>
   </section>
