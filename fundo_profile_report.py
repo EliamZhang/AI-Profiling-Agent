@@ -155,6 +155,10 @@ INCOME_COLS = [
     "bank_txn_income_centrelink_sum_182d",
     "bank_txn_income_centrelink_cv_182d",
     "bank_txn_income_otherincome_sum_182d",
+    "bank_txn_income_otherincome_category_externaltransfers_sum_182d",
+    "bank_txn_income_otherincome_category_internaltransfer_sum_182d",
+    "bank_txn_income_otherincome_category_allothercredits_sum_182d",
+    "bank_txn_income_otherincome_category_gambling_sum_182d",
     "bank_txn_worthiness_income_source_cnt_182d",
     "bank_txn_worthiness_days_since_last_wage_income_182d",
     "bank_txn_worthiness_wage_income_consecutive_month_cnt_182d",
@@ -164,6 +168,8 @@ EXPENSE_COLS = [
     "bank_txn_expense_global_median_182d",
     "bank_txn_expense_global_cv_182d",
     "bank_txn_category_external_transfers_debit_amt_182d",
+    "bank_txn_category_internal_transfer_debit_amt_182d",
+    "bank_txn_category_global_debit_amt_182d",
     "bank_txn_category_gambling_debit_amt_182d",
     "bank_txn_category_fees_debit_amt_182d",
 ] + [f"bank_txn_category_{k}_debit_amt_182d" for k in CONSUMPTION_CATS]
@@ -185,6 +191,7 @@ BALANCE_COLS = [
     "bank_txn_balance_snapshot_last_182d",
     "bank_txn_balance_min_182d",
     "bank_txn_balance_max_182d",
+    "bank_txn_balance_sign_change_count_182d",
     "bank_txn_balance_anomaly_days_182d",
     "bank_txn_balance_below_avg_ratio_182d",
     "bank_txn_balance_global_net_burn_per_day_182d",
@@ -250,6 +257,9 @@ WORTHINESS_COLS = [
     "bank_txn_worthiness_daily_living_amt_max_182d",
     "bank_txn_worthiness_high_commitment_amt_sum_182d",
     "bank_txn_worthiness_large_expense_amt_max_182d",
+    "bank_txn_worthiness_large_expense_cnt_182d",
+    "bank_txn_worthiness_days_since_last_liability_drawdown_182d",
+    "bank_txn_worthiness_days_since_last_liability_repayment_182d",
 ]
 ALL_COLUMNS = list(
     dict.fromkeys(
@@ -496,6 +506,32 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["wage_share_agg"] = wages.sum() / total_income if total_income else np.nan
     m["cent_share_agg"] = cent.sum() / total_income if total_income else np.nan
     m["other_share_agg"] = other.sum() / total_income if total_income else np.nan
+    other_parts = {
+        "ext": d["bank_txn_income_otherincome_category_externaltransfers_sum_182d"],
+        "internal": d["bank_txn_income_otherincome_category_internaltransfer_sum_182d"],
+        "credits": d["bank_txn_income_otherincome_category_allothercredits_sum_182d"],
+        "gambling": d["bank_txn_income_otherincome_category_gambling_sum_182d"],
+    }
+    other_total = float(other.sum())
+    for key, col in other_parts.items():
+        m[f"other_{key}_share"] = float(col.sum() / other_total) if other_total else np.nan
+        m[f"other_{key}_inc"] = pos_share(col)
+        m[f"other_{key}_med"] = q(col[col > 0], 0.5)
+    m["other_known_share"] = (
+        float(sum(col.sum() for col in other_parts.values()) / other_total)
+        if other_total
+        else np.nan
+    )
+    m["other_residual_share"] = (
+        max(0.0, 1.0 - m["other_known_share"])
+        if np.isfinite(m["other_known_share"])
+        else np.nan
+    )
+    m["transfer_inc_share"] = (
+        float((other_parts["ext"].sum() + other_parts["internal"].sum()) / total_income)
+        if total_income
+        else np.nan
+    )
     m["arch_both"] = float((w & c).mean())
     m["arch_wage_only"] = float((w & ~c).mean())
     m["arch_cent_only"] = float((~w & c).mean())
@@ -560,6 +596,17 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
         if d["exp"].sum()
         else np.nan
     )
+    internal_transfer = d["bank_txn_category_internal_transfer_debit_amt_182d"]
+    global_debit = d["bank_txn_category_global_debit_amt_182d"]
+    m["ext_transfer_share_global"] = (
+        float(d["bank_txn_category_external_transfers_debit_amt_182d"].sum() / global_debit.sum())
+        if global_debit.sum()
+        else np.nan
+    )
+    m["internal_transfer_share_global"] = (
+        float(internal_transfer.sum() / global_debit.sum()) if global_debit.sum() else np.nan
+    )
+    m["internal_transfer_inc"] = pos_share(internal_transfer)
     m["ess_share_cons"] = float(d[ess_cols].sum().sum() / cons_total) if cons_total else np.nan
     m["dis_share_cons"] = float(d[dis_cols].sum().sum() / cons_total) if cons_total else np.nan
     m["gamb_incidence"] = pos_share(gamb)
@@ -594,6 +641,15 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["high_commit_share_p50"] = q(d["high_commit_share"], 0.5)
     m["large_expense_p50"] = q(d["bank_txn_worthiness_large_expense_amt_max_182d"], 0.5)
     m["large_expense_p90"] = q(d["bank_txn_worthiness_large_expense_amt_max_182d"], 0.9)
+    large_cnt = d["bank_txn_worthiness_large_expense_cnt_182d"]
+    m["large_expense_cnt_p50"] = q(large_cnt, 0.5)
+    m["large_expense_cnt_p90"] = q(large_cnt, 0.9)
+    m["large_expense_cnt_pm_p50"] = (
+        m["large_expense_cnt_p50"] / MONTHS if np.isfinite(m["large_expense_cnt_p50"]) else np.nan
+    )
+    m["large_expense_cnt_pm_p90"] = (
+        m["large_expense_cnt_p90"] / MONTHS if np.isfinite(m["large_expense_cnt_p90"]) else np.nan
+    )
     m["daily_living_p50"] = q(d["bank_txn_worthiness_daily_living_amt_max_182d"], 0.5)
 
     # 资金与负债
@@ -628,6 +684,12 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["rep_rate_p90"] = q(d["rep_rate"], 0.9)
     m["draw_m_p50"] = q(d["draw_m"], 0.5)
     m["draw_rate_p50"] = q(d["draw_rate"], 0.5)
+    days_draw = d["bank_txn_worthiness_days_since_last_liability_drawdown_182d"]
+    days_rep = d["bank_txn_worthiness_days_since_last_liability_repayment_182d"]
+    m["days_since_drawdown_p50"] = q(days_draw, 0.5)
+    m["days_since_drawdown_cov"] = float(days_draw.notna().mean())
+    m["days_since_repayment_p50"] = q(days_rep, 0.5)
+    m["days_since_repayment_cov"] = float(days_rep.notna().mean())
     m["net_borrow_share"] = cond_share(d["net_borrow"] > 0, d["net_borrow"])
     m["sur_trend_1m3m_p50"] = q(d["bank_txn_surplus_surplus_1m_vs_3m"], 0.5)
     m["sur_trend_3m6m_p50"] = q(d["bank_txn_surplus_surplus_3m_vs_6m"], 0.5)
@@ -637,6 +699,12 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["rep_trend_p50"] = q(rep_trend[rep_trend > 0], 0.5)
     m["bal_min_p50"] = q(d["bank_txn_balance_min_182d"], 0.5)
     m["bal_max_p50"] = q(d["bank_txn_balance_max_182d"], 0.5)
+    sign_change = d["bank_txn_balance_sign_change_count_182d"]
+    m["sign_change_p50"] = q(sign_change, 0.5)
+    m["sign_change_p90"] = q(sign_change, 0.9)
+    m["sign_change_pm_p50"] = (
+        m["sign_change_p50"] / MONTHS if np.isfinite(m["sign_change_p50"]) else np.nan
+    )
     m["bal_anomaly_p50"] = q(d["bank_txn_balance_anomaly_days_182d"], 0.5)
     m["bal_below_avg_p50"] = q(d["bank_txn_balance_below_avg_ratio_182d"], 0.5)
     m["net_burn_p50"] = q(d["bank_txn_balance_global_net_burn_per_day_182d"], 0.5)
@@ -692,6 +760,11 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["dish_unres_amt_total"] = float(
         d["bank_txn_dishonour_lender_unresolved_amt_3gp_182d"].sum()
     )
+    unres_income = finite(
+        safe_div(d["bank_txn_dishonour_lender_unresolved_amt_3gp_182d"], d["inc"])
+    )
+    m["dish_unres_income_p50"] = q(unres_income, 0.5)
+    m["dish_unres_income_p90"] = q(unres_income, 0.9)
     m["dish_personal_loan"] = cond_share(
         d["bank_txn_dishonour_personal_loan_ratio_182d"] > 0,
         d["bank_txn_dishonour_personal_loan_ratio_182d"],
@@ -906,7 +979,7 @@ def chart_consumption(m: dict, path: Path, top_n: int = 10) -> str:
     ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.0f}%"))
     top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
     ax.set_title(
-        f"可识别消费结构：{top3}居前",
+        f"可识别消费结构：{top3}居前（仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}）",
         fontsize=11.5,
         fontweight="bold",
         loc="left",
@@ -1157,6 +1230,13 @@ def build_html(
         ["福利", fmt_pct(m["cent_incidence"]), fmt_pct(m["cent_share_agg"]), fmt_money(m["cent_median_m"])],
         ["其他入账", fmt_pct(m["other_incidence"]), fmt_pct(m["other_share_agg"]), fmt_money(m["other_median_m"])],
     ]
+    other_rows = [
+        ["外部转账", fmt_pct(m["other_ext_share"]), fmt_pct(m["other_ext_inc"]), fmt_money(m["other_ext_med"])],
+        ["内部转账", fmt_pct(m["other_internal_share"]), fmt_pct(m["other_internal_inc"]), fmt_money(m["other_internal_med"])],
+        ["其他信用入账", fmt_pct(m["other_credits_share"]), fmt_pct(m["other_credits_inc"]), fmt_money(m["other_credits_med"])],
+        ["赌博入账", fmt_pct(m["other_gambling_share"]), fmt_pct(m["other_gambling_inc"]), fmt_money(m["other_gambling_med"])],
+        ["其余未列示", fmt_pct(m["other_residual_share"]), "—", "—"],
+    ]
     cat_items = sorted(m["cat_shares"].items(), key=lambda kv: kv[1], reverse=True)
     top5_text = "、".join(
         f"{CONSUMPTION_CATS[k]} {fmt_pct(v)}" for k, v in cat_items[:5]
@@ -1209,11 +1289,11 @@ def build_html(
 
     findings = [
         f"<b>收支缺口是常态，支出端为主、偿债进一步扩大缺口。</b> {fmt_pct(m['pre_debt_neg'])} 的用户在偿债前已收不抵支，计入还本付息后升至 {fmt_pct(m['sur_neg'])}，中位月盈余 {fmt_money(m['sur_p50'])}。重压型收入中位 {fmt_money(seg_val('重压型', 'inc_m'))}，高于平衡型的 {fmt_money(seg_val('平衡型', 'inc_m'))}，缺口并非单纯收入不足。",
-        f"<b>工资覆盖广，但入账金额高度依赖其他来源。</b> {fmt_pct(m['wage_incidence'])} 有工资收入，工资中位 {fmt_money(m['wage_median_m'])}/月，但工资仅占入账金额 {fmt_pct(m['wage_share_agg'])}，“其他入账”占 {fmt_pct(m['other_share_agg'])}。总入账 CV 中位 {num(m['income_cv_p50'])}，收入来源数中位 {num(m['income_source_p50'], 0)} 个；{fmt_pct(m['wage_3m6m_decline'])} 的用户近 3 月工资较近 6 月下降超 10%。",
-        f"<b>流动性缓冲接近于零。</b> 中位账户余额仅 {fmt_money(m['bal_p50'])}，只能覆盖 {m['buffer_p50']:.1f} 天支出；{fmt_pct(m['buffer_lt7'])} 的用户缓冲不足 7 天，小额意外支出即可直接转为透支。",
-        f"<b>支出刚性强，可压缩空间有限。</b> 外部转账占全部支出 {fmt_pct(m['ext_share_agg'])}，债务相关支出占 {fmt_pct(m['debt_share_p50'])}，高承诺支出占收入中位 {fmt_pct(m['high_commit_share_p50'])}；可识别消费中位仅占总支出 {fmt_pct(m['cons_share_exp_p50'])}，支出端可压缩余地不大。",
+        f"<b>工资覆盖广，但入账金额高度依赖其他来源。</b> {fmt_pct(m['wage_incidence'])} 有工资收入，工资中位 {fmt_money(m['wage_median_m'])}/月，但工资仅占入账金额 {fmt_pct(m['wage_share_agg'])}，“其他入账”占 {fmt_pct(m['other_share_agg'])}，其中外部+内部转账合计占分项收入 {fmt_pct(m['transfer_inc_share'])}。总入账 CV 中位 {num(m['income_cv_p50'])}，收入来源数中位 {num(m['income_source_p50'], 0)} 个；{fmt_pct(m['wage_3m6m_decline'])} 的用户近 3 月工资较近 6 月下降超 10%。",
+        f"<b>流动性缓冲接近于零。</b> 中位账户余额仅 {fmt_money(m['bal_p50'])}，只能覆盖 {m['buffer_p50']:.1f} 天支出；{fmt_pct(m['buffer_lt7'])} 的用户缓冲不足 7 天，小额意外支出即可直接转为透支；6 个月内余额正负切换中位 {num(m['sign_change_p50'], 0)} 次，反复进出透支。",
+        f"<b>支出刚性强，可压缩空间有限。</b> 按全部借记流水口径，外部转账占 {fmt_pct(m['ext_transfer_share_global'])}、内部转账占 {fmt_pct(m['internal_transfer_share_global'])}；债务相关支出占 {fmt_pct(m['debt_share_p50'])}，高承诺支出占收入中位 {fmt_pct(m['high_commit_share_p50'])}；可识别消费中位仅占总支出 {fmt_pct(m['cons_share_exp_p50'])}，支出端可压缩余地不大。",
         f"<b>借贷以短期现金贷为主，借款扩张快于还款。</b> 放款金额结构为 {m['product_mix_text'] or '—'}；近 1 月/近 3 月新增借款比中位 {num(m['draw_trend_p50'])}，高于还款比的 {num(m['rep_trend_p50'])}，{fmt_pct(m['net_borrow_share'])} 为净借款人，债务滚动特征明显。",
-        f"<b>拒付处置能力弱，风险可能继续累积。</b> {fmt_pct(m['dish_unres'])} 的用户存在未解决拒付，未解决金额合计 {fmt_money(m['dish_unres_amt_total'], compact=True)}，解决率仅 {fmt_pct(m['dish_resolution_rate'])}；未解决机构数中位 {num(m['dish_institution_p50'], 0)} 家，处置渠道集中但进展有限。",
+        f"<b>拒付处置能力弱，风险可能继续累积。</b> {fmt_pct(m['dish_unres'])} 的用户存在未解决拒付，未解决金额合计 {fmt_money(m['dish_unres_amt_total'], compact=True)}，未解决金额/收入 P90 达 {fmt_pct(m['dish_unres_income_p90'])}，解决率仅 {fmt_pct(m['dish_resolution_rate'])}；未解决机构数中位 {num(m['dish_institution_p50'], 0)} 家，处置渠道集中但进展有限。",
         f"<b>赌博与手续费渗透广，行为风险不可忽视。</b> {fmt_pct(m['gamb_incidence'])} 有赌博交易，占可识别消费 {fmt_pct(m['gamb_share_cons'])}，P99 单笔达 {fmt_money(m['gamb_p99'])}；{fmt_pct(m['fees_incidence'])} 有手续费支出，手续费/透支类交易发生率达 {fmt_pct(m['fees_ticket_incidence'])}。",
         f"<b>人群分化明显，尾部压力集中。</b> 重压型占 {fmt_pct(seg_val('重压型', 'share'))}，月支出中位 {fmt_money(seg_val('重压型', 'exp_m'))} 高于收入 {fmt_money(seg_val('重压型', 'inc_m'))}，现金贷使用率 {fmt_pct(seg_val('重压型', 'adv_use'))}、拒付率 {fmt_pct(seg_val('重压型', 'dishon'))}；盈余型仅占 {fmt_pct(seg_val('盈余型', 'share'))}，整体均值掩盖了尾部风险。",
     ]
@@ -1267,11 +1347,12 @@ def build_html(
   <section class="section">
     <h2><span class="num">1</span>收入与就业</h2>
     <p class="goal"><b>分析目标</b>：判断还款来源是否充足、稳定、可持续。</p>
-    <p class="lede">工资覆盖面广，但入账金额主要由“其他入账”贡献；整体入账波动大、来源分散，工资趋势总体平稳，就业信息可识别度有限。</p>
+    <p class="lede">工资覆盖面广，但入账金额主要由“其他入账”贡献，且其中转账类占比较高；整体入账波动大、来源分散，工资趋势总体平稳，就业信息可识别度有限。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['income']}" alt="收入来源与收入形态"></div>
     <h3>收入水平与来源</h3>
     <ul class="notes">
       <li><b>{fmt_pct(m['wage_incidence'])}</b> 有工资收入，工资中位 <b>{fmt_money(m['wage_median_m'])}/月</b>，但工资仅占入账金额 <b>{fmt_pct(m['wage_share_agg'])}</b>；<b>{fmt_pct(m['cent_incidence'])}</b> 有福利收入，中位 <b>{fmt_money(m['cent_median_m'])}/月</b>；“其他入账”占全部入账 <b>{fmt_pct(m['other_share_agg'])}</b>，是入账金额的主要来源。</li>
+      <li>“其他入账”中，外部转账占 <b>{fmt_pct(m['other_ext_share'])}</b>、内部转账 <b>{fmt_pct(m['other_internal_share'])}</b>、其他信用入账 <b>{fmt_pct(m['other_credits_share'])}</b>、赌博入账 <b>{fmt_pct(m['other_gambling_share'])}</b>；外部+内部转账合计占分项收入 <b>{fmt_pct(m['transfer_inc_share'])}</b>，相当部分入账是转账流水而非稳定劳动收入。</li>
       <li>收入组合：仅工资 <b>{fmt_pct(m['arch_wage_only'])}</b>、工资+福利 <b>{fmt_pct(m['arch_both'])}</b>、仅福利 <b>{fmt_pct(m['arch_cent_only'])}</b>、无工资/福利 <b>{fmt_pct(m['arch_neither'])}</b>；收入来源数中位 <b>{num(m['income_source_p50'], 0)} 个</b>。</li>
     </ul>
     <h3>收入稳定性与趋势</h3>
@@ -1290,18 +1371,21 @@ def build_html(
       <summary>查看图表数据</summary>
       {html_table(["收入来源", "有该类收入用户占比", "收入金额占比", "中位月收入（有该类收入）"], income_rows)}
       <p class="note">金额占比为样本加总口径；“其他入账”含转账、退款等非工资性入账。</p>
+      <p class="note" style="margin-top:12px"><b>其他入账拆分</b>（四类合计覆盖 {fmt_pct(m['other_known_share'])}，其余为未列示类别）</p>
+      {html_table(["其他入账构成", "占其他入账", "用户发生率", "有该类用户 6 个月中位金额"], other_rows)}
+      <p class="note">占比以“其他入账”为分母；外部+内部转账合计占分项收入 {fmt_pct(m['transfer_inc_share'])}。内部转账为自有账户间划转，不应视为真实收入。</p>
     </details>
   </section>
 
   <section class="section">
     <h2><span class="num">2</span>支出与消费</h2>
     <p class="goal"><b>分析目标</b>：判断资金流向、消费刚性与可压缩空间。</p>
-    <p class="lede">支出中真正占用资金的是转账与刚性负担，可识别消费占比有限、类目分散，支出端可压缩空间有限。</p>
+    <p class="lede">支出中真正占用资金的是外部/内部转账与刚性负担，可识别消费占比有限、类目分散，支出端可压缩空间有限。</p>
     <div class="chart"><img src="data:image/png;base64,{figs['consumption']}" alt="可识别消费结构"></div>
     <h3>支出规模与形态</h3>
     <ul class="notes">
       <li>月支出中位 <b>{fmt_money(m['exp_p50'])}</b>，单笔中位 <b>{fmt_money(m['exp_ticket_p50'])}</b>，单笔金额 CV 中位 <b>{num(m['exp_cv_p50'])}</b>，支出呈小额、高波动特征。</li>
-      <li>可识别消费中位 <b>{fmt_money(m['cons_p50'])}/月</b>，用户层面中位占总支出 <b>{fmt_pct(m['cons_share_exp_p50'])}</b>；外部转账占全部支出 <b>{fmt_pct(m['ext_share_agg'])}</b>（用户层面中位 {fmt_pct(m['ext_share_p50'])}），是资金流出的主要通道。</li>
+      <li>可识别消费中位 <b>{fmt_money(m['cons_p50'])}/月</b>，用户层面中位占总支出 <b>{fmt_pct(m['cons_share_exp_p50'])}</b>；外部转账占全部支出 <b>{fmt_pct(m['ext_share_agg'])}</b>（用户层面中位 {fmt_pct(m['ext_share_p50'])}）；按全部借记流水口径，外部转账占 <b>{fmt_pct(m['ext_transfer_share_global'])}</b>、内部转账占 <b>{fmt_pct(m['internal_transfer_share_global'])}</b>（发生率 {fmt_pct(m['internal_transfer_inc'])}），转账是资金流出的主要通道。</li>
       <li>支出趋势：近 1 月/近 3 月中位 <b>{num(m['exp_trend_1m3m_p50'])}</b>、近 3 月/近 6 月 <b>{num(m['exp_trend_3m6m_p50'])}</b>，<b>{fmt_pct(m['exp_trend_up'])}</b> 近 1 月支出较近 3 月上升超 10%。</li>
     </ul>
     <h3>消费结构与集中度</h3>
@@ -1336,11 +1420,12 @@ def build_html(
     <ul class="notes">
       <li>月还款中位 <b>{fmt_money(m['rep_m_p50'])}</b>，偿债/收入中位 <b>{fmt_pct(m['rep_rate_p50'])}</b>、P90 <b>{fmt_pct(m['rep_rate_p90'])}</b>。</li>
       <li>月新增借款中位 <b>{fmt_money(m['draw_m_p50'])}</b>，近 1 月/近 3 月借款比中位 <b>{num(m['draw_trend_p50'])}</b>，高于还款比的 <b>{num(m['rep_trend_p50'])}</b>；<b>{fmt_pct(m['net_borrow_share'])}</b> 为净借款人。</li>
+      <li>有对应交易用户中，最近一笔借款距中位 <b>{num(m['days_since_drawdown_p50'], 0)} 天</b>（覆盖 {fmt_pct(m['days_since_drawdown_cov'])}），最近一笔还款距中位 <b>{num(m['days_since_repayment_p50'], 0)} 天</b>（覆盖 {fmt_pct(m['days_since_repayment_cov'])}），借款/还款发生频繁，债务处于持续滚动状态。</li>
     </ul>
     <h3>信用履约与债务处置</h3>
     <ul class="notes">
       <li><b>{fmt_pct(m['dish_any'])}</b> 有拒付记录，<b>{fmt_pct(m['dish_unres'])}</b> 未解决；已解决 <b>{m['dish_resolved_cnt_total']:,.0f}</b> 笔、未解决 <b>{m['dish_unresolved_cnt_total']:,.0f}</b> 笔，解决率 <b>{fmt_pct(m['dish_resolution_rate'])}</b>，追补发生率 <b>{fmt_pct(m['dish_catchup_inc'])}</b>。</li>
-      <li>已解决金额 <b>{fmt_money(m['dish_resolved_amt_total'], compact=True)}</b>、未解决金额 <b>{fmt_money(m['dish_unres_amt_total'], compact=True)}</b>；未解决拒付涉及机构数中位 <b>{num(m['dish_institution_p50'], 0)} 家</b>，处置渠道集中但进展有限。</li>
+      <li>已解决金额 <b>{fmt_money(m['dish_resolved_amt_total'], compact=True)}</b>、未解决金额 <b>{fmt_money(m['dish_unres_amt_total'], compact=True)}</b>；未解决金额/收入 P90 达 <b>{fmt_pct(m['dish_unres_income_p90'])}</b>；未解决拒付涉及机构数中位 <b>{num(m['dish_institution_p50'], 0)} 家</b>，处置渠道集中但进展有限。</li>
       <li><b>{fmt_pct(m['collections_inc'])}</b> 有催收/坏账类交易，<b>{fmt_pct(m['debt_consolidation_inc'])}</b> 有债务整合，债务处置已从拒付延伸到催收与整合环节。</li>
     </ul>
   </section>
@@ -1358,7 +1443,7 @@ def build_html(
     </ul>
     <h3>账户余额与流动性</h3>
     <ul class="notes">
-      <li>账户余额中位 <b>{fmt_money(m['bal_p50'])}</b>，P25 <b>{fmt_money(m['bal_p25'])}</b>；<b>{fmt_pct(m['bal_lt100'])}</b> 低于 $100，<b>{fmt_pct(m['bal_neg'])}</b> 透支，余额为负的账户天数占比中位 <b>{fmt_pct(m['neg_balance_days_p50'])}</b>。</li>
+      <li>账户余额中位 <b>{fmt_money(m['bal_p50'])}</b>，P25 <b>{fmt_money(m['bal_p25'])}</b>；<b>{fmt_pct(m['bal_lt100'])}</b> 低于 $100，<b>{fmt_pct(m['bal_neg'])}</b> 透支，余额为负的账户天数占比中位 <b>{fmt_pct(m['neg_balance_days_p50'])}</b>；6 个月内余额正负切换中位 <b>{num(m['sign_change_p50'], 0)} 次</b>（约 {num(m['sign_change_pm_p50'], 1)} 次/月），反复进出透支。</li>
       <li>区间最低值中位 <b>{fmt_money(m['bal_min_p50'])}</b>、最高值中位 <b>{fmt_money(m['bal_max_p50'])}</b>；余额低于自身均值的天数占比中位 <b>{fmt_pct(m['bal_below_avg_p50'])}</b>，异常天数中位 <b>{num(m['bal_anomaly_p50'], 0)} 天</b>，净消耗中位 <b>{fmt_money(m['net_burn_p50'])}/天</b>。</li>
       <li>余额 ≥$1,000 的账户天数占比中位仅 <b>{fmt_pct(m['bal_ge1000_p50'])}</b>；中位余额仅覆盖 <b>{m['buffer_p50']:.1f} 天</b>支出，<b>{fmt_pct(m['buffer_lt7'])}</b> 不足 7 天，流动性缓冲极薄。中位银行账户数 <b>{num(m['bank_account_p50'], 0)} 个</b>。</li>
     </ul>
@@ -1379,7 +1464,7 @@ def build_html(
     </ul>
     <h3>异常与大额交易</h3>
     <ul class="notes">
-      <li>最大单笔支出中位 <b>{fmt_money(m['large_expense_p50'])}</b>、P90 <b>{fmt_money(m['large_expense_p90'])}</b>；日常消费最大单笔中位 <b>{fmt_money(m['daily_living_p50'])}</b>，大额支出对月度现金流的扰动不容忽视。</li>
+      <li>最大单笔支出中位 <b>{fmt_money(m['large_expense_p50'])}</b>、P90 <b>{fmt_money(m['large_expense_p90'])}</b>；大额支出中位 <b>{num(m['large_expense_cnt_pm_p50'], 1)} 笔/月</b>，P90 <b>{num(m['large_expense_cnt_pm_p90'], 1)} 笔/月</b>；日常消费最大单笔中位 <b>{fmt_money(m['daily_living_p50'])}</b>，大额支出对月度现金流的扰动不容忽视。</li>
     </ul>
     <h3>高风险行为</h3>
     <ul class="notes">
@@ -1413,6 +1498,7 @@ def build_html(
     <p><b>口径说明</b>：样本为 {html.escape(str(m['sample_month']))} 的{html.escape(str(m['user_type_label']))}样本；同一 user_id 保留交易笔数最多的申请。有效样本要求 txn_raw_input_cnt &gt; 0，且收入/支出/盈余非缺失、收入 &gt; 0，共 {m['n_valid']:,} 人（{fmt_pct(m['coverage'])}）。观察窗口 {WINDOW_DAYS} 天，月度指标按 6 个月折算。</p>
     <p><b>缺失处理</b>：金额类字段的 −999,999.99999 与 lender 类字段的 −1 视为缺失；未做插补。无有效流水用户（{m['n_no_data']:,} 人）未纳入画像指标。</p>
     <p><b>指标定义</b>：盈余 = 收入 − 支出 − 还本付息 − 拒付费 + 新增借款；可识别消费 = {len(CONSUMPTION_CATS)} 个消费类目的 debit 金额之和；拒付率 = 拒付笔数 /（拒付笔数 + 还款笔数），解决率 = 已解决笔数 /（已解决 + 未解决）；CV = 交易级金额变异系数；HHI = 各消费类目份额平方和；高承诺支出 = 房租/保险/教育/医疗/健身类支出加总；赌博占比 = 赌博类支出 / 可识别消费；手续费/透支类交易发生率 = 有该类交易的用户占比；催收/债务整合 = 有对应类目交易的用户占比。分位数均为各自分布独立计算，不可直接相减。</p>
+    <p><b>新增指标口径</b>：其他入账拆分以“其他入账”为分母；转账类入账占比以分项收入（工资+福利+其他入账）为分母；内部转账为自有账户间划转，不应视为真实收入。支出端外部/内部转账占比均以全部借记流水（global debit）为分母，故不在“总支出”口径下直接相加。最近借款/还款距今天数仅对有对应交易的用户计算；未解决拒付/收入 = 未解决拒付金额 / 收入。余额正负切换次数为 182 天内余额跨越零值的次数；大额支出笔数按 6 个月折算为月均。</p>
     <p><b>数据源</b>：fundo_sample_with_feature_all.csv（共 {n_fields:,} 个字段，本次加载 {len(ALL_COLUMNS) - len(missing)} 个）；每类指标只保留 182d / l182d 主窗口，趋势使用 1m_vs_3m 与 3m_vs_6m 比率，未加载 7/14/28/56/84/168d 等重复窗口。变量口径来自 txn_tool。{missing_note}</p>
     <p>本报告为描述性画像，不构成信用评估结论。生成时间：{html.escape(generated_at)}</p>
   </div>
