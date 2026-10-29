@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swap In vs Swap Out 画像对比（精简版）</title>
+<style>
+:root {
+  --surface: #fcfcfb; --page: #f9f9f7; --ink: #0b0b0b; --ink2: #52514e;
+  --muted: #898781; --grid: #e1e0d9; --baseline: #c3c2b7;
+  --in: #1c5cab; --out: #d14b45; --gold: #a16207; --gold-line: #d9a441;
+  --gold-bg: #fdf9ec; --hl: #fbeec4;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 30px 24px 46px; }
+.eyebrow { color: var(--muted); font-size: 10.5px; letter-spacing: .14em; font-weight: 650; text-transform: uppercase; }
+h1 { font-size: 27px; line-height: 1.25; margin: 7px 0 5px; letter-spacing: -.02em; }
+.subtitle { color: var(--ink2); font-size: 13.5px; margin: 0 0 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid rgba(11,11,11,.10); background: var(--surface);
+  border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2);
+}
+.chip b { color: var(--ink); font-weight: 650; }
+.note-legend { color: var(--muted); font-size: 11px; margin: 0 0 14px; }
+.star { color: var(--gold); font-size: 12px; line-height: 1; margin-right: 4px; }
+.key-conclusion {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin: 4px 0 14px; padding: 9px 12px;
+  border-left: 3px solid var(--gold-line); background: var(--gold-bg);
+  border-radius: 0 8px 8px 0; color: var(--ink); font-size: 13.5px; line-height: 1.6;
+}
+.key-conclusion .star { margin-top: 2px; flex: none; font-size: 14px; }
+mark.hl { background: var(--hl); color: inherit; padding: 0 2px; border-radius: 3px; font-weight: 650; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0 4px; }
+.kpi { background: var(--surface); border: 1px solid rgba(11,11,11,.10); border-radius: 12px; padding: 12px 14px; }
+.kpi-label { color: var(--ink2); font-size: 11.5px; }
+.kpi-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 5px; }
+.kpi-row .who { color: var(--ink2); font-size: 11px; display: inline-flex; align-items: center; gap: 5px; }
+.kpi-row .v { font-size: 18px; font-weight: 650; letter-spacing: -.01em; }
+.kpi-delta { color: var(--muted); font-size: 10.5px; margin-top: 5px; }
+.section { margin-top: 24px; }
+h2 { font-size: 17px; margin: 0 0 8px; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+h2 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink); color: #fff; font-size: 11px; font-weight: 650;
+}
+.metric {
+  display: grid; grid-template-columns: 150px 1fr 112px; gap: 12px;
+  align-items: center; padding: 7px 0; border-bottom: 1px solid var(--grid);
+}
+.metric:last-child { border-bottom: none; }
+.metric-label { font-size: 12.5px; color: var(--ink); font-weight: 550; }
+.metric-bars { display: grid; gap: 4px; }
+.bar-row { display: grid; grid-template-columns: 34px 1fr 62px; gap: 7px; align-items: center; }
+.bar-row .who { font-size: 10.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
+.track { height: 9px; background: #eeede7; border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; border-radius: 999px; }
+.bar-row .val { font-size: 11.5px; font-weight: 650; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+.metric-delta { text-align: right; font-size: 10.5px; color: var(--muted); }
+.delta { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.delta.muted { color: var(--muted); }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+.note-box {
+  margin-top: 22px; padding: 10px 12px; border: 1px solid var(--grid);
+  border-radius: 10px; background: var(--surface); color: var(--ink2); font-size: 11.5px;
+}
+.note-box b { color: var(--ink); }
+.footer { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--baseline); color: var(--muted); font-size: 11px; }
+.footer p { margin: 3px 0; }
+@media (max-width: 760px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .metric { grid-template-columns: 1fr; gap: 4px; }
+  .metric-delta { text-align: left; }
+  h1 { font-size: 23px; }
+}
+@media print { .wrap { max-width: none; } .kpi, .metric { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">SWAP IN × SWAP OUT · QUICK READ</div>
+  <h1>Swap In vs Swap Out 画像对比（精简版）</h1>
+  <p class="subtitle">同一套银行流水特征口径 · 182 天观察窗口 · 存量用户 · 描述性对比</p>
+  <div class="chips">
+    <span class="chip"><span class="dot" style="background:#1c5cab"></span>Swap In 有效 <b>641</b> 人</span>
+    <span class="chip"><span class="dot" style="background:#d14b45"></span>Swap Out 有效 <b>138</b> 人</span>
+    <span class="chip">生成时间 <b>2026-10-29 10:02</b></span>
+  </div>
+  <p class="note-legend"><span class="star">★</span>金色框为该节结论，金色高亮为支撑结论的数据；蓝色为 Swap In，红色为 Swap Out。</p>
+
+  <div class="key-conclusion"><span class="star">★</span><div><b>一句话结论：</b>没有一方全面占优。Swap Out 收入更高、工资更稳、重压型更少，但借贷和拒付暴露更高；Swap In 杠杆更低，但收入更弱、重压型占比更高。</div></div>
+
+  <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">中位月收入</div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>Swap In</span><span class="v">$8,050</span></div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Swap Out</span><span class="v">$10,081</span></div>
+        <div class="kpi-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 $2,031（25%）</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">有借贷放款</div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>Swap In</span><span class="v">72.7%</span></div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Swap Out</span><span class="v">88.4%</span></div>
+        <div class="kpi-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 15.7pp</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">有拒付记录</div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>Swap In</span><span class="v">56.0%</span></div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Swap Out</span><span class="v">63.8%</span></div>
+        <div class="kpi-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 7.8pp</span></div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">重压型占比</div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>Swap In</span><span class="v">30.3%</span></div>
+        <div class="kpi-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Swap Out</span><span class="v">18.8%</span></div>
+        <div class="kpi-delta"><span class="delta"><span class="dot" style="background:#1c5cab"></span>In 高 11.4pp</span></div>
+      </div></div>
+
+  <section class="section">
+    <h2><span class="num">1</span>收入质量</h2>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 收入更高，工资覆盖 <mark class="hl">99.3%</mark>（Swap In 81.0%），工资占入账 <mark class="hl">36.6%</mark> vs <mark class="hl">19.9%</mark>；Swap In 更依赖其他入账。</div></div>
+    
+      <div class="metric">
+        <div class="metric-label">工资覆盖率</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:81.0%;background:#1c5cab"></div></div><span class="val">81.0%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:99.3%;background:#d14b45"></div></div><span class="val">99.3%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 18.3pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">工资占入账</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:19.9%;background:#1c5cab"></div></div><span class="val">19.9%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:36.6%;background:#d14b45"></div></div><span class="val">36.6%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 16.7pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">其他入账占比</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:74.9%;background:#1c5cab"></div></div><span class="val">74.9%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:62.0%;background:#d14b45"></div></div><span class="val">62.0%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#1c5cab"></span>In 高 12.9pp</span></div>
+      </div>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">2</span>杠杆与履约</h2>
+    <div class="key-conclusion"><span class="star">★</span><div>Swap Out 的借贷和偿债负担明显更高：现金贷使用率 <mark class="hl">68.8%</mark>（Swap In 49.8%）、偿债 / 收入 <mark class="hl">10.6%</mark> vs <mark class="hl">6.8%</mark>；拒付更多，但解决率也更高。</div></div>
+    
+      <div class="metric">
+        <div class="metric-label">现金贷使用率</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:49.8%;background:#1c5cab"></div></div><span class="val">49.8%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:68.8%;background:#d14b45"></div></div><span class="val">68.8%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 19.1pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">偿债 / 收入</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:6.8%;background:#1c5cab"></div></div><span class="val">6.8%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:10.6%;background:#d14b45"></div></div><span class="val">10.6%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 3.8pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">未解决拒付</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:52.0%;background:#1c5cab"></div></div><span class="val">52.0%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:59.4%;background:#d14b45"></div></div><span class="val">59.4%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 7.5pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">拒付解决率</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:19.0%;background:#1c5cab"></div></div><span class="val">19.0%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:27.0%;background:#d14b45"></div></div><span class="val">27.0%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 8.0pp</span></div>
+      </div>
+  </section>
+
+  <section class="section">
+    <h2><span class="num">3</span>现金流与分层</h2>
+    <div class="key-conclusion"><span class="star">★</span><div>两组几乎全部负盈余、缓冲不足 7 天；Swap In 重压型占比 <mark class="hl">30.3%</mark>（Swap Out 18.8%），Swap Out 赌博消费占比 <mark class="hl">18.2%</mark>（Swap In 14.5%）。</div></div>
+    
+      <div class="metric">
+        <div class="metric-label">负盈余占比</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:99.2%;background:#1c5cab"></div></div><span class="val">99.2%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:100.0%;background:#d14b45"></div></div><span class="val">100.0%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 0.8pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">缓冲 &lt; 7 天</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:93.1%;background:#1c5cab"></div></div><span class="val">93.1%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:98.6%;background:#d14b45"></div></div><span class="val">98.6%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 5.4pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">重压型占比</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:30.3%;background:#1c5cab"></div></div><span class="val">30.3%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:18.8%;background:#d14b45"></div></div><span class="val">18.8%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#1c5cab"></span>In 高 11.4pp</span></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">赌博占可识别消费</div>
+        <div class="metric-bars">
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#1c5cab"></span>In</span><div class="track"><div class="fill" style="width:14.5%;background:#1c5cab"></div></div><span class="val">14.5%</span></div>
+          <div class="bar-row"><span class="who"><span class="dot" style="background:#d14b45"></span>Out</span><div class="track"><div class="fill" style="width:18.2%;background:#d14b45"></div></div><span class="val">18.2%</span></div>
+        </div>
+        <div class="metric-delta"><span class="delta"><span class="dot" style="background:#d14b45"></span>Out 高 3.7pp</span></div>
+      </div>
+  </section>
+
+  <div class="note-box">
+    <b>读法提示：</b>Swap Out 的“重压型更少”部分来自更高的新增借款（中位 $465/月 vs Swap In $183）。剔除新借后，Swap Out 偿债后现金流中位 -$2,063 vs Swap In -$1,731。两组为 641 vs 138 人的描述性对比，拒付差异的 95% 置信区间有重叠，不代表因果。
+  </div>
+
+  <div class="footer">
+    <p><b>数据源</b>：existing_swap_in_v1_2_with_feature_all.csv、existing_swap_out_v1_2_with_feature_all.csv；同一 user_id 保留交易笔数最多的申请。</p>
+    <p><b>口径</b>：观察窗口 182 天，月度指标按 6 个月折算；盈余 = 收入 − 支出 − 还本付息 + 新增借款；有效样本要求 txn_raw_input_cnt &gt; 0，且收入 / 支出 / 盈余非缺失、收入 &gt; 0。</p>
+    <p><b>说明</b>：两组为独立样本，未做统一加权或显著性检验；以上差异仅用于描述性对比，不构成信用评估结论。</p>
+  </div>
+</div>
+</body>
+</html>
