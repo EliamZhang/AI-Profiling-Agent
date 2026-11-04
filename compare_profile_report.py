@@ -88,6 +88,26 @@ def load_profile(name: str, module, path: Path) -> Profile:
     df = module.dedupe_users(df_raw)
     d, m, seg = module.build_metrics(df, n_apps)
 
+    for key, col in (
+        ("inc_mean", "inc_m"),
+        ("exp_mean", "exp_m"),
+        ("sur_mean", "sur_m"),
+        ("bal_mean", "bal"),
+        ("rep_mean", "rep_m"),
+        ("draw_mean", "draw_m"),
+    ):
+        m[key] = float(d[col].mean())
+    m["dishfee_mean"] = float(
+        d["bank_txn_surplus_dishonoursfee_sum_182d"].div(fpr.MONTHS).mean()
+    )
+
+    m["inc_cat_mean"] = float(
+        d["bank_txn_income_wages_sum_182d"].div(fpr.MONTHS).mean()
+    )
+    m["exp_cat_mean"] = float(
+        d["bank_txn_category_global_debit_amt_182d"].div(fpr.MONTHS).mean()
+    )
+
     bal = d["bal"]
     bucket_labels = ["透支 (<$0)", "$0–100", "$100–500", "$500–1k", "≥$1k"]
     bucket_masks = [
@@ -341,20 +361,28 @@ DISTRIBUTION_ROWS = [
     ("月收入 P25", "inc_p25", "money"),
     ("月收入中位", "inc_p50", "money"),
     ("月收入 P75", "inc_p75", "money"),
+    ("月收入平均数", "inc_mean", "money"),
+    ("月收入平均数（category：仅 wages）", "inc_cat_mean", "money"),
     ("月支出 P25", "exp_p25", "money"),
     ("月支出中位", "exp_p50", "money"),
     ("月支出 P75", "exp_p75", "money"),
+    ("月支出平均数", "exp_mean", "money"),
+    ("月支出平均数（category：全部借记）", "exp_cat_mean", "money"),
     ("月盈余中位", "sur_p50", "money"),
+    ("月盈余平均数", "sur_mean", "money"),
     ("盈余率中位", "sur_rate_p50", "pct"),
     ("账户余额 P25", "bal_p25", "money"),
     ("账户余额中位", "bal_p50", "money"),
     ("账户余额 P75", "bal_p75", "money"),
+    ("账户余额平均数", "bal_mean", "money"),
 ]
 
 INCOME_ROWS = [
     ("中位月收入", "inc_p50", "money"),
     ("月收入 P25", "inc_p25", "money"),
     ("月收入 P75", "inc_p75", "money"),
+    ("月收入平均数", "inc_mean", "money"),
+    ("月收入平均数（category 口径：仅 wages）", "inc_cat_mean", "money"),
     ("有工资收入占比", "wage_incidence", "pct"),
     ("工资占入账金额", "wage_share_agg", "pct"),
     ("工资中位月收入（有工资）", "wage_median_m", "money"),
@@ -375,6 +403,8 @@ EXPENSE_ROWS = [
     ("中位月支出", "exp_p50", "money"),
     ("月支出 P25", "exp_p25", "money"),
     ("月支出 P75", "exp_p75", "money"),
+    ("月支出平均数", "exp_mean", "money"),
+    ("月支出平均数（category 口径：全部借记）", "exp_cat_mean", "money"),
     ("可识别消费中位月额", "cons_p50", "money"),
     ("可识别消费 / 总支出（用户中位）", "cons_share_exp_p50", "pct"),
     ("外部转账 / 总支出", "ext_share_agg", "pct"),
@@ -398,11 +428,14 @@ LIABILITY_ROWS = [
     ("放款金额结构", "product_mix_text", "text"),
     ("净借款人占比", "net_borrow_share", "pct"),
     ("中位月还款额", "rep_m_p50", "money"),
+    ("平均月还款额", "rep_mean", "money"),
     ("偿债 / 收入中位", "rep_rate_p50", "pct"),
     ("偿债 / 收入 P90", "rep_rate_p90", "pct"),
     ("中位月新增借款", "draw_m_p50", "money"),
+    ("平均月新增借款", "draw_mean", "money"),
     ("借款 / 收入中位", "draw_rate_p50", "pct"),
     ("有拒付记录", "dish_any", "pct"),
+    ("平均月拒付费", "dishfee_mean", "money"),
     ("未解决拒付", "dish_unres", "pct"),
     ("拒付解决率", "dish_resolution_rate", "pct"),
     ("催收类拒付发生率", "collections_inc", "pct"),
@@ -413,6 +446,7 @@ CASHFLOW_ROWS = [
     ("偿债前现金流中位（月）", "pre_debt_cf_p50", "money"),
     ("偿债前收不抵支占比", "pre_debt_neg", "pct"),
     ("中位月盈余", "sur_p50", "money"),
+    ("月盈余平均数", "sur_mean", "money"),
     ("负盈余占比", "sur_neg", "pct"),
     ("中位盈余率", "sur_rate_p50", "pct"),
     ("双周盈余为负占比", "fortnight_neg", "pct"),
@@ -420,6 +454,7 @@ CASHFLOW_ROWS = [
     ("中位账户余额", "bal_p50", "money"),
     ("账户余额 P25", "bal_p25", "money"),
     ("账户余额 P75", "bal_p75", "money"),
+    ("账户余额平均数", "bal_mean", "money"),
     ("透支用户占比", "bal_neg", "pct"),
     ("余额 < $100 用户占比", "bal_lt100", "pct"),
     ("缓冲天数中位", "buffer_p50", "num1"),
@@ -439,15 +474,42 @@ RISK_ROWS = [
     ("周末消费占比中位", "weekend_share_p50", "pct"),
 ]
 
-KPI_SPECS = [
-    ("中位月收入", "inc_p50", "money"),
-    ("中位月支出", "exp_p50", "money"),
-    ("中位月盈余", "sur_p50", "money"),
-    ("负盈余用户", "sur_neg", "pct"),
-    ("中位账户余额", "bal_p50", "money"),
-    ("有借贷放款", "any_disburse", "pct"),
-    ("有拒付记录", "dish_any", "pct"),
-    ("流动性缓冲 < 7 天", "buffer_lt7", "pct"),
+KPI_GROUPS = [
+    ("收入", [
+        ("中位月收入", "inc_p50", "money"),
+        ("平均月收入", "inc_mean", "money"),
+        ("平均月收入（wages）", "inc_cat_mean", "money"),
+    ]),
+    ("支出", [
+        ("中位月支出", "exp_p50", "money"),
+        ("平均月支出", "exp_mean", "money"),
+        ("平均月支出（category）", "exp_cat_mean", "money"),
+    ]),
+    ("盈余", [
+        ("中位月盈余", "sur_p50", "money"),
+        ("平均月盈余", "sur_mean", "money"),
+        ("负盈余用户", "sur_neg", "pct"),
+    ]),
+    ("还款", [
+        ("中位月还款额", "rep_m_p50", "money"),
+        ("平均月还款额", "rep_mean", "money"),
+        ("偿债 / 收入中位", "rep_rate_p50", "pct"),
+    ]),
+    ("新增借款", [
+        ("有借贷放款", "any_disburse", "pct"),
+        ("中位月新增借款", "draw_m_p50", "money"),
+        ("平均月新增借款", "draw_mean", "money"),
+        ("借款 / 收入中位", "draw_rate_p50", "pct"),
+    ]),
+    ("拒付与费用", [
+        ("有拒付记录", "dish_any", "pct"),
+        ("平均月拒付费", "dishfee_mean", "money"),
+    ]),
+    ("余额与流动性", [
+        ("中位账户余额", "bal_p50", "money"),
+        ("平均账户余额", "bal_mean", "money"),
+        ("流动性缓冲 < 7 天", "buffer_lt7", "pct"),
+    ]),
 ]
 
 # 明细表中高亮这些指标行
@@ -1164,6 +1226,12 @@ CSS = fpr.CSS + """
 .kpi .cmp .who { color: var(--ink2); font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; }
 .kpi .cmp .v { font-size: 18px; font-weight: 650; letter-spacing: -.01em; }
 .kpi .delta-line { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+.kpi-group {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 8px;
+  margin: 6px 0 -2px; color: var(--ink2); font-size: 11px;
+  font-weight: 650; letter-spacing: .08em;
+}
+.kpi-group::after { content: ""; flex: 1; height: 1px; background: var(--grid); }
 .delta { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .delta.muted { color: var(--muted); }
 table.cmp td:nth-child(1) { width: 36%; }
@@ -1196,20 +1264,25 @@ table.cmp tbody tr.hl:hover td { background: #f7efd7; }
 
 
 def kpi_html(pf: Profile, pw: Profile) -> str:
-    cards = []
-    for label, key, kind in KPI_SPECS:
-        fv, wv = metric_value(pf, key), metric_value(pw, key)
-        cards.append(
-            '<div class="kpi">'
-            f'<div class="label">{html.escape(label)}</div>'
-            f'<div class="cmp"><span class="who"><span class="dot" style="background:{POP_COLORS["Fundo"]}"></span>Fundo</span>'
-            f'<span class="v">{fmt_metric(fv, kind)}</span></div>'
-            f'<div class="cmp"><span class="who"><span class="dot" style="background:{POP_COLORS["WageGo"]}"></span>WageGo</span>'
-            f'<span class="v">{fmt_metric(wv, kind)}</span></div>'
-            f'<div class="delta-line">{fmt_delta(fv, wv, kind)}</div>'
-            "</div>"
+    blocks = []
+    for group, specs in KPI_GROUPS:
+        cards = []
+        for label, key, kind in specs:
+            fv, wv = metric_value(pf, key), metric_value(pw, key)
+            cards.append(
+                '<div class="kpi">'
+                f'<div class="label">{html.escape(label)}</div>'
+                f'<div class="cmp"><span class="who"><span class="dot" style="background:{POP_COLORS["Fundo"]}"></span>Fundo</span>'
+                f'<span class="v">{fmt_metric(fv, kind)}</span></div>'
+                f'<div class="cmp"><span class="who"><span class="dot" style="background:{POP_COLORS["WageGo"]}"></span>WageGo</span>'
+                f'<span class="v">{fmt_metric(wv, kind)}</span></div>'
+                f'<div class="delta-line">{fmt_delta(fv, wv, kind)}</div>'
+                "</div>"
+            )
+        blocks.append(
+            f'<div class="kpi-group">{html.escape(group)}</div>' + "".join(cards)
         )
-    return "".join(cards)
+    return "".join(blocks)
 
 
 def build_html(pf: Profile, pw: Profile, figs: dict[str, str], generated_at: str) -> str:

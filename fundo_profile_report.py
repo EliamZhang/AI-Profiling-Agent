@@ -175,6 +175,7 @@ SURPLUS_COLS = [
     "bank_txn_surplus_surplus_sum_182d",
     "bank_txn_surplus_liabilityrepayment_sum_182d",
     "bank_txn_surplus_liabilitydrawdown_sum_182d",
+    "bank_txn_surplus_dishonoursfee_sum_182d",
     "bank_txn_surplus_fortnightly_surplus_182d",
     "bank_txn_surplus_surplus_1m_vs_3m",
     "bank_txn_surplus_surplus_3m_vs_6m",
