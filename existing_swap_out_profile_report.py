@@ -174,6 +174,7 @@ SURPLUS_COLS = [
     "bank_txn_surplus_surplus_sum_182d",
     "bank_txn_surplus_liabilityrepayment_sum_182d",
     "bank_txn_surplus_liabilitydrawdown_sum_182d",
+    "bank_txn_surplus_dishonoursfee_sum_182d",
     "bank_txn_surplus_fortnightly_surplus_182d",
     "bank_txn_surplus_surplus_1m_vs_3m",
     "bank_txn_surplus_surplus_3m_vs_6m",
@@ -821,6 +822,16 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["cat_shares"] = cat_shares
     m["cat_totals"] = cat_totals
     m["cons_total"] = cons_total
+
+    m["inc_mean"] = float(d["inc_m"].mean())
+    m["exp_mean"] = float(d["exp_m"].mean())
+    m["sur_mean"] = float(d["sur_m"].mean())
+    m["bal_mean"] = float(d["bal"].mean())
+    m["rep_mean"] = float(d["rep_m"].mean())
+    m["draw_mean"] = float(d["draw_m"].mean())
+    m["dishfee_mean"] = float(
+        d["bank_txn_surplus_dishonoursfee_sum_182d"].div(MONTHS).mean()
+    )
     return d, m, seg
 
 
@@ -1635,13 +1646,16 @@ def build_html(
         )
 
     kpis = [
-        ("中位月收入", fmt_money(m["inc_p50"]), f"P25 {fmt_money(m['inc_p25'])} · P75 {fmt_money(m['inc_p75'])}"),
-        ("中位月支出", fmt_money(m["exp_p50"]), f"P25 {fmt_money(m['exp_p25'])} · P75 {fmt_money(m['exp_p75'])}"),
-        ("中位月盈余", fmt_money(m["sur_p50"]), f"近1月/近3月 {num(m['sur_trend_1m3m_p50'])}"),
+        ("中位月收入", fmt_money(m["inc_p50"]), f"均值 {fmt_money(m['inc_mean'])} · P25 {fmt_money(m['inc_p25'])} · P75 {fmt_money(m['inc_p75'])}"),
+        ("中位月支出", fmt_money(m["exp_p50"]), f"均值 {fmt_money(m['exp_mean'])} · P25 {fmt_money(m['exp_p25'])} · P75 {fmt_money(m['exp_p75'])}"),
+        ("中位月盈余", fmt_money(m["sur_p50"]), f"均值 {fmt_money(m['sur_mean'])} · 近1月/近3月 {num(m['sur_trend_1m3m_p50'])}"),
         ("负盈余用户", fmt_pct(m["sur_neg"]), f"偿债前 {fmt_pct(m['pre_debt_neg'])}"),
-        ("中位账户余额", fmt_money(m["bal_p50"]), f"低于均值天数 {fmt_pct(m['bal_below_avg_p50'])}"),
+        ("中位账户余额", fmt_money(m["bal_p50"]), f"均值 {fmt_money(m['bal_mean'])} · 低于均值天数 {fmt_pct(m['bal_below_avg_p50'])}"),
         ("余额不足 7 天支出", fmt_pct(m["buffer_lt7"]), f"中位 {m['buffer_p50']:.1f} 天"),
         ("有借贷放款", fmt_pct(m["any_disburse"]), f"净借款人 {fmt_pct(m['net_borrow_share'])}"),
+        ("平均月还款额", fmt_money(m["rep_mean"]), f"中位 {fmt_money(m['rep_m_p50'])} · 偿债/收入 {fmt_pct(m['rep_rate_p50'])}"),
+        ("平均月新增借款", fmt_money(m["draw_mean"]), f"中位 {fmt_money(m['draw_m_p50'])} · 借款/收入 {fmt_pct(m['draw_rate_p50'])}"),
+        ("平均月拒付费", fmt_money(m["dishfee_mean"]), f"有拒付记录 {fmt_pct(m['dish_any'])} · 未解决 {fmt_pct(m['dish_unres'])}"),
         ("有拒付记录", fmt_pct(m["dish_any"]), f"未解决金额 {fmt_money(m['dish_unres_amt_total'], compact=True)}"),
         ("有赌博交易", fmt_pct(m["gamb_incidence"]), f"占可识别消费 {fmt_pct(m['gamb_share_cons'])} · 手续费/透支 {fmt_pct(m['fees_ticket_incidence'])}"),
     ]
