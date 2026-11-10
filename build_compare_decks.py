@@ -3,13 +3,12 @@
 """Build PPT-style slide decks for the comparison reports.
 
 Usage:
-    python build_compare_decks.py --pair swap_in_out --with-lite
+    python build_compare_decks.py
     python build_compare_decks.py --pair fundo_wagego
 
 Outputs (in output/):
     compare_profile_report_slides.html
     compare_swap_profile_report_slides.html
-    compare_swap_profile_report_lite_slides.html
 """
 
 from __future__ import annotations
@@ -21,7 +20,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-import numpy as np
 from plotly.offline import get_plotlyjs
 
 import compare_profile_report as cmp_fw
@@ -63,7 +61,6 @@ PAIRS = {
         "subtitle": "同一套银行流水特征口径 · 182 天观察窗口 · 存量用户 · 描述性对比",
         "source": "existing_swap_in_v1_2_with_feature_all.csv · existing_swap_out_v1_2_with_feature_all.csv",
         "sample_note": "两组均为存量用户样本；未做统一加权或显著性检验，差异仅用于描述性对比。",
-        "lite": "compare_swap_profile_report_lite_slides.html",
         "status_levels": ("green", "blue"),
     },
 }
@@ -552,204 +549,7 @@ def build_pair_deck(
     )
 
 
-def build_lite_deck(pin: dict, pout: dict, generated_at: str) -> str:
-    mi, mo = pin["m"], pout["m"]
-    fm = swap_in_mod.fmt_money
-    fp = swap_in_mod.fmt_pct
-
-    def metric_row(label, fv, wv, kind="pct"):
-        if kind == "money":
-            left, right = fm(fv), fm(wv)
-        else:
-            left, right = fp(fv), fp(wv)
-        delta = cmp_sw.fmt_delta(fv, wv, kind)
-        return (label, f"{left}<small> vs </small>{right}", delta)
-
-    def seg_val(p, name, col):
-        try:
-            return float(p["seg"].loc[name, col])
-        except Exception:
-            return float("nan")
-
-    heavy_in = seg_val(pin, "重压型", "share")
-    heavy_out = seg_val(pout, "重压型", "share")
-
-    kpi_html = ui.cmp_kpi_cards(
-        [
-            {
-                "label": "中位月收入",
-                "left_name": "Swap In",
-                "left_value": fm(mi["inc_p50"]),
-                "right_name": "Swap Out",
-                "right_value": fm(mo["inc_p50"]),
-                "delta": cmp_sw.fmt_delta(mi["inc_p50"], mo["inc_p50"], "money"),
-                "left_color": "#1c5cab",
-                "right_color": "#d14b45",
-            },
-            {
-                "label": "有借贷放款",
-                "left_name": "Swap In",
-                "left_value": fp(mi["any_disburse"]),
-                "right_name": "Swap Out",
-                "right_value": fp(mo["any_disburse"]),
-                "delta": cmp_sw.fmt_delta(mi["any_disburse"], mo["any_disburse"], "pct"),
-                "left_color": "#1c5cab",
-                "right_color": "#d14b45",
-            },
-            {
-                "label": "有拒付记录",
-                "left_name": "Swap In",
-                "left_value": fp(mi["dish_any"]),
-                "right_name": "Swap Out",
-                "right_value": fp(mo["dish_any"]),
-                "delta": cmp_sw.fmt_delta(mi["dish_any"], mo["dish_any"], "pct"),
-                "left_color": "#1c5cab",
-                "right_color": "#d14b45",
-            },
-            {
-                "label": "重压型占比",
-                "left_name": "Swap In",
-                "left_value": fp(heavy_in),
-                "right_name": "Swap Out",
-                "right_value": fp(heavy_out),
-                "delta": cmp_sw.fmt_delta(heavy_in, heavy_out, "pct"),
-                "left_color": "#1c5cab",
-                "right_color": "#d14b45",
-            },
-        ]
-    )
-
-    def content_slide(title, kicker, conclusion, rows, sub):
-        statement = (
-            f'<div class="statement reveal d2"><span class="status green"><i></i>结论</span>'
-            f"<h3>{conclusion}</h3><p>{sub}</p></div>"
-        )
-        body = (
-            '<div class="duo wide-right">'
-            + statement
-            + ui.metric_rows(rows)
-            + "</div>"
-        )
-        return ui.slide_content(
-            brand="SWAP IN <em>×</em> SWAP OUT",
-            section="Quick Read",
-            kicker=kicker,
-            title=title,
-            body=body,
-        )
-
-    slides = []
-    slides.append(
-        ui.slide_cover(
-            brand="SWAP IN <em>×</em> SWAP OUT",
-            tag="QUICK READ",
-            eyebrow=f"画像对比 · 精简版 · {generated_at}",
-            title="Swap In vs Swap Out<br>画像对比（精简版）",
-            desc="同一套银行流水特征口径 · 182 天观察窗口 · 存量用户 · 描述性对比。",
-            statuses=[
-                ("green", f"Swap In 有效 {mi['n_valid']:,}"),
-                ("blue", f"Swap Out 有效 {mo['n_valid']:,}"),
-            ],
-            metrics=[
-                ("Swap In", f"{mi['n_valid']:,}", "有效用户"),
-                ("Swap Out", f"{mo['n_valid']:,}", "有效用户"),
-                ("Window", "182 天", "观察窗口"),
-                ("Type", "Descriptive", "描述性对比"),
-            ],
-        )
-    )
-
-    slides.append(
-        ui.slide_content(
-            brand="SWAP IN <em>×</em> SWAP OUT",
-            section="Executive Summary",
-            kicker="一句话结论",
-            title="没有一方全面占优",
-            sub="Swap Out 收入更高、工资更稳、重压型更少，但借贷和拒付暴露更高；Swap In 杠杆更低，但收入更弱、重压型占比更高。",
-            body=kpi_html
-            + ui.fact_strip(
-                [
-                    (fp(mi["wage_incidence"]), "Swap In 工资覆盖"),
-                    (fp(mo["wage_incidence"]), "Swap Out 工资覆盖"),
-                    (fp(mi["buffer_lt7"]), "Swap In 缓冲 < 7 天"),
-                    (fp(mo["buffer_lt7"]), "Swap Out 缓冲 < 7 天"),
-                ]
-            )
-            + ui.note_strip(
-                "读法提示",
-                f"Swap Out 的“重压型更少”部分来自更高的新增借款（中位 {fm(mo['draw_m_p50'])}/月 vs Swap In {fm(mi['draw_m_p50'])}）。两组为 {mi['n_valid']:,} vs {mo['n_valid']:,} 人的描述性对比，不作因果推断。",
-            ),
-        )
-    )
-
-    slides.append(
-        content_slide(
-            "收入质量",
-            "1 · Income Quality",
-            f"Swap Out 收入更高，工资覆盖 {fp(mo['wage_incidence'])}（Swap In {fp(mi['wage_incidence'])}）。",
-            [
-                metric_row("工资覆盖率", mi["wage_incidence"], mo["wage_incidence"]),
-                metric_row("工资占入账", mi["wage_share_agg"], mo["wage_share_agg"]),
-                metric_row("其他入账占比", mi["other_share_agg"], mo["other_share_agg"]),
-            ],
-            "Swap Out 工资占入账更高，Swap In 更依赖其他入账。",
-        )
-    )
-    slides.append(
-        content_slide(
-            "杠杆与履约",
-            "2 · Leverage & Repayment",
-            f"Swap Out 的借贷和偿债负担明显更高：现金贷使用率 {fp(mo['adv_use'])}（Swap In {fp(mi['adv_use'])}）。",
-            [
-                metric_row("现金贷使用率", mi["adv_use"], mo["adv_use"]),
-                metric_row("偿债 / 收入", mi["rep_rate_p50"], mo["rep_rate_p50"]),
-                metric_row("未解决拒付", mi["dish_unres"], mo["dish_unres"]),
-                metric_row("拒付解决率", mi["dish_resolution_rate"], mo["dish_resolution_rate"]),
-            ],
-            "Swap Out 拒付更多，但解决率也更高；两组债务处置能力都有限。",
-        )
-    )
-    slides.append(
-        content_slide(
-            "现金流与分层",
-            "3 · Cashflow & Segments",
-            f"两组几乎全部负盈余、缓冲不足 7 天；Swap In 重压型占比 {fp(heavy_in)}（Swap Out {fp(heavy_out)}）。",
-            [
-                metric_row("负盈余占比", mi["sur_neg"], mo["sur_neg"]),
-                metric_row("缓冲 < 7 天", mi["buffer_lt7"], mo["buffer_lt7"], "pct"),
-                ("重压型占比", f"{fp(heavy_in)}<small> vs </small>{fp(heavy_out)}", cmp_sw.fmt_delta(heavy_in, heavy_out, "pct")),
-                metric_row("赌博占可识别消费", mi["gamb_share_cons"], mo["gamb_share_cons"]),
-            ],
-            "Swap Out 赌博消费占比更高；薄缓冲是两组共同底盘。",
-        )
-    )
-
-    slides.append(
-        ui.slide_closing(
-            brand="SWAP IN <em>×</em> SWAP OUT",
-            kicker="结论 · Takeaway",
-            title="精简版结论",
-            sub="Swap Out 不是“更优质”，而是“更高收入 + 更高杠杆”；Swap In 不是“更差”，而是“更低杠杆 + 更弱收入”。",
-            takeaways=[
-                ("收入", f"Swap Out 工资覆盖 <b>{fp(mo['wage_incidence'])}</b>、中位月收入 <b>{fm(mo['inc_p50'])}</b>；Swap In 分别为 <b>{fp(mi['wage_incidence'])}</b> 与 <b>{fm(mi['inc_p50'])}</b>。"),
-                ("流动性", f"两组缓冲不足 7 天占比 <b>{fp(mi['buffer_lt7'])}</b> vs <b>{fp(mo['buffer_lt7'])}</b>，账户缓冲都极薄。"),
-                ("读法", "Swap Out 重压型更少部分来自更高新增借款；两组为描述性对比，拒付差异的置信区间有重叠，不作因果推断。"),
-            ],
-            source=(
-                "<b>口径</b>：观察窗口 182 天，月度指标按 6 个月折算；盈余 = 收入 − 支出 − 还本付息 + 新增借款；"
-                "有效样本要求 txn_raw_input_cnt &gt; 0，且收入 / 支出 / 盈余非缺失、收入 &gt; 0。"
-            ),
-            date=f"生成时间 {generated_at}",
-        )
-    )
-
-    return ui.deck_document(
-        title="Swap In vs Swap Out 画像对比（精简版）· 演示文稿",
-        slides=slides,
-    )
-
-
-def run_pair(pair_key: str, generated_at: str, out_dir: Path, with_lite: bool = False) -> None:
+def run_pair(pair_key: str, generated_at: str, out_dir: Path) -> None:
     pair = PAIRS[pair_key]
     module = pair["module"]
     left_name, left_mod, left_csv = pair["left"]
@@ -776,16 +576,6 @@ def run_pair(pair_key: str, generated_at: str, out_dir: Path, with_lite: bool = 
     out_path.write_text(report, encoding="utf-8")
     print(f"[{pair_key}] deck -> {out_path} ({len(report)/1e6:.1f} MB)")
 
-    if with_lite and "lite" in pair:
-        post_in = float(np.nanmedian((pf.d["inc"] - pf.d["exp"] - pf.d["rep"]) / 6))
-        post_out = float(np.nanmedian((pw.d["inc"] - pw.d["exp"] - pw.d["rep"]) / 6))
-        pin = {"m": pf.m, "seg": pf.seg, "post_cf": post_in, "n_fields": pf.n_fields}
-        pout = {"m": pw.m, "seg": pw.seg, "post_cf": post_out, "n_fields": pw.n_fields}
-        lite = build_lite_deck(pin, pout, generated_at)
-        lite_path = out_dir / pair["lite"]
-        lite_path.write_text(lite, encoding="utf-8")
-        print(f"[{pair_key}] lite deck -> {lite_path} ({len(lite)/1e6:.1f} MB)")
-
     del pf, pw, figs, report
     gc.collect()
 
@@ -793,7 +583,6 @@ def run_pair(pair_key: str, generated_at: str, out_dir: Path, with_lite: bool = 
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成人群对比 PPT 式幻灯片 HTML")
     parser.add_argument("--pair", choices=list(PAIRS) + ["all"], default="all")
-    parser.add_argument("--with-lite", action="store_true", help="同时生成 Swap 精简版幻灯片")
     parser.add_argument("--out", default="", help="输出目录")
     args = parser.parse_args()
 
@@ -801,7 +590,7 @@ def main() -> None:
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
     keys = list(PAIRS) if args.pair == "all" else [args.pair]
     for key in keys:
-        run_pair(key, generated_at, out_dir, with_lite=args.with_lite and "lite" in PAIRS[key])
+        run_pair(key, generated_at, out_dir)
 
 
 if __name__ == "__main__":
