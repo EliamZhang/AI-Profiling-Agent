@@ -168,10 +168,6 @@ def esc(value) -> str:
     return html.escape(str(value))
 
 
-def status(level: str, label: str) -> str:
-    return f'<span class="status {level}"><i></i>{esc(label)}</span>'
-
-
 def slide_cover(
     *,
     brand: str,

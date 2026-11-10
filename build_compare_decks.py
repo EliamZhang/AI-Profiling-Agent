@@ -111,21 +111,6 @@ def build_compare_kpis(module, pf, pw, names: tuple[str, str], specs) -> str:
     return ui.cmp_kpi_cards(cards)
 
 
-def side_pair_cards(module, pf, pw, specs, left_name, right_name) -> str:
-    cards = []
-    for label, key, kind, note in specs:
-        fv = module.metric_value(pf, key)
-        wv = module.metric_value(pw, key)
-        cards.append(
-            (
-                label,
-                pair_value(module.fmt_metric(fv, kind), module.fmt_metric(wv, kind)),
-                note,
-            )
-        )
-    return ui.side_cards(cards)
-
-
 def build_pair_deck(
     pair_key: str,
     pair: dict,
@@ -353,7 +338,7 @@ def build_pair_deck(
             section=section_b,
             kicker="2.1 · Expense Structure",
             title="支出与消费",
-            sub=f"支出规模接近，但资金流向不同：外部/内部转账结构与赌博类消费是主要差异。",
+            sub="支出规模接近，但资金流向不同：外部/内部转账结构与赌博类消费是主要差异。",
             body=expense_body,
         )
     )
@@ -595,3 +580,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

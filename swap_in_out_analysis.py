@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Swap In vs Swap Out 原始交易明细分析（指标构建）
+Swap In vs Swap Out 原始交易明细分析（指标构建）。
 
-用法:
-    python swap_in_out_analysis.py
-
-输出:
-    output/swap_in_out_user_metrics.csv
+供 build_raw_deck.py 调用。
 """
 
 from __future__ import annotations
@@ -26,7 +22,6 @@ DATA = {
     "Swap In": ROOT / "data" / "swap_in.csv",
     "Swap Out": ROOT / "data" / "swap_out.csv",
 }
-OUT = ROOT / "output" / "swap_in_out_user_metrics.csv"
 WINDOW_DAYS = 182
 
 # 结构型类目：不进入消费口径
@@ -392,41 +387,3 @@ def user_metrics(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def main() -> None:
-    frames = [load_group(name, path) for name, path in DATA.items()]
-    tx = pd.concat(frames, ignore_index=True)
-    users = user_metrics(tx)
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    users.to_csv(OUT, index=False, encoding="utf-8-sig")
-    print(f"用户指标: {OUT} | {len(users)} users")
-    print("\n=== 交易分类规模（笔数 / 金额） ===")
-    print(tx.groupby(["group", "cls"])["amount"].agg(["count", "sum"]).round(0).to_string())
-    print("\n=== 用户指标中位数 / 发生率 ===")
-    show = [
-        "n_txn", "n_accounts", "income", "wage", "welfare", "loan_in", "debt_repay",
-        "consumption", "gambling", "ext_transfer_out", "internal_transfer_out",
-        "median_balance", "buffer_days", "neg_days_share", "low_balance_days_share",
-        "wage_ratio", "true_income_ratio", "loan_inflow_ratio", "repay_rate",
-        "gambling_share", "ext_transfer_share", "consumption_share",
-        "pay_events", "pay_outflow_7d", "pay_repay_7d", "pay_ext_7d",
-        "pay_recycle_7d",
-        "loan_events", "loan_outflow_7d", "loan_repay_7d", "loan_recycle_7d",
-        "active_lender_cnt", "cash_advance", "bnpl", "personal_loan", "bank_loan",
-        "any_wage", "any_loan_draw", "any_repay", "any_gambling", "any_dishonour",
-    ]
-    for g, sub in users.groupby("group"):
-        print(f"\n--- {g} | n={len(sub)} ---")
-        out = []
-        for col in show:
-            s = pd.to_numeric(sub[col], errors="coerce")
-            if s.notna().sum() == 0:
-                continue
-            if col.startswith("any_") or col in {"neg_days_share", "low_balance_days_share"}:
-                out.append(f"{col}={s.mean():.1%}")
-            else:
-                out.append(f"{col}={s.median():.3g}")
-        print(" | ".join(out))
-
-
-if __name__ == "__main__":
-    main()

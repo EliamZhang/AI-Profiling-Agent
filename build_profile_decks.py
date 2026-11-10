@@ -83,14 +83,6 @@ SEG_COLORS = {
 }
 
 
-def safe(fn, value, fallback="—"):
-    try:
-        out = fn(value)
-        return out if out else fallback
-    except Exception:
-        return fallback
-
-
 def split_finding(text: str) -> tuple[str, str]:
     m = re.match(r"\s*<b>(.*?)</b>(.*)", text, re.S)
     if m:
@@ -538,3 +530,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
