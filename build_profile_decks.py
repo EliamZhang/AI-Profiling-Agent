@@ -6,7 +6,7 @@ Usage:
     python build_profile_decks.py                # all four datasets
     python build_profile_decks.py --only fundo,swap_in
 
-Outputs (in output/):
+Outputs (in output/html/):
     fundo_profile_report_slides.html
     wagego_profile_report_slides.html
     existing_swap_in_profile_report_slides.html
@@ -34,7 +34,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "output"
+OUT = ROOT / "output" / "html"
 
 DATASETS = {
     "fundo": {

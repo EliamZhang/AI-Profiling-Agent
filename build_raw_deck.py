@@ -6,7 +6,7 @@ Usage:
     python build_raw_deck.py
 
 Output:
-    output/swap_in_out_profile_report_slides.html
+    output/html/swap_in_out_profile_report_slides.html
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "output" / "swap_in_out_profile_report_slides.html"
+OUT = ROOT / "output" / "html" / "swap_in_out_profile_report_slides.html"
 BRAND = "SWAP IN <em>×</em> SWAP OUT"
 IN_COLOR = "#1c5cab"
 OUT_COLOR = "#d14b45"

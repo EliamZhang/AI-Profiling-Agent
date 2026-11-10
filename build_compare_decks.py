@@ -6,7 +6,7 @@ Usage:
     python build_compare_decks.py
     python build_compare_decks.py --pair fundo_wagego
 
-Outputs (in output/):
+Outputs (in output/html/):
     compare_profile_report_slides.html
     compare_swap_profile_report_slides.html
 """
@@ -34,7 +34,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).resolve().parent
-OUT = ROOT / "output"
+OUT = ROOT / "output" / "html"
 
 PAIRS = {
     "fundo_wagego": {
