@@ -32,7 +32,6 @@ from fundo_profile_report import (
     INK,
     INK2,
     SEQ_BLUE,
-    SERIES,
     STATUS,
     SURFACE,
     base_layout,
@@ -57,7 +56,7 @@ DEFAULT_FUNDO = ROOT / "data" / "fundo_sample_with_feature_all.csv"
 DEFAULT_WAGEGO = ROOT / "data" / "wagego_sample_with_feature_all.csv"
 DEFAULT_OUT = ROOT / "output"
 
-POP_COLORS = {"Fundo": SERIES[0], "WageGo": SERIES[1]}
+POP_COLORS = {"Fundo": "#0E7558", "WageGo": "#6B4FA8"}
 POP_Y_ORDER = ["WageGo", "Fundo"]  # 水平图中 Fundo 在上
 HILITE = "#d9a441"  # 结论对应数据的金色描边
 SEG_COLORS = {
