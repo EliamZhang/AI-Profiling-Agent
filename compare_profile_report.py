@@ -230,11 +230,13 @@ DIFF_OVERVIEW = [
     ("未解决拒付", "dish_unres"),
     ("赌博交易发生率", "gamb_incidence"),
     ("手续费发生率", "fees_incidence"),
-    ("净借款人占比", "net_borrow_share"),
     ("工资占入账金额", "wage_share_agg"),
     ("福利收入发生率", "cent_incidence"),
+    ("福利 / 入账中位", "cent_share_rec_p50"),
+    ("固定账单 / 工资中位", "fixed_wage_p50"),
+    ("品质消费 / 工资中位", "prem_wage_p50"),
+    ("外部借贷覆盖率", "external_lender_incidence"),
     ("重压型占比", "seg:重压型:share"),
-    ("盈余型占比", "seg:盈余型:share"),
 ]
 
 
@@ -325,6 +327,68 @@ def chart_income_mix(pf: Profile, pw: Profile) -> str:
     )
     fig.update_annotations(font=dict(size=12, color=INK2))
     return fig_html(fig, 420)
+
+
+def chart_income_resilience(pf: Profile, pw: Profile) -> str:
+    ben_defs = [
+        ("pension", "养老金"),
+        ("family", "家庭福利"),
+        ("jobseeker", "JobSeeker"),
+        ("child", "儿童抚养"),
+        ("carer", "照顾者福利"),
+        ("youth", "青年津贴"),
+    ]
+    labels = [name for _, name in ben_defs]
+    f_ben = [
+        float(pf.m["benefit_type_inc"].get(key, np.nan)) * 100
+        for key, _ in ben_defs
+    ]
+    w_ben = [
+        float(pw.m["benefit_type_inc"].get(key, np.nan)) * 100
+        for key, _ in ben_defs
+    ]
+    seg_labels = list(SEG_COLORS.keys())
+    f_wage = [seg_val(pf, s, "wage_share") * 100 for s in seg_labels]
+    w_wage = [seg_val(pw, s, "wage_share") * 100 for s in seg_labels]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.22,
+        subplot_titles=("福利类型覆盖率（福利人群，可重叠）", "各分层工资占入账"),
+    )
+    add_grouped_bars(
+        fig, labels, f_ben, w_ben, row=1, col=1, digits=1,
+        highlight={"养老金", "JobSeeker"},
+    )
+    add_grouped_bars(
+        fig, seg_labels, f_wage, w_wage, row=1, col=2, digits=1,
+        showlegend=False, highlight={"重压型"},
+    )
+    mx_ben = max([v for v in f_ben + w_ben if valid(v)] + [0]) * 1.24
+    mx_wage = max([v for v in f_wage + w_wage if valid(v)] + [0]) * 1.36
+    fig.update_xaxes(range=[0, mx_ben], ticksuffix="%", row=1, col=1)
+    fig.update_xaxes(range=[0, mx_wage], ticksuffix="%", row=1, col=2)
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(seg_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=450, margin=dict(l=104, r=24, t=64, b=74), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.34,
+        bargroupgap=0.08,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.18, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 450)
 
 
 def chart_distributions(pf: Profile, pw: Profile) -> str:
@@ -503,6 +567,123 @@ def chart_consumption_dumbbell(pf: Profile, pw: Profile, top_n: int = 12) -> str
         )
     )
     return fig_html(fig, 520)
+
+
+def chart_consumption_depth(pf: Profile, pw: Profile) -> str:
+    picks = [
+        ("groceries", "超市"),
+        ("dining_out", "餐饮"),
+        ("rent", "房租"),
+        ("insurance", "保险"),
+        ("travel", "旅游"),
+        ("automotive", "汽车"),
+        ("gambling", "赌博"),
+        ("fees", "手续费"),
+    ]
+    labels = [label for _, label in picks]
+    f_pen = [
+        float(pf.m["cat_pen"].get(key, np.nan)) * 100 for key, _ in picks
+    ]
+    w_pen = [
+        float(pw.m["cat_pen"].get(key, np.nan)) * 100 for key, _ in picks
+    ]
+    seg_labels = list(SEG_COLORS.keys())
+    f_prem = [seg_val(pf, s, "prem_wage") * 100 for s in seg_labels]
+    w_prem = [seg_val(pw, s, "prem_wage") * 100 for s in seg_labels]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.23,
+        subplot_titles=("消费类目渗透率", "品质消费 / 工资（各分层中位）"),
+    )
+    add_grouped_bars(
+        fig, labels, f_pen, w_pen, row=1, col=1, digits=1,
+        highlight={"赌博", "手续费"},
+    )
+    add_grouped_bars(
+        fig, seg_labels, f_prem, w_prem, row=1, col=2, digits=1,
+        showlegend=False, highlight={"重压型"},
+    )
+    mx_pen = max([v for v in f_pen + w_pen if valid(v)] + [0]) * 1.20
+    mx_prem = max([v for v in f_prem + w_prem if valid(v)] + [0]) * 1.38
+    fig.update_xaxes(range=[0, mx_pen], ticksuffix="%", row=1, col=1)
+    fig.update_xaxes(range=[0, mx_prem], ticksuffix="%", row=1, col=2)
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(seg_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=450, margin=dict(l=92, r=24, t=64, b=74), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.34,
+        bargroupgap=0.08,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.18, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 450)
+
+
+def chart_fixed_burden(pf: Profile, pw: Profile) -> str:
+    seg_labels = list(SEG_COLORS.keys())
+    f_fix = [seg_val(pf, s, "fixed_wage") * 100 for s in seg_labels]
+    w_fix = [seg_val(pw, s, "fixed_wage") * 100 for s in seg_labels]
+    cov_labels = ["固定账单", "房租", "保险"]
+    f_cov = [
+        pf.m["fixed_bill_incidence"] * 100,
+        pf.m["rent_incidence"] * 100,
+        pf.m["insurance_incidence"] * 100,
+    ]
+    w_cov = [
+        pw.m["fixed_bill_incidence"] * 100,
+        pw.m["rent_incidence"] * 100,
+        pw.m["insurance_incidence"] * 100,
+    ]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.23,
+        subplot_titles=("固定账单 / 工资（各分层中位）", "刚性支出覆盖率"),
+    )
+    add_grouped_bars(
+        fig, seg_labels, f_fix, w_fix, row=1, col=1, digits=1,
+        highlight={"重压型"},
+    )
+    add_grouped_bars(
+        fig, cov_labels, f_cov, w_cov, row=1, col=2, digits=1,
+        showlegend=False, highlight={"房租"},
+    )
+    mx_fix = max([v for v in f_fix + w_fix if valid(v)] + [0]) * 1.38
+    fig.update_xaxes(range=[0, mx_fix], ticksuffix="%", row=1, col=1)
+    fig.update_xaxes(range=[0, 108], ticksuffix="%", row=1, col=2)
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(seg_labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(cov_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=450, margin=dict(l=72, r=24, t=64, b=74), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.34,
+        bargroupgap=0.08,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.18, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 450)
 
 
 def chart_liability(pf: Profile, pw: Profile) -> str:
@@ -832,6 +1013,19 @@ def build_findings(pf: Profile, pw: Profile) -> list[str]:
         f"其余主要来自“其他入账”（{fmt_pct(fm['other_share_agg'])} vs {fmt_pct(wm['other_share_agg'])}）。"
     )
 
+    parts.append(
+        f"<b>Fundo 的福利覆盖更高，重压型更依赖非工资入账。</b> 福利收入发生率 "
+        f"{fmt_pct(fm['cent_incidence'])} vs {fmt_pct(wm['cent_incidence'])}；"
+        f"福利人群中福利占入账中位 {fmt_pct(fm['cent_share_rec_p50'])} vs "
+        f"{fmt_pct(wm['cent_share_rec_p50'])}。养老金覆盖率 "
+        f"{fmt_pct(fm['benefit_type_inc'].get('pension'))} vs "
+        f"{fmt_pct(wm['benefit_type_inc'].get('pension'))}，JobSeeker "
+        f"{fmt_pct(fm['benefit_type_inc'].get('jobseeker'))} vs "
+        f"{fmt_pct(wm['benefit_type_inc'].get('jobseeker'))}。"
+        f"重压型工资占入账 {fmt_pct(seg_val(pf, '重压型', 'wage_share'))} vs "
+        f"{fmt_pct(seg_val(pw, '重压型', 'wage_share'))}，两组均低于其他分层。"
+    )
+
     cat_gaps = []
     for k, fv in fm["cat_shares"].items():
         wv = wm["cat_shares"].get(k, np.nan)
@@ -855,6 +1049,21 @@ def build_findings(pf: Profile, pw: Profile) -> list[str]:
     )
 
     parts.append(
+        f"<b>WageGo 的消费渗透更广，Fundo 的品质消费负担更重。</b> 赌博交易发生率 "
+        f"{fmt_pct(wm['gamb_incidence'])} vs {fmt_pct(fm['gamb_incidence'])}，"
+        f"手续费发生率 {fmt_pct(wm['fees_incidence'])} vs {fmt_pct(fm['fees_incidence'])}，"
+        f"超市 {fmt_pct(wm['cat_pen'].get('groceries'))} vs "
+        f"{fmt_pct(fm['cat_pen'].get('groceries'))}、餐饮 "
+        f"{fmt_pct(wm['cat_pen'].get('dining_out'))} vs "
+        f"{fmt_pct(fm['cat_pen'].get('dining_out'))}。"
+        f"品质消费 / 工资中位 Fundo {fmt_pct(fm['prem_wage_p50'])}、WageGo "
+        f"{fmt_pct(wm['prem_wage_p50'])}，P90 {fmt_pct(fm['prem_wage_p90'])} vs "
+        f"{fmt_pct(wm['prem_wage_p90'])}；重压型 "
+        f"{fmt_pct(seg_val(pf, '重压型', 'prem_wage'))} vs "
+        f"{fmt_pct(seg_val(pw, '重压型', 'prem_wage'))}，两组均为各分层最高。"
+    )
+
+    parts.append(
         f"<b>两组均以负盈余为主，账户缓冲普遍不足。</b> 中位月盈余 Fundo {fmt_money(fm['sur_p50'])}、"
         f"WageGo {fmt_money(wm['sur_p50'])}；负盈余用户占比 "
         f"{fmt_pct(fm['sur_neg'])} vs {fmt_pct(wm['sur_neg'])}。中位账户余额 "
@@ -863,10 +1072,28 @@ def build_findings(pf: Profile, pw: Profile) -> list[str]:
     )
 
     parts.append(
+        f"<b>刚性支出覆盖率接近，但 Fundo 的固定账单负担更重。</b> 固定账单覆盖率 "
+        f"{fmt_pct(fm['fixed_bill_incidence'])} vs {fmt_pct(wm['fixed_bill_incidence'])}，"
+        f"房租 {fmt_pct(fm['rent_incidence'])} vs {fmt_pct(wm['rent_incidence'])}，"
+        f"保险 {fmt_pct(fm['insurance_incidence'])} vs {fmt_pct(wm['insurance_incidence'])}。"
+        f"固定账单 / 工资中位 {fmt_pct(fm['fixed_wage_p50'])} vs "
+        f"{fmt_pct(wm['fixed_wage_p50'])}，P90 {fmt_pct(fm['fixed_wage_p90'])} vs "
+        f"{fmt_pct(wm['fixed_wage_p90'])}；超过 30% 的用户占比 "
+        f"{fmt_pct(fm['fixed_wage_gt30'])} vs {fmt_pct(wm['fixed_wage_gt30'])}。"
+        f"收入 / 支出中位 {fm['income_expense_ratio_p50']:.3f} vs "
+        f"{wm['income_expense_ratio_p50']:.3f}，重压型固定账单 / 工资 "
+        f"{fmt_pct(seg_val(pf, '重压型', 'fixed_wage'))} vs "
+        f"{fmt_pct(seg_val(pw, '重压型', 'fixed_wage'))}。"
+    )
+
+    parts.append(
         f"<b>WageGo 的借贷参与度和拒付暴露更高。</b> 有借贷放款 "
         f"{fmt_pct(wm['any_disburse'])} vs Fundo {fmt_pct(fm['any_disburse'])}，"
         f"现金贷使用率 {fmt_pct(wm['adv_use'])} vs {fmt_pct(fm['adv_use'])}，"
         f"分期贷 {fmt_pct(wm['loan_use'])} vs {fmt_pct(fm['loan_use'])}。"
+        f"外部借贷覆盖率 {fmt_pct(wm['external_lender_incidence'])} vs "
+        f"{fmt_pct(fm['external_lender_incidence'])}，其中 MyPayNow "
+        f"{fmt_pct(wm['mypaynow_incidence'])} vs {fmt_pct(fm['mypaynow_incidence'])}。"
         f"偿债 / 收入中位 {fmt_pct(wm['rep_rate_p50'])} vs {fmt_pct(fm['rep_rate_p50'])}；"
         f"有拒付记录 {fmt_pct(wm['dish_any'])} vs {fmt_pct(fm['dish_any'])}，"
         f"未解决拒付 {fmt_pct(wm['dish_unres'])} vs {fmt_pct(fm['dish_unres'])}，"
@@ -874,10 +1101,8 @@ def build_findings(pf: Profile, pw: Profile) -> list[str]:
     )
 
     parts.append(
-        f"<b>WageGo 的赌博、手续费与催收暴露更高。</b> 赌博交易发生率 "
-        f"{fmt_pct(wm['gamb_incidence'])} vs {fmt_pct(fm['gamb_incidence'])}，"
-        f"赌博占可识别消费 {fmt_pct(wm['gamb_share_cons'])} vs {fmt_pct(fm['gamb_share_cons'])}；"
-        f"手续费发生率 {fmt_pct(wm['fees_incidence'])} vs {fmt_pct(fm['fees_incidence'])}，"
+        f"<b>WageGo 的赌博强度与费用暴露更高。</b> 赌博占可识别消费 "
+        f"{fmt_pct(wm['gamb_share_cons'])} vs {fmt_pct(fm['gamb_share_cons'])}；"
         f"手续费 / 透支类交易 {fmt_pct(wm['fees_ticket_incidence'])} vs "
         f"{fmt_pct(fm['fees_ticket_incidence'])}，催收类拒付 "
         f"{fmt_pct(wm['collections_inc'])} vs {fmt_pct(fm['collections_inc'])}。"

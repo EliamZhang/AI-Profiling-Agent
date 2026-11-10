@@ -122,16 +122,16 @@ def build_profile_findings(mod, m: dict, seg) -> list[str]:
             f"<b>支出刚性强，工资口径下的真实可支配收入更薄。</b> 固定账单覆盖 {fp(m['fixed_bill_incidence'])}，"
             f"固定账单/工资中位 {fp(m['fixed_wage_p50'])}、P90 {fp(m['fixed_wage_p90'])}；"
             f"重压型 {fp(sv('重压型', 'fixed_wage'))} vs 盈余型 {fp(sv('盈余型', 'fixed_wage'))}。"
-            f"房租覆盖 {fp(sv('盈余型', 'rent_inc'))}→{fp(sv('重压型', 'rent_inc'))}，"
+            f"房租覆盖率 {fp(sv('盈余型', 'rent_inc'))}→{fp(sv('重压型', 'rent_inc'))}，"
             f"品质消费/工资 {fp(sv('盈余型', 'prem_wage'))}→{fp(sv('重压型', 'prem_wage'))}；"
             f"收入/支出比中位仅 {num(m['income_expense_ratio_p50'], 3)}，账面平衡掩盖了刚性支出后的薄可支配收入。"
         )
     if "cent_recipients" in m and "benefit_type_inc" in m:
         ben = m["benefit_type_inc"]
         findings.append(
-            f"<b>福利覆盖近四成，但不是尾部压力的主因。</b> {fp(m['cent_incidence'])} 有福利入账；"
-            f"福利人群中养老金 {fp(ben.get('pension'))}、家庭福利 {fp(ben.get('family'))}、"
-            f"JobSeeker {fp(ben.get('jobseeker'))}。福利覆盖率在赤字型最高（{fp(sv('赤字型', 'cent_inc'))}），"
+            f"<b>福利覆盖较广，但不是尾部压力的主因。</b> {fp(m['cent_incidence'])} 有福利入账；"
+            f"福利人群中养老金覆盖率 {fp(ben.get('pension'))}、家庭福利覆盖率 {fp(ben.get('family'))}、"
+            f"JobSeeker 覆盖率 {fp(ben.get('jobseeker'))}（可重叠）。福利覆盖率在赤字型最高（{fp(sv('赤字型', 'cent_inc'))}），"
             f"重压型反而降至 {fp(sv('重压型', 'cent_inc'))}；重压型入账金额中工资仅占 "
             f"{fp(sv('重压型', 'wage_share'))}，更多依赖其他入账，尾部压力更多来自支出与借贷，"
             "而非单纯福利依赖。"
@@ -147,7 +147,7 @@ def build_profile_findings(mod, m: dict, seg) -> list[str]:
             f"{min(mypay_seg):.1%}–{max(mypay_seg):.1%}" if mypay_seg else "—"
         )
         findings.append(
-            f"<b>外部借贷重叠高，竞品用户与 Fundo 客群高度重合。</b> "
+            f"<b>外部借贷关系不可忽视，竞品覆盖分散在各层级。</b> "
             f"可识别外部借贷机构覆盖 {fp(m['external_lender_incidence'])}，其中 "
             f"MyPayNow {fp(m['mypaynow_incidence'])}、CBA Loans {fp(comp.get('CBA Loans'))}、"
             f"Credit24 {fp(comp.get('Credit24'))}、Swoosh {fp(comp.get('Swoosh'))}；"
@@ -354,9 +354,9 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             + "</div>"
             + ui.fact_strip(
                 [
-                    (fp(m["benefit_type_inc"].get("pension")), "福利人群：养老金"),
-                    (fp(m["benefit_type_inc"].get("family")), "福利人群：家庭福利"),
-                    (fp(m["benefit_type_inc"].get("jobseeker")), "福利人群：JobSeeker"),
+                    (fp(m["benefit_type_inc"].get("pension")), "养老金覆盖率（福利人群）"),
+                    (fp(m["benefit_type_inc"].get("family")), "家庭福利覆盖率（福利人群）"),
+                    (fp(m["benefit_type_inc"].get("jobseeker")), "JobSeeker 覆盖率（福利人群）"),
                     (fp(seg_val("重压型", "cent_inc")), "重压型福利覆盖率"),
                 ]
             )
@@ -367,7 +367,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
                 section=section_1,
                 kicker=f"{n_resilience} · Income Resilience",
                 title="收入结构与韧性",
-                sub="福利覆盖近四成，但尾部压力并非单纯福利依赖；重压型工资占比更低，收入更依赖其他入账与外部支持。",
+                sub=f"福利覆盖 {fp(m['cent_incidence'])}，但尾部压力并非单纯福利依赖；重压型工资占比更低，收入更依赖其他入账与外部支持。",
                 body=resilience_body,
             )
         )
@@ -493,7 +493,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
                     (
                         "固定账单覆盖率",
                         fp(m["fixed_bill_incidence"]),
-                        f"有支出用户中位 {fm(m['fixed_bill_median_pos'])} / 6 个月",
+                        f"有账单用户中位 {fm(m['fixed_bill_median_pos'])} / 6 个月",
                     ),
                     (
                         "房租覆盖率",
@@ -526,7 +526,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
                 section=section_2,
                 kicker=f"{n_fixed} · Fixed Obligations",
                 title="刚性支出与真实可支配收入",
-                sub="固定账单覆盖近九成、房租覆盖近半；按工资口径，重压型固定账单负担是盈余型的近三倍，账面收支平衡掩盖了真实可支配收入的差异。",
+                sub="固定账单覆盖近九成、房租覆盖近半；按工资口径，重压型固定账单负担明显高于盈余型，账面收支平衡掩盖了真实可支配收入的差异。",
                 body=fixed_body,
             )
         )
@@ -701,7 +701,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             (
                 "支出",
                 f"固定账单覆盖 <b>{fp(m['fixed_bill_incidence'])}</b>，固定账单/工资中位 <b>{fp(m['fixed_wage_p50'])}</b>；"
-                f"房租覆盖 <b>{fp(seg_val('盈余型', 'rent_inc'))}→{fp(seg_val('重压型', 'rent_inc'))}</b>，"
+                f"房租覆盖率 <b>{fp(seg_val('盈余型', 'rent_inc'))}→{fp(seg_val('重压型', 'rent_inc'))}</b>，"
                 f"收入/支出比中位仅 <b>{m['income_expense_ratio_p50']:.3f}</b>。",
             ),
             (

@@ -1288,7 +1288,7 @@ def chart_income_resilience(m: dict, seg: pd.DataFrame) -> str:
     family = float(m["benefit_type_inc"].get("family", np.nan)) * 100
     add_panel_title(
         fig,
-        f"福利构成：养老金 {pension:.0f}%、家庭福利 {family:.0f}%",
+        f"福利类型覆盖：养老金 {pension:.0f}%、家庭福利 {family:.0f}%",
         "x2 domain",
         "y2 domain",
     )
@@ -1328,7 +1328,7 @@ def chart_consumption(m: dict, top_n: int = 10) -> str:
     top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
     add_title(
         fig,
-        f"可识别消费结构：{top3}居前（仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}）",
+        f"消费结构：{top3}居前 · 可识别消费仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}",
         y=1.12,
     )
     return fig_html(fig)
@@ -1755,7 +1755,7 @@ def chart_fixed_burden(m: dict, seg: pd.DataFrame) -> str:
             yanchor="bottom",
             font=dict(color=MUTED, size=10.5),
         )
-    add_panel_title(fig, "房租覆盖：赤字型与重压型接近一半", "x2 domain", "y2 domain")
+    add_panel_title(fig, "房租覆盖率：赤字型与重压型接近一半", "x2 domain", "y2 domain")
 
     base_layout(fig, height=430, margin=dict(l=72, r=24, t=78, b=64))
     fig.update_xaxes(
