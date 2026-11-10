@@ -241,6 +241,36 @@ WORTHINESS_COLS = [
     "bank_txn_worthiness_days_since_last_liability_drawdown_182d",
     "bank_txn_worthiness_days_since_last_liability_repayment_182d",
 ]
+BENEFIT_COLS = {
+    "pension": "bank_txn_income_centrelink_3rdparty_centrelinkpension_sum_182d",
+    "family": "bank_txn_income_centrelink_3rdparty_familybenefits_sum_182d",
+    "jobseeker": "bank_txn_income_centrelink_3rdparty_jobseeker_sum_182d",
+    "child": "bank_txn_income_centrelink_3rdparty_childsupport_sum_182d",
+    "carer": "bank_txn_income_centrelink_3rdparty_carersbenefits_sum_182d",
+    "youth": "bank_txn_income_centrelink_3rdparty_youthallowance_sum_182d",
+}
+COMPETITOR_COLS = {
+    "MyPayNow": "bank_txn_lender_disburse_competitor_MyPayNow_count_l182d",
+    "CBA Loans": "bank_txn_lender_disburse_competitor_CBA_Loans_count_l182d",
+    "Credit24": "bank_txn_lender_disburse_competitor_Credit24_count_l182d",
+    "Swoosh": "bank_txn_lender_disburse_competitor_Swoosh_Finance_count_l182d",
+    "360 Cash": "bank_txn_lender_disburse_competitor_360_Cash_Loans_count_l182d",
+    "CBA StepPay": "bank_txn_lender_disburse_competitor_CBA_StepPay_count_l182d",
+    "Klarna": "bank_txn_lender_disburse_competitor_Klarna_count_l182d",
+}
+DEPTH_COLS = [
+    "bank_txn_worthiness_fixed_bill_amt_sum_182d",
+    "bank_txn_worthiness_rent_amt_total_182d",
+    "bank_txn_worthiness_insurance_amt_total_182d",
+    "bank_txn_worthiness_premium_lifestyle_amt_sum_182d",
+    "bank_txn_worthiness_income_to_expense_ratio_182d",
+    "bank_txn_balance_cv_182d",
+    "bank_txn_income_wages_max_consecutive_months",
+    "bank_txn_income_wages_interval_std",
+    "bank_txn_income_wages_3rdparty_count",
+] + list(BENEFIT_COLS.values()) + list(COMPETITOR_COLS.values()) + [
+    f"bank_txn_category_{k}_debit_cnt_182d" for k in CONSUMPTION_CATS
+]
 ALL_COLUMNS = list(
     dict.fromkeys(
         META_COLS
@@ -253,6 +283,7 @@ ALL_COLUMNS = list(
         + INDUSTRY_COLS
         + CATEGORY_COLS
         + WORTHINESS_COLS
+        + DEPTH_COLS
     )
 )
 TEXT_COLS = {"user_id", "application_id", "sample_datetime", "sample_month", "user_type", "feature_error"}
@@ -434,6 +465,16 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
         if f"bank_txn_category_{k}_debit_amt_182d" in d.columns
     }
     cat_shares = {k: (v / cons_total if cons_total and np.isfinite(cons_total) else np.nan) for k, v in cat_totals.items()}
+    cat_pen = {}
+    cat_ticket = {}
+    for k in CONSUMPTION_CATS:
+        cnt_col = f"bank_txn_category_{k}_debit_cnt_182d"
+        amt_col = f"bank_txn_category_{k}_debit_amt_182d"
+        if cnt_col in d.columns and amt_col in d.columns:
+            cnt = d[cnt_col]
+            amt = d[amt_col]
+            cat_pen[k] = pos_share(cnt)
+            cat_ticket[k] = q((amt / cnt.replace(0, np.nan))[cnt > 0], 0.5)
 
     ess_cols = [f"bank_txn_category_{k}_debit_amt_182d" for k in ESSENTIAL_CATS]
     dis_cols = [f"bank_txn_category_{k}_debit_amt_182d" for k in DISCRETIONARY_CATS]
@@ -519,6 +560,23 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     )
     m["wage_consecutive_p50"] = q(
         d.loc[w, "bank_txn_worthiness_wage_income_consecutive_month_cnt_182d"], 0.5
+    )
+    d["cent_share"] = finite(safe_div(cent, d["inc"]))
+    m["cent_recipients"] = int(c.sum())
+    m["cent_share_rec_p50"] = q(d.loc[c, "cent_share"], 0.5)
+    m["benefit_type_inc"] = {
+        key: pos_share(d.loc[c, col])
+        for key, col in BENEFIT_COLS.items()
+        if col in d.columns
+    }
+    m["wage_max_run_p50"] = q(
+        d.loc[w, "bank_txn_income_wages_max_consecutive_months"], 0.5
+    )
+    m["wage_interval_std_p50"] = q(
+        d.loc[w, "bank_txn_income_wages_interval_std"], 0.5
+    )
+    m["wage_3rdparty_p50"] = q(
+        d.loc[w, "bank_txn_income_wages_3rdparty_count"], 0.5
     )
     m["employer_streak_p50"] = q(
         ind["bank_txn_worthiness_primary_employer_streak_months_182d"], 0.5
@@ -613,6 +671,35 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
         m["large_expense_cnt_p90"] / MONTHS if np.isfinite(m["large_expense_cnt_p90"]) else np.nan
     )
     m["daily_living_p50"] = q(d["bank_txn_worthiness_daily_living_amt_max_182d"], 0.5)
+
+    # 刚性支出与真实可支配收入（工资口径）
+    fixed_bill = d["bank_txn_worthiness_fixed_bill_amt_sum_182d"]
+    rent = d["bank_txn_worthiness_rent_amt_total_182d"]
+    insurance = d["bank_txn_worthiness_insurance_amt_total_182d"]
+    premium = d["bank_txn_worthiness_premium_lifestyle_amt_sum_182d"]
+    d["fixed_wage_rate"] = finite(safe_div(fixed_bill, wages))
+    d["rent_wage_rate"] = finite(safe_div(rent, wages))
+    d["ins_wage_rate"] = finite(safe_div(insurance, wages))
+    d["prem_wage_rate"] = finite(safe_div(premium, wages))
+    m["fixed_bill_incidence"] = pos_share(fixed_bill)
+    m["fixed_bill_median_pos"] = q(fixed_bill[fixed_bill > 0], 0.5)
+    m["fixed_wage_p50"] = q(d["fixed_wage_rate"], 0.5)
+    m["fixed_wage_p90"] = q(d["fixed_wage_rate"], 0.9)
+    m["fixed_wage_gt30"] = cond_share(d["fixed_wage_rate"] > 0.30, d["fixed_wage_rate"])
+    m["rent_incidence"] = pos_share(rent)
+    m["rent_median_pos"] = q(rent[rent > 0], 0.5)
+    m["rent_wage_p50_renters"] = q(d.loc[rent > 0, "rent_wage_rate"], 0.5)
+    m["insurance_incidence"] = pos_share(insurance)
+    m["premium_incidence"] = pos_share(premium)
+    m["prem_wage_p50"] = q(d["prem_wage_rate"], 0.5)
+    m["prem_wage_p90"] = q(d["prem_wage_rate"], 0.9)
+    m["income_expense_ratio_p50"] = q(
+        d["bank_txn_worthiness_income_to_expense_ratio_182d"], 0.5
+    )
+    m["income_expense_ratio_p10"] = q(
+        d["bank_txn_worthiness_income_to_expense_ratio_182d"], 0.1
+    )
+    m["balance_cv_p50"] = q(d["bank_txn_balance_cv_182d"], 0.5)
 
     # 资金与负债
     m["pre_debt_cf_p50"] = q(d["pre_debt_cf"] / MONTHS, 0.5)
@@ -711,6 +798,24 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     mix.sort(key=lambda x: x[1], reverse=True)
     m["product_mix_text"] = "、".join(f"{name} {v:.0%}" for name, v in mix)
 
+    # 外部借贷机构重叠（lender 字段 -1 清洗后，非缺失即代表有该机构放款）
+    comp_present = {
+        name: col for name, col in COMPETITOR_COLS.items() if col in d.columns
+    }
+    m["competitor_inc"] = {
+        name: float(d[col].notna().mean()) for name, col in comp_present.items()
+    }
+    if comp_present:
+        d["external_lender_any"] = d[list(comp_present.values())].notna().any(axis=1)
+        m["external_lender_incidence"] = float(d["external_lender_any"].mean())
+    else:
+        d["external_lender_any"] = False
+        m["external_lender_incidence"] = np.nan
+    mypay_col = COMPETITOR_COLS["MyPayNow"]
+    m["mypaynow_incidence"] = (
+        float(d[mypay_col].notna().mean()) if mypay_col in d.columns else np.nan
+    )
+
     m["dish_any"] = cond_share(
         d["bank_txn_dishonour_lender_ratio_182d"] > 0,
         d["bank_txn_dishonour_lender_ratio_182d"],
@@ -784,11 +889,57 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
                 "bank_txn_dishonour_lender_ratio_182d",
                 lambda s: float((s.dropna() > 0).mean()) if s.notna().any() else np.nan,
             ),
+            fixed_wage=("fixed_wage_rate", "median"),
+            prem_wage=("prem_wage_rate", "median"),
+            fixed_inc=(
+                "bank_txn_worthiness_fixed_bill_amt_sum_182d",
+                lambda s: float((s.dropna() > 0).mean()) if s.notna().any() else np.nan,
+            ),
+            rent_inc=(
+                "bank_txn_worthiness_rent_amt_total_182d",
+                lambda s: float((s.dropna() > 0).mean()) if s.notna().any() else np.nan,
+            ),
+            insurance_inc=(
+                "bank_txn_worthiness_insurance_amt_total_182d",
+                lambda s: float((s.dropna() > 0).mean()) if s.notna().any() else np.nan,
+            ),
+            cent_inc=(
+                "bank_txn_income_centrelink_sum_182d",
+                lambda s: float((s.dropna() > 0).mean()) if s.notna().any() else np.nan,
+            ),
+            mypay_inc=(
+                "bank_txn_lender_disburse_competitor_MyPayNow_count_l182d",
+                lambda s: float(s.notna().mean()),
+            ),
+            external_inc=("external_lender_any", "mean"),
+            balance_cv=("bank_txn_balance_cv_182d", "median"),
         )
         .reindex(["盈余型", "平衡型", "赤字型", "重压型"])
     )
     seg["share"] = seg["n"] / len(d)
 
+    seg_mix = (
+        d.dropna(subset=["segment"])
+        .groupby("segment", observed=True)
+        .agg(
+            wage_amt=("bank_txn_income_wages_sum_182d", "sum"),
+            cent_amt=("bank_txn_income_centrelink_sum_182d", "sum"),
+            other_amt=("bank_txn_income_otherincome_sum_182d", "sum"),
+        )
+    )
+    seg_mix["total"] = seg_mix.sum(axis=1)
+    for col, src in (
+        ("wage_share", "wage_amt"),
+        ("cent_share", "cent_amt"),
+        ("other_share", "other_amt"),
+    ):
+        seg_mix[col] = finite(seg_mix[src] / seg_mix["total"].replace(0, np.nan))
+    seg = seg.join(seg_mix[["wage_share", "cent_share", "other_share"]])
+    for col in ("wage_share", "cent_share", "other_share"):
+        seg[col] = seg[col].fillna(0.0)
+
+    m["cat_pen"] = cat_pen
+    m["cat_ticket"] = cat_ticket
     m["cat_shares"] = cat_shares
     m["cat_totals"] = cat_totals
     m["cons_total"] = cons_total
@@ -863,6 +1014,26 @@ def add_title(fig, text: str, xref: str = "x domain", y: float = 1.16) -> None:
         y=y,
         xref=xref,
         yref="y domain",
+        text=text,
+        showarrow=False,
+        xanchor="left",
+        yanchor="bottom",
+        font=dict(family=CHART_FONT, color=INK, size=14),
+    )
+
+
+def add_panel_title(
+    fig,
+    text: str,
+    xref: str,
+    yref: str = "y domain",
+    y: float = 1.16,
+) -> None:
+    fig.add_annotation(
+        x=0,
+        y=y,
+        xref=xref,
+        yref=yref,
         text=text,
         showarrow=False,
         xanchor="left",
@@ -1003,6 +1174,127 @@ def chart_income(m: dict) -> str:
     )
 
 
+def chart_income_resilience(m: dict, seg: pd.DataFrame) -> str:
+    labels = ["盈余型", "平衡型", "赤字型", "重压型"]
+    order = labels[::-1]
+    mix_defs = [
+        ("wage_share", "工资", SERIES[0], "#ffffff"),
+        ("cent_share", "福利", SERIES[3], INK),
+        ("other_share", "其他入账", NEUTRAL, "#ffffff"),
+    ]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[1.15, 1.0],
+        horizontal_spacing=0.18,
+    )
+    for col, name, color, text_color in mix_defs:
+        vals = [
+            float(seg.loc[s, col]) * 100 if s in seg.index else 0.0 for s in labels
+        ]
+        fig.add_trace(
+            go.Bar(
+                y=labels,
+                x=vals,
+                orientation="h",
+                name=name,
+                marker=dict(color=color, line=dict(color=SURFACE, width=1.5)),
+                text=[f"{v:.0f}%" if v >= 9 else "" for v in vals],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(color=text_color, size=11),
+                hovertemplate=f"%{{y}}<br>{name}占入账 %{{x:.1f}}%<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+    ben_defs = [
+        ("pension", "养老金"),
+        ("family", "家庭福利"),
+        ("jobseeker", "JobSeeker"),
+        ("child", "儿童抚养"),
+        ("carer", "照顾者福利"),
+        ("youth", "青年津贴"),
+    ]
+    ben_vals = [
+        (name, float(m["benefit_type_inc"].get(key, np.nan)) * 100)
+        for key, name in ben_defs
+    ]
+    ben_vals = [(name, v) for name, v in ben_vals if np.isfinite(v)]
+    ben_vals.sort(key=lambda x: x[1])
+    fig.add_trace(
+        go.Bar(
+            y=[name for name, _ in ben_vals],
+            x=[v for _, v in ben_vals],
+            orientation="h",
+            marker=dict(color=SERIES[0]),
+            text=[f"{v:.1f}%" for _, v in ben_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>福利人群中覆盖率 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+
+    base_layout(fig, height=430, margin=dict(l=72, r=24, t=78, b=84), showlegend=True)
+    fig.update_layout(
+        barmode="stack",
+        bargap=0.38,
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=-0.22,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_xaxes(
+        range=[0, 100],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=1,
+    )
+    xmax = max([v for _, v in ben_vals], default=1)
+    fig.update_xaxes(
+        range=[0, xmax * 1.28 if xmax else 1],
+        ticksuffix="%",
+        title="福利人群中的覆盖率（可重叠）",
+        row=1,
+        col=2,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=[name for name, _ in ben_vals],
+        showgrid=False,
+        row=1,
+        col=2,
+    )
+    add_panel_title(fig, "各分层入账构成：重压型工资占比最低", "x domain")
+    pension = float(m["benefit_type_inc"].get("pension", np.nan)) * 100
+    family = float(m["benefit_type_inc"].get("family", np.nan)) * 100
+    add_panel_title(
+        fig,
+        f"福利构成：养老金 {pension:.0f}%、家庭福利 {family:.0f}%",
+        "x2 domain",
+        "y2 domain",
+    )
+    return fig_html(fig)
+
+
 def chart_consumption(m: dict, top_n: int = 10) -> str:
     items = sorted(m["cat_shares"].items(), key=lambda kv: kv[1])[-top_n:]
     labels = [
@@ -1037,6 +1329,171 @@ def chart_consumption(m: dict, top_n: int = 10) -> str:
     add_title(
         fig,
         f"可识别消费结构：{top3}居前（仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}）",
+        y=1.12,
+    )
+    return fig_html(fig)
+
+
+def chart_consumption_depth(m: dict, seg: pd.DataFrame) -> str:
+    picks = [
+        ("rent", "房租", SERIES[3], "middle right"),
+        ("insurance", "保险", SERIES[3], "middle right"),
+        ("travel", "旅游", SERIES[0], "top center"),
+        ("automotive", "汽车", SERIES[0], "top center"),
+        ("gambling", "赌博", STATUS["critical"], "middle right"),
+        ("fees", "手续费", NEUTRAL, "top center"),
+        ("groceries", "超市", SERIES[0], "bottom center"),
+        ("dining_out", "餐饮", SERIES[0], "top center"),
+    ]
+    xs, ys, texts, colors, positions, totals = [], [], [], [], [], []
+    for key, label, color, position in picks:
+        pen = m["cat_pen"].get(key, np.nan)
+        ticket = m["cat_ticket"].get(key, np.nan)
+        total = m["cat_totals"].get(key, np.nan)
+        if not (np.isfinite(pen) and np.isfinite(ticket) and ticket > 0):
+            continue
+        xs.append(float(pen) * 100)
+        ys.append(float(ticket))
+        texts.append(label)
+        colors.append(color)
+        positions.append(position)
+        totals.append(float(total) if np.isfinite(total) else 0.0)
+    max_total = max(totals, default=1.0) or 1.0
+    sizes = [16 + 24 * np.sqrt(t / max_total) for t in totals]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[1.3, 1.0],
+        horizontal_spacing=0.14,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            text=texts,
+            textposition=positions,
+            textfont=dict(color=INK2, size=10.5),
+            marker=dict(
+                size=sizes,
+                color=colors,
+                opacity=0.86,
+                line=dict(color=SURFACE, width=2),
+            ),
+            hovertemplate=(
+                "%{text}<br>渗透率 %{x:.1f}%<br>中位客单价 $%{y:,.2f}<extra></extra>"
+            ),
+        ),
+        row=1,
+        col=1,
+    )
+    pen_med = float(np.median(xs)) if xs else 50.0
+    ticket_med = float(np.median(ys)) if ys else 40.0
+    fig.add_vline(
+        x=pen_med,
+        line=dict(color=BASELINE, width=1, dash="dot"),
+        row=1,
+        col=1,
+    )
+    fig.add_hline(
+        y=ticket_med,
+        line=dict(color=BASELINE, width=1, dash="dot"),
+        row=1,
+        col=1,
+    )
+    fig.add_annotation(
+        x=0.98,
+        y=0.02,
+        xref="x domain",
+        yref="y domain",
+        text="高频低额",
+        showarrow=False,
+        xanchor="right",
+        yanchor="bottom",
+        font=dict(color=MUTED, size=10.5),
+    )
+    fig.add_annotation(
+        x=0.02,
+        y=0.98,
+        xref="x domain",
+        yref="y domain",
+        text="低频高额",
+        showarrow=False,
+        xanchor="left",
+        yanchor="top",
+        font=dict(color=MUTED, size=10.5),
+    )
+
+    labels = ["盈余型", "平衡型", "赤字型", "重压型"]
+    order = labels[::-1]
+    colors_by_seg = {
+        "盈余型": STATUS["good"],
+        "平衡型": STATUS["warning"],
+        "赤字型": STATUS["serious"],
+        "重压型": STATUS["critical"],
+    }
+    vals = [
+        float(seg.loc[s, "prem_wage"]) * 100 if s in seg.index else np.nan
+        for s in order
+    ]
+    vals_plot = [v if np.isfinite(v) else 0.0 for v in vals]
+    fig.add_trace(
+        go.Bar(
+            y=order,
+            x=vals_plot,
+            orientation="h",
+            marker=dict(color=[colors_by_seg[s] for s in order]),
+            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>品质消费 / 工资中位 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+
+    base_layout(fig, height=430, margin=dict(l=76, r=24, t=78, b=64))
+    fig.update_xaxes(
+        range=[0, 100],
+        ticksuffix="%",
+        title="类目渗透率（有交易用户占比）",
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        type="log",
+        range=[0, 3],
+        tickvals=[1, 10, 100, 1000],
+        ticktext=["$1", "$10", "$100", "$1k"],
+        title="中位客单价（对数轴）",
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(
+        range=[0, max(vals_plot) * 1.30 if any(vals_plot) else 1],
+        ticksuffix="%",
+        title="品质消费 / 工资（有工资用户，中位）",
+        row=1,
+        col=2,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=2,
+    )
+    add_panel_title(fig, "渗透率 × 客单价：高频小额与低频大额并存", "x domain")
+    low = float(seg.loc["盈余型", "prem_wage"]) if "盈余型" in seg.index else np.nan
+    high = float(seg.loc["重压型", "prem_wage"]) if "重压型" in seg.index else np.nan
+    ratio = high / low if np.isfinite(high) and np.isfinite(low) and low > 0 else np.nan
+    add_panel_title(
+        fig,
+        f"品质消费强度：重压型是盈余型的 {ratio:.1f} 倍" if np.isfinite(ratio) else "品质消费强度",
+        "x2 domain",
+        "y2 domain",
     )
     return fig_html(fig)
 
@@ -1120,7 +1577,7 @@ def chart_liability(m: dict) -> str:
     top = rows[-1] if rows else None
     add_title(
         left,
-        f"借贷产品：{top[0]} 占放款金额 {top[2]:.0f}%" if top else "借贷产品结构",
+        f"最大品类：{top[0]} {top[2]:.0f}%" if top else "借贷产品结构",
         xref="paper",
     )
 
@@ -1193,6 +1650,143 @@ def chart_liability(m: dict) -> str:
         f'<div class="chart-grid even"><div>{fig_html(left)}</div>'
         f"<div>{fig_html(right)}</div></div>"
     )
+
+
+def chart_fixed_burden(m: dict, seg: pd.DataFrame) -> str:
+    labels = ["盈余型", "平衡型", "赤字型", "重压型"]
+    order = labels[::-1]
+    colors_by_seg = {
+        "盈余型": STATUS["good"],
+        "平衡型": STATUS["warning"],
+        "赤字型": STATUS["serious"],
+        "重压型": STATUS["critical"],
+    }
+
+    fixed_vals = [
+        float(seg.loc[s, "fixed_wage"]) * 100 if s in seg.index else np.nan
+        for s in order
+    ]
+    fixed_plot = [v if np.isfinite(v) else 0.0 for v in fixed_vals]
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[1.0, 1.0],
+        horizontal_spacing=0.16,
+    )
+    fig.add_trace(
+        go.Bar(
+            y=order,
+            x=fixed_plot,
+            orientation="h",
+            marker=dict(color=[colors_by_seg[s] for s in order]),
+            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in fixed_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>固定账单 / 工资中位 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+    med = float(m["fixed_wage_p50"]) * 100 if np.isfinite(m["fixed_wage_p50"]) else np.nan
+    if np.isfinite(med):
+        fig.add_vline(
+            x=med,
+            line=dict(color=BASELINE, width=1, dash="dot"),
+            row=1,
+            col=1,
+        )
+        fig.add_annotation(
+            x=med,
+            y=1,
+            xref="x",
+            yref="y domain",
+            text=f"全体中位 {med:.1f}%",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color=MUTED, size=10.5),
+        )
+    low = float(seg.loc["盈余型", "fixed_wage"]) if "盈余型" in seg.index else np.nan
+    high = float(seg.loc["重压型", "fixed_wage"]) if "重压型" in seg.index else np.nan
+    ratio = high / low if np.isfinite(high) and np.isfinite(low) and low > 0 else np.nan
+    add_panel_title(
+        fig,
+        f"固定账单负担：重压型是盈余型的 {ratio:.1f} 倍" if np.isfinite(ratio) else "固定账单负担",
+        "x domain",
+    )
+
+    rent_vals = [
+        float(seg.loc[s, "rent_inc"]) * 100 if s in seg.index else np.nan
+        for s in order
+    ]
+    rent_plot = [v if np.isfinite(v) else 0.0 for v in rent_vals]
+    fig.add_trace(
+        go.Bar(
+            y=order,
+            x=rent_plot,
+            orientation="h",
+            marker=dict(color=SERIES[0]),
+            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in rent_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>房租覆盖率 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+    overall = float(m["rent_incidence"]) * 100 if np.isfinite(m["rent_incidence"]) else np.nan
+    if np.isfinite(overall):
+        fig.add_vline(
+            x=overall,
+            line=dict(color=BASELINE, width=1, dash="dot"),
+            row=1,
+            col=2,
+        )
+        fig.add_annotation(
+            x=overall,
+            y=1,
+            xref="x2",
+            yref="y2 domain",
+            text=f"全体 {overall:.1f}%",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color=MUTED, size=10.5),
+        )
+    add_panel_title(fig, "房租覆盖：赤字型与重压型接近一半", "x2 domain", "y2 domain")
+
+    base_layout(fig, height=430, margin=dict(l=72, r=24, t=78, b=64))
+    fig.update_xaxes(
+        range=[0, max(fixed_plot) * 1.30 if any(fixed_plot) else 1],
+        ticksuffix="%",
+        title="固定账单 / 工资（有工资用户，中位）",
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(
+        range=[0, max(rent_plot) * 1.30 if any(rent_plot) else 1],
+        ticksuffix="%",
+        title="房租覆盖率（有房租交易用户占比）",
+        row=1,
+        col=2,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=2,
+    )
+    return fig_html(fig)
 
 
 def chart_health(d: pd.DataFrame, m: dict) -> str:

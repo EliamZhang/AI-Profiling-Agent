@@ -106,7 +106,7 @@ def build_profile_findings(mod, m: dict, seg) -> list[str]:
         except Exception:
             return "—"
 
-    return [
+    findings = [
         f"<b>收支缺口是常态，支出端为主、偿债进一步扩大缺口。</b> {fp(m['pre_debt_neg'])} 的用户在偿债前已收不抵支，计入还本付息后升至 {fp(m['sur_neg'])}，中位月盈余 {fm(m['sur_p50'])}。重压型收入中位 {fm(sv('重压型', 'inc_m'))}，高于平衡型的 {fm(sv('平衡型', 'inc_m'))}，缺口并非单纯收入不足。",
         f"<b>工资覆盖广，但入账金额高度依赖其他来源。</b> {fp(m['wage_incidence'])} 有工资收入，工资中位 {fm(m['wage_median_m'])}/月，但工资仅占入账金额 {fp(m['wage_share_agg'])}，“其他入账”占 {fp(m['other_share_agg'])}，其中外部+内部转账合计占分项收入 {fp(m['transfer_inc_share'])}。总入账 CV 中位 {num(m['income_cv_p50'])}，收入来源数中位 {num(m['income_source_p50'], 0)} 个；{fp(m['wage_3m6m_decline'])} 的用户近 3 月工资较近 6 月下降超 10%。",
         f"<b>流动性缓冲接近于零。</b> 中位账户余额仅 {fm(m['bal_p50'])}，只能覆盖 {m['buffer_p50']:.1f} 天支出；{fp(m['buffer_lt7'])} 的用户缓冲不足 7 天，小额意外支出即可直接转为透支；6 个月内余额正负切换中位 {num(m['sign_change_p50'], 0)} 次，反复进出透支。",
@@ -117,6 +117,45 @@ def build_profile_findings(mod, m: dict, seg) -> list[str]:
         f"<b>人群分化明显，尾部压力集中。</b> 重压型占 {fp(sv('重压型', 'share'))}，月支出中位 {fm(sv('重压型', 'exp_m'))} 高于收入 {fm(sv('重压型', 'inc_m'))}，现金贷使用率 {fp(sv('重压型', 'adv_use'))}、拒付率 {fp(sv('重压型', 'dishon'))}；盈余型仅占 {fp(sv('盈余型', 'share'))}，整体均值掩盖了尾部风险。",
     ]
 
+    if "fixed_wage_p50" in m:
+        findings[3] = (
+            f"<b>支出刚性强，工资口径下的真实可支配收入更薄。</b> 固定账单覆盖 {fp(m['fixed_bill_incidence'])}，"
+            f"固定账单/工资中位 {fp(m['fixed_wage_p50'])}、P90 {fp(m['fixed_wage_p90'])}；"
+            f"重压型 {fp(sv('重压型', 'fixed_wage'))} vs 盈余型 {fp(sv('盈余型', 'fixed_wage'))}。"
+            f"房租覆盖 {fp(sv('盈余型', 'rent_inc'))}→{fp(sv('重压型', 'rent_inc'))}，"
+            f"品质消费/工资 {fp(sv('盈余型', 'prem_wage'))}→{fp(sv('重压型', 'prem_wage'))}；"
+            f"收入/支出比中位仅 {num(m['income_expense_ratio_p50'], 3)}，账面平衡掩盖了刚性支出后的薄可支配收入。"
+        )
+    if "cent_recipients" in m and "benefit_type_inc" in m:
+        ben = m["benefit_type_inc"]
+        findings.append(
+            f"<b>福利覆盖近四成，但不是尾部压力的主因。</b> {fp(m['cent_incidence'])} 有福利入账；"
+            f"福利人群中养老金 {fp(ben.get('pension'))}、家庭福利 {fp(ben.get('family'))}、"
+            f"JobSeeker {fp(ben.get('jobseeker'))}。福利覆盖率在赤字型最高（{fp(sv('赤字型', 'cent_inc'))}），"
+            f"重压型反而降至 {fp(sv('重压型', 'cent_inc'))}；重压型入账金额中工资仅占 "
+            f"{fp(sv('重压型', 'wage_share'))}，更多依赖其他入账，尾部压力更多来自支出与借贷，"
+            "而非单纯福利依赖。"
+        )
+    if "mypaynow_incidence" in m:
+        comp = m.get("competitor_inc", {})
+        mypay_seg = [
+            float(seg.loc[s, "mypay_inc"])
+            for s in ("盈余型", "平衡型", "赤字型", "重压型")
+            if s in seg.index and "mypay_inc" in seg.columns
+        ]
+        mypay_range = (
+            f"{min(mypay_seg):.1%}–{max(mypay_seg):.1%}" if mypay_seg else "—"
+        )
+        findings.append(
+            f"<b>外部借贷重叠高，竞品用户与 Fundo 客群高度重合。</b> "
+            f"可识别外部借贷机构覆盖 {fp(m['external_lender_incidence'])}，其中 "
+            f"MyPayNow {fp(m['mypaynow_incidence'])}、CBA Loans {fp(comp.get('CBA Loans'))}、"
+            f"Credit24 {fp(comp.get('Credit24'))}、Swoosh {fp(comp.get('Swoosh'))}；"
+            f"MyPayNow 覆盖率在各分层间为 {mypay_range}，竞品用户并非集中于单一风险层级，"
+            "获客与存量经营都需关注外部借贷关系。"
+        )
+    return findings
+
 
 def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_at: str) -> str:
     name = ds["name"]
@@ -126,6 +165,16 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     section_1 = "01 · 收入与支出"
     section_2 = "02 · 负债、流动性与风险"
     sample_note = f"{html.escape(str(m['sample_month']))} {html.escape(str(m['user_type_label']))}样本"
+    depth = "fixed_burden" in figs
+    n_income = "1.1"
+    n_resilience = "1.2" if depth else ""
+    n_expense = "1.3" if depth else "1.2"
+    n_consumption = "1.4" if depth else ""
+    n_fixed = "2.1" if depth else ""
+    n_liability = "2.2" if depth else "2.1"
+    n_cashflow = "2.3" if depth else "2.2"
+    n_segments = "2.4" if depth else "2.3"
+    n_risk = "2.5" if depth else "2.4"
 
     findings = build_profile_findings(mod, m, seg)
 
@@ -151,7 +200,11 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             title=f"{html.escape(name)}<br>银行流水用户画像",
             desc=(
                 f"基于 {ds['source']} 的银行流水特征，观察窗口 {mod.WINDOW_DAYS} 天，"
-                "从收入、支出、负债、现金流、用户分层与风险信号六个维度呈现人群画像。"
+                + (
+                    "从收入结构、消费深度、刚性支出、负债、现金流、用户分层与风险信号等维度呈现人群画像。"
+                    if depth
+                    else "从收入、支出、负债、现金流、用户分层与风险信号六个维度呈现人群画像。"
+                )
             ),
             statuses=[
                 ("green", f"有效流水用户 {m['n_valid']:,}"),
@@ -207,8 +260,12 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             brand=brand,
             section="Executive Summary",
             kicker="核心结论",
-            title="六个维度看人群底盘",
-            sub="收支缺口与薄缓冲是共性底盘；收入来源、借贷依赖与风险信号决定人群分化。",
+            title="多维度看人群底盘" if depth else "六个维度看人群底盘",
+            sub=(
+                "收支缺口与薄缓冲是共性底盘；收入结构、消费强度与刚性支出决定人群分化。"
+                if depth
+                else "收支缺口与薄缓冲是共性底盘；收入来源、借贷依赖与风险信号决定人群分化。"
+            ),
             body=exec_body,
         )
     )
@@ -221,12 +278,17 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             num="01",
             kicker="Income & Expense",
             title="收入与支出",
-            desc="先看钱从哪里来、花到哪里去：工资覆盖与收入来源决定还款基础，支出刚性与转账流向决定可压缩空间。",
+            desc="先看钱从哪里来、花到哪里去：工资覆盖与收入来源决定还款基础，支出刚性与消费深度决定可压缩空间。",
             status_html='<span class="status green"><i></i>画像已完成</span>',
             meta=[
                 (fm(m["inc_p50"]), "中位月收入"),
                 (fm(m["exp_p50"]), "中位月支出"),
-                (fp(m["cons_share_exp_p50"]), "可识别消费 / 总支出"),
+                (
+                    fp(m["fixed_wage_p50"]),
+                    "固定账单 / 工资（中位）",
+                )
+                if depth
+                else (fp(m["cons_share_exp_p50"]), "可识别消费 / 总支出"),
             ],
         )
     )
@@ -256,12 +318,59 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         ui.slide_content(
             brand=brand,
             section=section_1,
-            kicker="1.1 · Income & Employment",
+            kicker=f"{n_income} · Income & Employment",
             title="收入与就业",
             sub="工资覆盖面广，但入账金额高度依赖转账类“其他入账”；收入波动偏高、来源分散。",
             body=income_body,
         )
     )
+
+    if "income_resilience" in figs:
+        resilience_body = (
+            '<div class="duo">'
+            + ui.chart_box(
+                figs["income_resilience"],
+                f"n = {m['n_valid']:,}；左图按分层汇总入账金额，金额口径受高收入用户影响；右图为福利人群中各类型覆盖率，可重叠。",
+            )
+            + ui.side_cards(
+                [
+                    (
+                        "福利覆盖率",
+                        fp(m["cent_incidence"]),
+                        f"{m['cent_recipients']:,} 人有福利入账 · 福利/入账中位 {fp(m['cent_share_rec_p50'])}（福利人群）",
+                    ),
+                    (
+                        "工资连续性",
+                        f"{m['wage_max_run_p50']:.0f} 个月",
+                        f"最长连续工资月份中位 · 到账间隔波动 P50 {m['wage_interval_std_p50']:.1f} 天",
+                    ),
+                    (
+                        "工资代发方",
+                        f"{m['wage_3rdparty_p50']:.0f} 个",
+                        f"代发方数量中位 · 入账 CV {m['income_cv_p50']:.2f}",
+                    ),
+                ]
+            )
+            + "</div>"
+            + ui.fact_strip(
+                [
+                    (fp(m["benefit_type_inc"].get("pension")), "福利人群：养老金"),
+                    (fp(m["benefit_type_inc"].get("family")), "福利人群：家庭福利"),
+                    (fp(m["benefit_type_inc"].get("jobseeker")), "福利人群：JobSeeker"),
+                    (fp(seg_val("重压型", "cent_inc")), "重压型福利覆盖率"),
+                ]
+            )
+        )
+        slides.append(
+            ui.slide_content(
+                brand=brand,
+                section=section_1,
+                kicker=f"{n_resilience} · Income Resilience",
+                title="收入结构与韧性",
+                sub="福利覆盖近四成，但尾部压力并非单纯福利依赖；重压型工资占比更低，收入更依赖其他入账与外部支持。",
+                body=resilience_body,
+            )
+        )
 
     # 05 Expense
     expense_body = (
@@ -288,12 +397,62 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         ui.slide_content(
             brand=brand,
             section=section_1,
-            kicker="1.2 · Expense & Consumption",
+            kicker=f"{n_expense} · Expense & Consumption",
             title="支出与消费",
             sub="真正占用资金的是转账与刚性负担；可识别消费占比有限，支出端可压缩空间不大。",
             body=expense_body,
         )
     )
+
+    if "consumption_depth" in figs:
+        depth_body = (
+            '<div class="duo">'
+            + ui.chart_box(
+                figs["consumption_depth"],
+                f"n = {m['n_valid']:,}；气泡大小为 6 个月类目总额；右图仅统计有工资用户，以工资为分母。",
+            )
+            + ui.side_cards(
+                [
+                    (
+                        "高频刚需",
+                        f"{fp(m['cat_pen']['groceries'])} / {fp(m['cat_pen']['dining_out'])}",
+                        f"超市 / 餐饮渗透率 · 客单价 {fm(m['cat_ticket']['groceries'])} / {fm(m['cat_ticket']['dining_out'])}",
+                    ),
+                    (
+                        "低频大额",
+                        f"{fp(m['cat_pen']['rent'])} / {fm(m['cat_ticket']['rent'])}",
+                        f"房租渗透率 / 客单价 · 保险 {fp(m['cat_pen']['insurance'])} / {fm(m['cat_ticket']['insurance'])}",
+                    ),
+                    (
+                        "品质消费强度",
+                        fp(m["prem_wage_p50"]),
+                        f"品质消费/工资中位 · P90 {fp(m['prem_wage_p90'])}（有工资用户）",
+                    ),
+                ]
+            )
+            + "</div>"
+            + ui.fact_strip(
+                [
+                    (fp(m["premium_incidence"]), "品质消费覆盖率"),
+                    (fp(m["cat_pen"]["gambling"]), "赌博渗透率"),
+                    (fp(m["cat_pen"]["fees"]), "手续费渗透率"),
+                    (
+                        f"{fp(seg_val('盈余型', 'prem_wage'))} → {fp(seg_val('重压型', 'prem_wage'))}",
+                        "品质消费/工资：盈余→重压",
+                    ),
+                ]
+            )
+        )
+        slides.append(
+            ui.slide_content(
+                brand=brand,
+                section=section_1,
+                kicker=f"{n_consumption} · Consumption Depth",
+                title="消费渗透与品质消费",
+                sub="消费几乎覆盖所有类目，差异不在“有没有”，而在“占工资多少”；品质消费强度随现金流压力上升，支出端压缩空间有限。",
+                body=depth_body,
+            )
+        )
 
     # 06 Divider 02
     slides.append(
@@ -303,17 +462,87 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             num="02",
             kicker="Liability, Liquidity & Risk",
             title="负债、流动性与风险",
-            desc="再看钱如何周转、能否缓冲：借贷使用与偿债压力、账户缓冲厚度、拒付与高风险行为共同决定尾部风险。",
+            desc="再看钱如何周转、能否缓冲：刚性支出与偿债压力、账户缓冲厚度、拒付与高风险行为共同决定尾部风险。",
             status_html='<span class="status amber"><i></i>尾部风险需重点跟踪</span>',
-            meta=[
-                (fp(m["any_disburse"]), "有借贷放款"),
-                (fm(m["bal_p50"]), "中位账户余额"),
-                (fp(m["dish_any"]), "有拒付记录"),
-            ],
+            meta=(
+                [
+                    (fp(m["any_disburse"]), "有借贷放款"),
+                    (fm(m["bal_p50"]), "中位账户余额"),
+                    (fp(m["fixed_wage_p50"]), "固定账单 / 工资（中位）"),
+                    (fp(m["dish_any"]), "有拒付记录"),
+                ]
+                if depth
+                else [
+                    (fp(m["any_disburse"]), "有借贷放款"),
+                    (fm(m["bal_p50"]), "中位账户余额"),
+                    (fp(m["dish_any"]), "有拒付记录"),
+                ]
+            ),
         )
     )
 
+    if "fixed_burden" in figs:
+        fixed_body = (
+            '<div class="duo">'
+            + ui.chart_box(
+                figs["fixed_burden"],
+                f"n = {m['n_valid']:,}；左图仅统计有工资用户，以工资为分母；右图为有房租交易用户占比。",
+            )
+            + ui.side_cards(
+                [
+                    (
+                        "固定账单覆盖率",
+                        fp(m["fixed_bill_incidence"]),
+                        f"有支出用户中位 {fm(m['fixed_bill_median_pos'])} / 6 个月",
+                    ),
+                    (
+                        "房租覆盖率",
+                        fp(m["rent_incidence"]),
+                        f"有房租用户中位 {fm(m['rent_median_pos'])} / 6 个月 · 房租/工资中位 {fp(m['rent_wage_p50_renters'])}",
+                    ),
+                    (
+                        "收入 / 支出",
+                        f"{m['income_expense_ratio_p50']:.3f}",
+                        f"中位 · P10 {m['income_expense_ratio_p10']:.3f} · 固定账单/工资 P90 {fp(m['fixed_wage_p90'])}",
+                    ),
+                ]
+            )
+            + "</div>"
+            + ui.fact_strip(
+                [
+                    (fp(m["fixed_wage_p50"]), "固定账单 / 工资中位"),
+                    (fp(m["fixed_wage_gt30"]), "固定账单 / 工资 >30%"),
+                    (fp(m["insurance_incidence"]), "保险覆盖率"),
+                    (
+                        f"{fp(seg_val('盈余型', 'fixed_wage'))} → {fp(seg_val('重压型', 'fixed_wage'))}",
+                        "固定账单/工资：盈余→重压",
+                    ),
+                ]
+            )
+        )
+        slides.append(
+            ui.slide_content(
+                brand=brand,
+                section=section_2,
+                kicker=f"{n_fixed} · Fixed Obligations",
+                title="刚性支出与真实可支配收入",
+                sub="固定账单覆盖近九成、房租覆盖近半；按工资口径，重压型固定账单负担是盈余型的近三倍，账面收支平衡掩盖了真实可支配收入的差异。",
+                body=fixed_body,
+            )
+        )
+
     # 07 Liability
+    liability_facts = [
+        (fp(m["adv_use"]), "现金贷 / 工资预支使用率"),
+        (fp(m["net_borrow_share"]), "净借款人占比"),
+        (fm(m["draw_m_p50"]), "中位月新增借款"),
+        (fm(m["dish_unres_amt_total"], compact=True), "未解决拒付金额"),
+    ]
+    if "external_lender_incidence" in m:
+        liability_facts[2] = (
+            fp(m["external_lender_incidence"]),
+            f"外部借贷覆盖 · MyPayNow {fp(m['mypaynow_incidence'])}",
+        )
     liability_body = (
         '<div class="duo">'
         + ui.chart_box(figs["liability"], f"n = {m['n_valid']:,}；使用率与拒付占比以有效用户为分母，金额占比以全部放款金额为分母。")
@@ -325,20 +554,13 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             ]
         )
         + "</div>"
-        + ui.fact_strip(
-            [
-                (fp(m["adv_use"]), "现金贷 / 工资预支使用率"),
-                (fp(m["net_borrow_share"]), "净借款人占比"),
-                (fm(m["draw_m_p50"]), "中位月新增借款"),
-                (fm(m["dish_unres_amt_total"], compact=True), "未解决拒付金额"),
-            ]
-        )
+        + ui.fact_strip(liability_facts)
     )
     slides.append(
         ui.slide_content(
             brand=brand,
             section=section_2,
-            kicker="2.1 · Liability & Repayment",
+            kicker=f"{n_liability} · Liability & Repayment",
             title="负债与信用履约",
             sub="借贷以短期现金贷为主，新增借款扩张快于还款；拒付规模大、解决率低，是负债端最突出的风险点。",
             body=liability_body,
@@ -346,6 +568,11 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     )
 
     # 08 Cashflow
+    low_balance_note = (
+        f"余额 < $100 占 {fp(m['bal_lt100'])} · 正负切换 {m['sign_change_p50']:.0f} 次 / 6 个月"
+    )
+    if "balance_cv_p50" in m:
+        low_balance_note += f" · 余额 CV {m['balance_cv_p50']:.2f}"
     cashflow_body = (
         '<div class="duo">'
         + ui.chart_box(figs["health"], f"n = {m['n_valid']:,}；盈余直方图显示 P1–P99 范围，余额取最近快照。")
@@ -353,7 +580,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             [
                 ("负盈余占比", fp(m["sur_neg"]), f"偿债前已有 {fp(m['pre_debt_neg'])} 收不抵支"),
                 ("中位账户余额", fm(m["bal_p50"]), f"缓冲 {m['buffer_p50']:.1f} 天 · 不足 7 天 {fp(m['buffer_lt7'])}"),
-                ("透支与低余额", fp(m["bal_neg"]), f"余额 < $100 占 {fp(m['bal_lt100'])} · 正负切换 {m['sign_change_p50']:.0f} 次 / 6 个月"),
+                ("透支与低余额", fp(m["bal_neg"]), low_balance_note),
             ]
         )
         + "</div>"
@@ -370,7 +597,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         ui.slide_content(
             brand=brand,
             section=section_2,
-            kicker="2.2 · Cashflow & Liquidity",
+            kicker=f"{n_cashflow} · Cashflow & Liquidity",
             title="现金流与流动性",
             sub="偿债前已大量用户收不抵支，计入还本付息后缺口进一步扩大；账户缓冲极薄，收入中断即可转为透支。",
             body=cashflow_body,
@@ -414,7 +641,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         ui.slide_content(
             brand=brand,
             section=section_2,
-            kicker="2.3 · Segmentation",
+            kicker=f"{n_segments} · Segmentation",
             title="用户分层",
             sub="整体均值掩盖了尾部风险：重压型人群规模大、收支缺口深，是风险识别与策略分层的重点。",
             body=segments_body,
@@ -436,15 +663,15 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         ui.slide_content(
             brand=brand,
             section=section_2,
-            kicker="2.4 · Risk Signals",
+            kicker=f"{n_risk} · Risk Signals",
             title="交易行为与风险信号",
             sub="赌博、手续费/透支与拒付是传统收支指标之外的行为风险信号，需要与现金流指标联合解读。",
             body=risk_body,
         )
     )
 
-    # 12-13 Findings
-    for chunk_start in (0, 4):
+    # 12-14 Findings
+    for chunk_start in range(0, len(findings), 4):
         chunk = findings[chunk_start:chunk_start + 4]
         if not chunk:
             continue
@@ -459,18 +686,48 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             )
         )
 
-    # 14 Closing
+    # 15 Closing
+    if depth:
+        closing_sub = (
+            f"{name} 人群的核心特征是：收支缺口常态化、账户缓冲极薄、刚性支出与外部借贷暴露高，"
+            "人群分化集中在尾部。"
+        )
+        takeaways = [
+            (
+                "收入",
+                f"福利覆盖 <b>{fp(m['cent_incidence'])}</b>，但重压型仅 <b>{fp(seg_val('重压型', 'cent_inc'))}</b>；"
+                f"重压型入账金额中工资仅占 <b>{fp(seg_val('重压型', 'wage_share'))}</b>，更依赖其他入账。",
+            ),
+            (
+                "支出",
+                f"固定账单覆盖 <b>{fp(m['fixed_bill_incidence'])}</b>，固定账单/工资中位 <b>{fp(m['fixed_wage_p50'])}</b>；"
+                f"房租覆盖 <b>{fp(seg_val('盈余型', 'rent_inc'))}→{fp(seg_val('重压型', 'rent_inc'))}</b>，"
+                f"收入/支出比中位仅 <b>{m['income_expense_ratio_p50']:.3f}</b>。",
+            ),
+            (
+                "风险",
+                f"中位余额 <b>{fm(m['bal_p50'])}</b>，仅覆盖 <b>{m['buffer_p50']:.1f} 天</b>支出；"
+                f"外部借贷覆盖 <b>{fp(m['external_lender_incidence'])}</b>（MyPayNow <b>{fp(m['mypaynow_incidence'])}</b>），"
+                f"<b>{fp(m['dish_unres'])}</b> 有未解决拒付。",
+            ),
+        ]
+    else:
+        closing_sub = (
+            f"{name} 人群的核心特征是：收支缺口常态化、账户缓冲极薄、借贷与拒付暴露高，"
+            "人群分化集中在尾部。"
+        )
+        takeaways = [
+            ("收入", f"工资覆盖 <b>{fp(m['wage_incidence'])}</b>，但工资仅占入账 <b>{fp(m['wage_share_agg'])}</b>；其他入账占 <b>{fp(m['other_share_agg'])}</b>。"),
+            ("流动性", f"中位余额 <b>{fm(m['bal_p50'])}</b>，仅覆盖 <b>{m['buffer_p50']:.1f} 天</b>支出，<b>{fp(m['buffer_lt7'])}</b> 不足 7 天。"),
+            ("风险", f"<b>{fp(m['dish_any'])}</b> 有拒付记录、<b>{fp(m['dish_unres'])}</b> 未解决；<b>{fp(m['gamb_incidence'])}</b> 有赌博交易。"),
+        ]
     slides.append(
         ui.slide_closing(
             brand=brand,
             kicker="结论 · Takeaway",
             title="画像结论",
-            sub=f"{name} 人群的核心特征是：收支缺口常态化、账户缓冲极薄、借贷与拒付暴露高，人群分化集中在尾部。",
-            takeaways=[
-                ("收入", f"工资覆盖 <b>{fp(m['wage_incidence'])}</b>，但工资仅占入账 <b>{fp(m['wage_share_agg'])}</b>；其他入账占 <b>{fp(m['other_share_agg'])}</b>。"),
-                ("流动性", f"中位余额 <b>{fm(m['bal_p50'])}</b>，仅覆盖 <b>{m['buffer_p50']:.1f} 天</b>支出，<b>{fp(m['buffer_lt7'])}</b> 不足 7 天。"),
-                ("风险", f"<b>{fp(m['dish_any'])}</b> 有拒付记录、<b>{fp(m['dish_unres'])}</b> 未解决；<b>{fp(m['gamb_incidence'])}</b> 有赌博交易。"),
-            ],
+            sub=closing_sub,
+            takeaways=takeaways,
             source=(
                 f"<b>口径</b>：观察窗口 {mod.WINDOW_DAYS} 天，月度指标按 6 个月折算；盈余 = 收入 − 支出 − 还本付息 − 拒付费 + 新增借款；"
                 f"数据源 {ds['source']}。分位数为各自分布独立计算，不可直接相减。"
@@ -501,6 +758,10 @@ def run_dataset(key: str, generated_at: str, out_dir: Path) -> Path:
         "health": mod.chart_health(d, m),
         "segments": mod.chart_segments(seg),
     }
+    if hasattr(mod, "chart_income_resilience"):
+        figs["income_resilience"] = mod.chart_income_resilience(m, seg)
+        figs["consumption_depth"] = mod.chart_consumption_depth(m, seg)
+        figs["fixed_burden"] = mod.chart_fixed_burden(m, seg)
     report = build_deck(mod, ds, m, seg, d, figs, generated_at)
     out_path = out_dir / ds["filename"]
     out_path.parent.mkdir(parents=True, exist_ok=True)

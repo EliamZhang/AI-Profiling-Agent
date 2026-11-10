@@ -27,6 +27,9 @@ EXTRA_CSS = """
   .chart-box .js-plotly-plot{width:100%!important}
   .chart-cap{font-size:10.5px;line-height:1.5;color:var(--faint);padding:6px 6px 0;flex:none}
   .chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;min-height:0}
+  .chart-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;flex:1;min-height:0;grid-auto-rows:1fr}
+  .chart-grid.even{grid-template-columns:1fr 1fr}
+  .chart-grid > div{min-width:0;min-height:0}
   .chart-stack{display:flex;flex-direction:column;gap:12px;flex:1;min-height:0}
   .chart-stack .chart-box{flex:1 1 0}
 
@@ -139,13 +142,16 @@ FIT_JS = """
       if (!box) return;
       var cs = getComputedStyle(box);
       var cap = box.querySelector('.chart-cap');
-      var w = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      var h = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
-              - (cap ? cap.offsetHeight : 0);
+      var cell = p.closest('.chart-grid > div');
+      var w = cell ? cell.clientWidth
+                   : box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var h = cell ? cell.clientHeight
+                   : box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+                     - (cap ? cap.offsetHeight : 0);
       if (w < 120 || h < 120) return;
       if (Math.abs(w - p.clientWidth) > 4 || Math.abs(h - p.clientHeight) > 4) {
         var holder = p.parentElement;
-        if (holder && holder !== box && holder.parentElement === box) {
+        if (holder && holder !== box && (holder.parentElement === box || holder.parentElement === cell)) {
           holder.style.height = h + 'px';
           holder.style.width = '100%';
         } else {
