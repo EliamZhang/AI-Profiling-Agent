@@ -37,7 +37,7 @@ def main():
     cohort=pd.read_csv(DATA/'fundo_wagego_cohort_comparison.csv')
     assert len(cohort)==24 and (cohort.valid_n<=cohort.cohort_n).all()
     for key,filename,n_slides,n_charts in [
-        ('fundo','fundo_profile_report_slides.html',24,14),
+        ('fundo','fundo_profile_report_slides.html',25,15),
         ('wagego','wagego_profile_report_slides.html',24,14),
         ('compare','compare_profile_report_slides.html',27,18),
     ]:

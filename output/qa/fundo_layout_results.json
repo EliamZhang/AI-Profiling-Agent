@@ -65,6 +65,24 @@
     },
     {
       "slide": 6,
+      "title": "就业形态：行业与发薪周期",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 412,
+          "traces": 6,
+          "box": 450
+        }
+      ]
+    },
+    {
+      "slide": 7,
       "title": "收入结构与韧性",
       "body": {
         "height": 626,
@@ -82,7 +100,7 @@
       ]
     },
     {
-      "slide": 7,
+      "slide": 8,
       "title": "收入来源与偿债承受力",
       "body": {
         "height": 626,
@@ -100,7 +118,7 @@
       ]
     },
     {
-      "slide": 8,
+      "slide": 9,
       "title": "支出与消费",
       "body": {
         "height": 626,
@@ -118,7 +136,7 @@
       ]
     },
     {
-      "slide": 9,
+      "slide": 10,
       "title": "消费渗透与品质消费",
       "body": {
         "height": 626,
@@ -136,7 +154,7 @@
       ]
     },
     {
-      "slide": 10,
+      "slide": 11,
       "title": "消费行为：看净流出，并控制多头暴露",
       "body": {
         "height": 626,
@@ -154,7 +172,7 @@
       ]
     },
     {
-      "slide": 11,
+      "slide": 12,
       "title": "负债、流动性与风险",
       "body": null,
       "crops": [],
@@ -162,7 +180,7 @@
       "plots": []
     },
     {
-      "slide": 12,
+      "slide": 13,
       "title": "刚性支出与工资负担",
       "body": {
         "height": 626,
@@ -180,7 +198,7 @@
       ]
     },
     {
-      "slide": 13,
+      "slide": 14,
       "title": "负债与信用履约",
       "body": {
         "height": 626,
@@ -204,7 +222,7 @@
       ]
     },
     {
-      "slide": 14,
+      "slide": 15,
       "title": "多头借贷：还款关系比新增借款更广",
       "body": {
         "height": 626,
@@ -222,7 +240,7 @@
       ]
     },
     {
-      "slide": 15,
+      "slide": 16,
       "title": "现金流与流动性",
       "body": {
         "height": 626,
@@ -240,7 +258,7 @@
       ]
     },
     {
-      "slide": 16,
+      "slide": 17,
       "title": "近期压力：收入回落与还款上升叠加",
       "body": {
         "height": 626,
@@ -251,7 +269,7 @@
       "plots": []
     },
     {
-      "slide": 17,
+      "slide": 18,
       "title": "余额为正，也可能存在持续资金压力",
       "body": {
         "height": 626,
@@ -269,7 +287,7 @@
       ]
     },
     {
-      "slide": 18,
+      "slide": 19,
       "title": "用户分层",
       "body": {
         "height": 626,
@@ -287,7 +305,7 @@
       ]
     },
     {
-      "slide": 19,
+      "slide": 20,
       "title": "交易行为与风险信号",
       "body": {
         "height": 626,
@@ -298,7 +316,7 @@
       "plots": []
     },
     {
-      "slide": 20,
+      "slide": 21,
       "title": "变量审查：补充关系，保留边界",
       "body": {
         "height": 626,
@@ -309,19 +327,8 @@
       "plots": []
     },
     {
-      "slide": 21,
-      "title": "主要发现",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
       "slide": 22,
-      "title": "主要发现（续）",
+      "title": "主要发现",
       "body": {
         "height": 626,
         "scroll": 626
@@ -343,13 +350,22 @@
     },
     {
       "slide": 24,
+      "title": "主要发现（续）",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 25,
       "title": "结论",
       "body": null,
       "crops": [],
       "escaped": [],
       "plots": []
     }
-  ],
-  "report": "fundo_profile_report_slides.html",
-  "sha256": "c089367253d87a903fdd02ec7537a451307f18815c13cb864ac32b91ce0a262d"
+  ]
 }

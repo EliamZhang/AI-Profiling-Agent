@@ -47,7 +47,7 @@ if '--screenshots' not in sys.argv:
 else:
     still=OUT/'fundo_still_preview.html'
     still.write_text(source.replace('<head>','<head>'+hook),encoding='utf-8')
-    for index in [2,3,7,10,14,16,17,20,24]:
+    for index in [2,3,6,7,10,14,16,17,20,24,25]:
         target=OUT/f'fundo_slide_{index:02d}.png'
         proc=subprocess.run(common+['--virtual-time-budget=1600','--screenshot='+str(target),still.as_uri()+f'#slide-{index}'],capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=40)
         print(index,target.exists(),target.stat().st_size if target.exists() else proc.stderr[:150])

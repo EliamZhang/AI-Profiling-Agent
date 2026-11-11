@@ -171,8 +171,9 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     depth = "fixed_burden" in figs
     enhanced = "profile_enrichment" in m
     extras = profile_extra.extra_slides(mod, ds, m) if enhanced else {}
+    has_industry = "industry" in extras
     n_income = "1.1"
-    n_resilience = "1.2" if depth else ""
+    n_resilience = "1.3" if has_industry else "1.2"
     n_expense = "1.3" if depth else "1.2"
     n_consumption = "1.4" if depth else ""
     n_fixed = "2.1" if depth else ""
@@ -181,7 +182,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     n_segments = "2.4" if depth else "2.3"
     n_risk = "2.5" if depth else "2.4"
     if enhanced:
-        n_expense, n_consumption = "1.4", "1.5"
+        n_expense, n_consumption = ("1.5", "1.6") if has_industry else ("1.4", "1.5")
         n_cashflow, n_segments, n_risk = "2.4", "2.7", "2.8"
 
     findings = build_profile_findings(mod, m, seg)
@@ -337,6 +338,9 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
             body=income_body,
         )
     )
+
+    if has_industry:
+        slides.append(extras["industry"])
 
     if "income_resilience" in figs:
         resilience_body = (

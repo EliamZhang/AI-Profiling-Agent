@@ -58,6 +58,29 @@ class FundoEnrichmentTests(unittest.TestCase):
         self.assertEqual(sum(r['outcome_n'] for r in e['lender_rows']),3)
         self.assertEqual(sum(r['n'] for r in e['lender_rows']),4)
 
+    def test_industry_coverage_and_pay_cycle_are_explicit(self):
+        d=self.sample()
+        for col in extra.INDUSTRY_COLUMNS:
+            d[col]=np.nan
+        d[extra.INDUSTRY_COLUMNS[0]]=[2.,1.,1.,np.nan]
+        d['bank_txn_industry_primary_industry_code']=[12.,12.,17.,np.nan]
+        d['bank_txn_industry_pattern_weekly']=[1.,0.,0.,0.]
+        d['bank_txn_industry_pattern_fortnightly']=[0.,1.,0.,0.]
+        d['bank_txn_industry_pattern_monthly']=0.
+        d['bank_txn_industry_pattern_irregular']=0.
+        m={}
+        e=extra.analyze(d,m)['industry']
+        self.assertEqual(e['employer_n'],3)
+        self.assertEqual(e['known_n'],2)
+        self.assertEqual(e['unknown_n'],1)
+        self.assertEqual(e['no_employer_n'],1)
+        self.assertEqual(e['industry_rows'][0]['industry'],'零售')
+        cycles={r['cycle']:r for r in e['pay_cycle_rows']}
+        self.assertAlmostEqual(cycles['weekly']['share'],1/3)
+        self.assertAlmostEqual(cycles['fortnightly']['share'],1/3)
+        self.assertAlmostEqual(cycles['unidentified']['share'],1/3)
+        self.assertIs(m['profile_enrichment']['industry'],e)
+
     def test_inconsistent_window_or_cashflow_fails_loudly(self):
         d=self.sample(); d.loc[0,extra.S+'income_sum_28d']=101.
         with self.assertRaisesRegex(ValueError,'28天金额大于182天金额'):

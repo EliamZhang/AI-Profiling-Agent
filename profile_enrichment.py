@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import deck_framework as ui
 
@@ -36,6 +37,43 @@ GROUPS = ["无已识别机构", "1 家", "2 家", "3–4 家", "≥5 家"]
 BURDEN_GROUPS = ["≤10%", "10%–30%", "30%–50%", "50%–100%", ">100%"]
 BAL_GROUPS = ["未见负余额", "负余额占比 ≤10%", "负余额占比 10%–25%", "负余额占比 >25%"]
 GAMBLE_GROUPS = ["无净流出", "净流出 ≤5%", "净流出 >5%"]
+INDUSTRY_COLUMNS = [
+    "bank_txn_industry_employer_cnt",
+    "bank_txn_industry_pattern_fortnightly",
+    "bank_txn_industry_pattern_weekly",
+    "bank_txn_industry_pattern_monthly",
+    "bank_txn_industry_pattern_irregular",
+    "bank_txn_industry_pay_interval_median",
+    "bank_txn_industry_pay_interval_std",
+    "bank_txn_industry_primary_employer_ratio",
+    "bank_txn_industry_primary_industry_code",
+]
+INDUSTRY_NAME = {
+    1: "住宿餐饮",
+    2: "银行代发",
+    3: "清洁/安保/物业",
+    4: "建筑",
+    5: "教育培训",
+    6: "金融保险",
+    7: "政府/公共管理",
+    8: "医疗与社会援助",
+    9: "劳务派遣",
+    10: "制造",
+    11: "采矿",
+    12: "零售",
+    13: "社会服务/非营利",
+    14: "体育/娱乐/博彩",
+    15: "技术服务/信息媒体",
+    16: "运输/邮政/仓储",
+    17: "未知",
+}
+PAY_CYCLES = [
+    ("weekly", "周薪"),
+    ("fortnightly", "双周薪"),
+    ("monthly", "月薪"),
+    ("irregular", "不规律"),
+    ("unidentified", "未识别"),
+]
 EXTRA_CSS = """
   .fundo-evidence .deck-table th{font-size:11px;padding:12px 16px}
   .fundo-evidence .deck-table td{font-size:14px;line-height:1.6;padding:18px 16px}
@@ -57,6 +95,18 @@ def med(s):
     return float(s.median()) if s.notna().any() else float("nan")
 
 
+def wilson_ci(s):
+    y = s.dropna()
+    n = len(y)
+    if not n:
+        return dict(unresolved=float("nan"), low=float("nan"), high=float("nan"), outcome_n=0)
+    p = float(y.mean())
+    den = 1 + 1.96**2 / n
+    center = (p + 1.96**2 / (2*n)) / den
+    half = 1.96 * np.sqrt(p*(1-p)/n + 1.96**2/(4*n*n)) / den
+    return dict(unresolved=p, low=center-half, high=center+half, outcome_n=n)
+
+
 def outcome(d):
     s = d["bank_txn_dishonour_lender_unresolved_cnt_3gp_182d"]
     return s.gt(0).astype(float).where(s.notna())
@@ -66,23 +116,82 @@ def group_rows(d, groups, order):
     rows = []
     for label in order:
         z = d.loc[groups == label]
-        y = z["e_unresolved"].dropna()
-        n = len(y)
-        p = rate(y)
-        # Wilson 95% intervals describe sampling variability, not model accuracy.
-        if n:
-            den = 1 + 1.96**2 / n
-            center = (p + 1.96**2 / (2*n)) / den
-            half = 1.96 * np.sqrt(p*(1-p)/n + 1.96**2/(4*n*n)) / den
-        else:
-            center = half = np.nan
-        rows.append(dict(group=label, n=len(z), outcome_n=n,
-                         unresolved= p, low=center-half, high=center+half,
+        ci = wilson_ci(z["e_unresolved"])
+        rows.append(dict(group=label, n=len(z), **ci,
                          repayment_total_p50=med(z["rep_rate"]),
                          repayment_recurring_p50=med(z["e_recurring_burden"]),
                          balance_p50=med(z["bal"]),
                          active_months_p50=med(z[W+"liability_repayment_active_month_cnt_182d"])))
     return rows
+
+
+def industry_summary(d):
+    """Employer industry and pay-cycle structure; no occupation field exists."""
+    emp = d["bank_txn_industry_employer_cnt"].notna()
+    code = d["bank_txn_industry_primary_industry_code"]
+    known = emp & code.notna() & code.ne(17)
+    unknown = emp & code.eq(17)
+    none = ~emp
+    flags = [f"bank_txn_industry_pattern_{key}" for key, _ in PAY_CYCLES[:4]]
+    mat = d[flags].fillna(0)
+    has = mat.max(axis=1) > 0
+    cycle = pd.Series("unidentified", index=d.index)
+    cycle.loc[has] = mat.loc[has].idxmax(axis=1).str.replace(
+        "bank_txn_industry_pattern_", "", regex=False
+    )
+    d["e_pay_cycle"] = cycle
+    emp_n = int(emp.sum())
+
+    def stats(z):
+        ci = wilson_ci(z["e_unresolved"])
+        recurring = z["e_recurring_burden"].dropna()
+        shares = cycle.loc[z.index].value_counts(normalize=True) if len(z) else pd.Series(dtype=float)
+        out = dict(n=len(z), **ci,
+                   burden_p50=med(recurring), burden_n=len(recurring),
+                   multi5=float(z[L+"repay_jgs_l182d"].ge(5).mean()) if len(z) else float("nan"),
+                   ever_negative=rate(z[W+"balance_negative_share_avg_acct_182d"].gt(0)),
+                   gamble5=rate(z["e_gamble_burden"].gt(.05)),
+                   wage_incidence=rate(z["bank_txn_income_wages_sum_182d"].gt(0)),
+                   wage_month_p50=med(z["bank_txn_income_wages_sum_182d"])/6,
+                   multi_employer_share=float(z["bank_txn_industry_employer_cnt"].ge(2).mean()) if len(z) else float("nan"))
+        for key, _ in PAY_CYCLES:
+            out[f"{key}_share"] = float(shares.get(key, 0.0))
+        return out
+
+    e = dict(n=len(d), employer_n=emp_n, employer_share=float(emp.mean()),
+             known_n=int(known.sum()), known_share=float(known.mean()),
+             unknown_n=int(unknown.sum()), unknown_share=float(unknown.mean()),
+             no_employer_n=int(none.sum()), no_employer_share=float(none.mean()),
+             single_employer_share=float(d.loc[emp, "bank_txn_industry_employer_cnt"].eq(1).mean()) if emp_n else float("nan"),
+             multi_employer_share=float(d.loc[emp, "bank_txn_industry_employer_cnt"].ge(2).mean()) if emp_n else float("nan"))
+    rows = []
+    keyed = d.loc[known].assign(_code=code[known].astype(int))
+    for code_value, z in keyed.groupby("_code"):
+        r = stats(z)
+        c = int(code_value)
+        r.update(code=c, industry=INDUSTRY_NAME.get(c, str(c)), share=len(z)/emp_n if emp_n else float("nan"))
+        rows.append(r)
+    rows.sort(key=lambda r: r["n"], reverse=True)
+    e["industry_rows"] = rows
+    e["groups"] = [
+        dict(industry="已知行业合计", code=None, **stats(d[known])),
+        dict(industry="行业未知", code=17, **stats(d[unknown])),
+        dict(industry="未识别雇主", code=None, **stats(d[none])),
+    ]
+    e["known"], e["unknown"], e["no_employer"] = e["groups"]
+    e["pay_cycle_rows"] = []
+    for cycle_key, label in PAY_CYCLES:
+        z = d.loc[emp & cycle.eq(cycle_key)]
+        r = stats(z)
+        r.update(cycle=cycle_key, label=label, share=len(z)/emp_n if emp_n else float("nan"))
+        e["pay_cycle_rows"].append(r)
+    big = [r for r in rows if r["n"] >= 300 and np.isfinite(r["unresolved"])]
+    if big:
+        lo = min(big, key=lambda r: r["unresolved"])
+        hi = max(big, key=lambda r: r["unresolved"])
+        e.update(unresolved_min=lo["unresolved"], unresolved_min_industry=lo["industry"],
+                 unresolved_max=hi["unresolved"], unresolved_max_industry=hi["industry"])
+    return e
 
 
 def analyze(d, m, *, dataset_key="fundo", dataset_name=None):
@@ -209,6 +318,7 @@ def analyze(d, m, *, dataset_key="fundo", dataset_name=None):
     e["gamble_net_total"] = float(net[matched].sum())
     e["gamble_gt5_n"] = int(d.e_gamble_burden.gt(.05).sum())
     e["gamble_gt5"] = e["gamble_gt5_n"] / e["gamble_n"]
+    e["industry"] = industry_summary(d) if all(c in d.columns for c in INDUSTRY_COLUMNS) else None
     m["profile_enrichment"] = e
     if dataset_key == "fundo":
         m["fundo_enrichment"] = e  # Backward-compatible Fundo evidence consumers.
@@ -244,10 +354,51 @@ def gamble_chart(mod, e):
     return mod.fig_html(fig)
 
 
+def industry_chart(mod, e):
+    ind = e["industry"]
+    rows = ind["industry_rows"][:10]
+    names = [r["industry"] for r in rows]
+    labels = dict(PAY_CYCLES)
+    colors = {"weekly":"#2C6CB0","fortnightly":"#5E8BB4","monthly":"#C98A2E",
+              "irregular":"#9AA6B2","unidentified":"#D9DEE5"}
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, horizontal_spacing=.12,
+                        subplot_titles=["发薪周期构成","未解决拒付率 · 95% CI"],
+                        column_widths=[.56,.44])
+    for key, _ in PAY_CYCLES:
+        fig.add_trace(go.Bar(y=names, x=[r[f"{key}_share"] for r in rows], name=labels[key],
+            orientation="h", marker_color=colors[key],
+            hovertemplate=f"{labels[key]} %{{x:.1%}}<extra></extra>"), row=1, col=1)
+    finite = [r for r in rows if np.isfinite(r["unresolved"])]
+    if finite:
+        fig.add_trace(go.Scatter(y=names, x=[r["unresolved"] for r in rows], mode="markers+text",
+            text=[f"{r['unresolved']:.1%} · n={r['n']:,}" if np.isfinite(r["unresolved"]) else "" for r in rows],
+            textposition="middle right", textfont=dict(size=11),
+            marker=dict(color="#1D4E79", size=9),
+            error_x=dict(type="data", symmetric=False,
+                array=[r["high"]-r["unresolved"] for r in rows],
+                arrayminus=[r["unresolved"]-r["low"] for r in rows],
+                color="#66788A", thickness=1),
+            hovertemplate="%{y}<br>未解决拒付 %{x:.1%}<br>%{text}<extra></extra>"), row=1, col=2)
+    known = ind["known"]["unresolved"]
+    if np.isfinite(known):
+        fig.add_vline(x=known, line_dash="dot", line_color="#898781", row=1, col=2)
+    mod.base_layout(fig, height=450, margin=dict(l=118,r=152,t=46,b=88), showlegend=True)
+    fig.update_layout(barmode="stack", legend=dict(orientation="h", x=0, y=-.16, font=dict(size=11)))
+    fig.update_xaxes(range=[0,1], tickformat=".0%", title_text="占可识别雇主用户", row=1, col=1)
+    high = max(r["high"] for r in finite) if finite else .6
+    fig.update_xaxes(range=[0,max(.6,high*1.02)], tickformat=".0%", title_text="未解决拒付用户占比", row=1, col=2)
+    fig.update_yaxes(autorange="reversed", showgrid=False)
+    return mod.fig_html(fig, height=450)
+
+
 def extra_slides(mod, ds, m):
     """Return named slides for insertion next to their relevant original analysis."""
     e=m["profile_enrichment"]; fp=mod.fmt_pct; fm=mod.fmt_money
     brand=ds["brand"]
+    ind=e.get("industry")
+    has_industry=bool(ind and e.get("dataset_key")=="fundo" and ind.get("industry_rows"))
+    recurring_no="1.4" if has_industry else "1.3"
+    gamble_no="1.7" if has_industry else "1.6"
     def slide(title,kicker,sub,body,section="补充分析"):
         return ui.slide_content(brand=brand,section=section,kicker=kicker,title=title,sub=sub,body=body)
     def chart_body(chart,caption,cards,facts):
@@ -268,7 +419,7 @@ def extra_slides(mod, ds, m):
         +ui.kpi_cards([("现金流盈余公式", "核验通过",f"{e['n']:,} 人误差均 ≤$0.02"),("来源分项之和", "等于标签收入", "工资 + 福利 + 其他入账"),("标签收入−现金流收入",fm(e['income_difference_month_p50']),"逐户差额月化中位；差异原因待释义确认"),("两套收入一致的用户",f"{e['same_income_n']:,} 人",f"仅占 {e['same_income_n']/e['n']:.2%}；相差不超过 $0.02")]).replace('class="kpi-row reveal d1"','class="kpi-row reveal d1 fundo-scope"')
         +ui.note_strip("解释边界","盈余 = 现金流收入 − 现金流支出 − 还本付息 − 拒付费 + 新增借款。含借款的净流量不等于自主还款能力；转账也不直接等于可持续收入。固定账单、房租、日常生活及高承诺支出可能重叠，不重复相加。"))
 
-    slides["recurring"]=slide("收入来源与偿债承受力","1.3 · Repayment Capacity", "改用工资与福利作为可识别经常性入账的代理，观察被总入账稀释的偿债负担。",
+    slides["recurring"]=slide("收入来源与偿债承受力",f"{recurring_no} · Repayment Capacity", "改用工资与福利作为可识别经常性入账的代理，观察被总入账稀释的偿债负担。",
         chart_body(rate_chart(mod,e['burden_rows']),f"按还本付息/(工资+福利)分组；可计算 n={e['recurring_n']:,}；横线为比例的 Wilson 95% 区间。",
         [("同一批用户 · 两种分母",f"{fp(e['same_total_p50'])} → {fp(e['recurring_p50'])}","现金流总收入 → 工资+福利；各自计算中位数"),
          ("工资+福利口径负担 >30%",fp(e['burden_gt30']),f"{e['burden_gt30_n']:,}/{e['recurring_n']:,} 人；P90 {fp(e['recurring_p90'])}"),
@@ -299,7 +450,7 @@ def extra_slides(mod, ds, m):
          ("余额可覆盖一月固定支出的占比",fp(e['fixedcover_p50']),f"原始预计算占比字段中位；有效 n={e['fixedcover_n']:,}")],
         [(fp(e['balance_rows'][0]['unresolved']),"未见负余额组未解决拒付率"),(fp(e['balance_rows'][-1]['unresolved']),"负余额占比 >25% 组未解决拒付率"),(f"{e['balance_accounts_p50']:.0f} 个","余额覆盖账户数中位"),(f"{e['balance_obs_p50']:.0f} 条","余额观测数中位 · 非自然日数")]),"02 · 负债、流动性与风险")
 
-    slides["gamble"]=slide("消费行为：看净流出，并控制多头暴露","1.6 · Gambling Cashflow", "赌博支出不等于净资金流失；补入同类贷记，并按还款机构数分层查看与未解决拒付的关系。",
+    slides["gamble"]=slide("消费行为：看净流出，并控制多头暴露",f"{gamble_no} · Gambling Cashflow", "赌博支出不等于净资金流失；补入同类贷记，并按还款机构数分层查看与未解决拒付的关系。",
         chart_body(gamble_chart(mod,e),f"单元格为未解决拒付用户占比及人数；工资+福利>0且赌博借贷记均可观测 n={e['gamble_n']:,}；n<30 不显示比例。",
         [("赌博借记 → 带符号净流出",f"{fm(e['gamble_debit_total'],compact=True)} → {fm(e['gamble_net_total'],compact=True)}",f"同样本贷记 {fm(e['gamble_credit_total'],compact=True)}；借贷记均有效 n={e['gamble_matched_n']:,}"),
          ("正净流出超过工资+福利 5%",fp(e['gamble_gt5']),f"{e['gamble_gt5_n']:,}/{e['gamble_n']:,} 人；净流入在负担指标中记 0"),
@@ -317,6 +468,17 @@ def extra_slides(mod, ds, m):
             ["机构识别的覆盖边界",f"{e['jgs_zero_with_repay']:,} 人有还款但无已识别机构","交易标签与机构识别存在覆盖差异，机构数为可识别关系的下限"],
         ],note=f"可复核文件：{e['dataset_key']}_variable_audit.csv（完整清单）、{e['dataset_key']}_enrichment_metrics.json（指标与核验）、{e['dataset_key']}_cross_analysis.csv（各组样本量与比例）。").replace('class="table-box fundo-evidence"','class="table-box fundo-evidence fundo-audit"')
         +ui.note_strip("结论适用范围",f"有效样本 {e['n']:,} 人，样本月份 {m['sample_month']}；按交易数最多申请去重，不是全体客户的随机样本。金额沿用原报告的 $ 记号，币种需由业务确认。阈值为描述性切分；同期拒付既是比较指标，也与机构识别存在共同覆盖，不作为模型性能。"))
+    if has_industry:
+        cycles={r["cycle"]:r for r in ind["pay_cycle_rows"]}
+        slides["industry"]=slide("就业形态：行业与发薪周期","1.2 · Employment Structure",
+            "先区分无雇主与行业未知；发薪周期与偿债负担、多头关系更相关，行业间拒付差异有限。",
+            chart_body(industry_chart(mod,e),
+                f"仅列样本量前 10 的已知行业；发薪周期为互斥标记；右图横线为已知行业合计 {fp(ind['known']['unresolved'])}，误差线为 Wilson 95% 区间。",
+                [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
+                 ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
+                 ("行业码未知",fp(ind["unknown_share"]),f"{ind['unknown_n']:,} 人 · 有工资但未分类；未解决拒付 {fp(ind['unknown']['unresolved'])}")],
+                [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(f"{fp(ind['unresolved_min'])} – {fp(ind['unresolved_max'])}","未解决拒付 · 行业区间")])
+            +ui.note_strip("口径与边界","无雇主识别不等于无收入：该组仍有福利或转账入账，且拒付率低于有工资群体。行业码为雇主行业/发薪渠道混合分类，不是职业或岗位；code 17 为有工资但行业未分类。未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
     return slides
 
 
@@ -369,8 +531,15 @@ def export_evidence(root, header, base_columns, d, m):
         audit.append(dict(variable=name,family=family,logical_feature=logical_feature,window=window.group(1) if window else '未标注',status=status,reason=reason,valid_n=int(series.notna().sum()) if series is not None else '',p50=med(series) if series is not None else ''))
     pd.DataFrame(audit).to_csv(out/f'{key}_variable_audit.csv',index=False,encoding='utf-8-sig')
     rows=[]
-    for analysis_key in ['lender_rows','burden_rows','balance_rows','gamble_rows','gamble_cells','recent_rows','identity_checks']:
-        rows.extend(dict(analysis=analysis_key,**r) for r in e[analysis_key])
+    ind=e.get('industry') or {}
+    sources=[('lender_rows',e['lender_rows']),('burden_rows',e['burden_rows']),
+             ('balance_rows',e['balance_rows']),('gamble_rows',e['gamble_rows']),
+             ('gamble_cells',e['gamble_cells']),('recent_rows',e['recent_rows']),
+             ('identity_checks',e['identity_checks']),
+             ('industry_rows',ind.get('industry_rows',[])),
+             ('industry_groups',ind.get('groups',[]))]
+    for analysis_key,records in sources:
+        rows.extend(dict(analysis=analysis_key,**r) for r in records)
     pd.DataFrame(rows).to_csv(out/f'{key}_cross_analysis.csv',index=False,encoding='utf-8-sig')
     def native(obj):
         if isinstance(obj,dict): return {str(k):native(v) for k,v in obj.items()}
