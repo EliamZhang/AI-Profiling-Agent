@@ -18,6 +18,8 @@ import numpy as np
 import pandas as pd
 
 import fundo_profile_report as fpr
+import profile_enrichment as profile_extra
+import compare_profile_enrichment as compare_extra
 from fundo_profile_report import (
     BASELINE,
     INK,
@@ -67,10 +69,15 @@ class Profile:
 
 def load_profile(name: str, module, path: Path) -> Profile:
     t0 = time.time()
-    df_raw, missing, n_fields = module.load_data(path)
+    df_raw, missing, n_fields = module.load_data(path, extra_columns=profile_extra.EXTRA_COLUMNS)
     df_raw, n_apps = module.clean_frame(df_raw)
     df = module.dedupe_users(df_raw)
     d, m, seg = module.build_metrics(df, n_apps)
+    profile_extra.analyze(d, m, dataset_key=name.lower(), dataset_name=name)
+    import csv
+    with path.open(encoding="utf-8-sig", newline="") as source:
+        header = next(csv.reader(source))
+    profile_extra.export_evidence(Path(__file__).resolve().parent, header, module.ALL_COLUMNS, d, m)
 
     for key, col in (
         ("inc_mean", "inc_m"),
@@ -113,6 +120,8 @@ def seg_val(p: Profile, segment: str, col: str) -> float:
 
 
 def metric_value(p: Profile, key: str):
+    if key.startswith("enrich:"):
+        return p.m.get("profile_enrichment", {}).get(key.split(":",1)[1], np.nan)
     if key.startswith("seg:"):
         _, segment, col = key.split(":", 2)
         return seg_val(p, segment, col)
@@ -225,17 +234,17 @@ DIFF_OVERVIEW = [
     ("缓冲 < 7 天", "buffer_lt7"),
     ("有借贷放款", "any_disburse"),
     ("现金贷使用率", "adv_use"),
-    ("BNPL 使用率", "bnpl_use"),
+    ("历史曾有负余额", "enrich:ever_negative"),
     ("有拒付记录", "dish_any"),
     ("未解决拒付", "dish_unres"),
     ("赌博交易发生率", "gamb_incidence"),
     ("手续费发生率", "fees_incidence"),
     ("工资占入账金额", "wage_share_agg"),
     ("福利收入发生率", "cent_incidence"),
-    ("福利 / 入账中位", "cent_share_rec_p50"),
+    ("还款/(工资+福利)中位", "enrich:recurring_p50"),
     ("固定账单 / 工资中位", "fixed_wage_p50"),
     ("品质消费 / 工资中位", "prem_wage_p50"),
-    ("外部借贷覆盖率", "external_lender_incidence"),
+    ("≥5 家已识别还款机构", "enrich:multi5"),
     ("重压型占比", "seg:重压型:share"),
 ]
 
@@ -886,7 +895,7 @@ def chart_risk(pf: Profile, pw: Profile) -> str:
         "赌博占消费",
         "手续费支出",
         "手续费 / 透支交易",
-        "催收类拒付",
+        "催收类支出",
         "债务整合",
         "高承诺支出 / 收入",
     ]
@@ -904,7 +913,7 @@ def chart_risk(pf: Profile, pw: Profile) -> str:
 
     fig = go.Figure()
     add_grouped_bars(fig, labels, f_vals, w_vals,
-                     highlight={"赌博交易", "赌博占消费", "手续费支出", "催收类拒付"})
+                     highlight={"赌博交易", "赌博占消费", "手续费支出", "催收类支出"})
     mx = max([v for v in f_vals + w_vals if valid(v)] + [0]) * 1.22
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
     fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
@@ -1002,126 +1011,7 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
 # 主要差异文字
 # ---------------------------------------------------------------------------
 def build_findings(pf: Profile, pw: Profile) -> list[str]:
-    fm, wm = pf.m, pw.m
-    parts = []
-
-    parts.append(
-        f"<b>收入水平接近，WageGo 的工资覆盖更广。</b> Fundo 中位月收入 {fmt_money(fm['inc_p50'])}，"
-        f"WageGo {fmt_money(wm['inc_p50'])}。有工资收入的比例 Fundo {fmt_pct(fm['wage_incidence'])}、"
-        f"WageGo {fmt_pct(wm['wage_incidence'])}；工资占入账金额分别为 "
-        f"{fmt_pct(fm['wage_share_agg'])} 与 {fmt_pct(wm['wage_share_agg'])}，"
-        f"其余主要来自“其他入账”（{fmt_pct(fm['other_share_agg'])} vs {fmt_pct(wm['other_share_agg'])}）。"
-    )
-
-    parts.append(
-        f"<b>Fundo 的福利覆盖更高，重压型更依赖非工资入账。</b> 福利收入发生率 "
-        f"{fmt_pct(fm['cent_incidence'])} vs {fmt_pct(wm['cent_incidence'])}；"
-        f"福利人群中福利占入账中位 {fmt_pct(fm['cent_share_rec_p50'])} vs "
-        f"{fmt_pct(wm['cent_share_rec_p50'])}。养老金覆盖率 "
-        f"{fmt_pct(fm['benefit_type_inc'].get('pension'))} vs "
-        f"{fmt_pct(wm['benefit_type_inc'].get('pension'))}，JobSeeker "
-        f"{fmt_pct(fm['benefit_type_inc'].get('jobseeker'))} vs "
-        f"{fmt_pct(wm['benefit_type_inc'].get('jobseeker'))}。"
-        f"重压型工资占入账 {fmt_pct(seg_val(pf, '重压型', 'wage_share'))} vs "
-        f"{fmt_pct(seg_val(pw, '重压型', 'wage_share'))}，两组均低于其他分层。"
-    )
-
-    cat_gaps = []
-    for k, fv in fm["cat_shares"].items():
-        wv = wm["cat_shares"].get(k, np.nan)
-        if valid(fv) and valid(wv):
-            cat_gaps.append((k, float(fv), float(wv), float(wv) - float(fv)))
-    top_cat = ""
-    if cat_gaps:
-        k, fv, wv, _ = max(cat_gaps, key=lambda x: abs(x[3]))
-        top_cat = (
-            f"消费类目份额差异最大的是{CAT_LABELS[k]}"
-            f"（Fundo {fmt_pct(fv)} vs WageGo {fmt_pct(wv)}）。"
-        )
-    parts.append(
-        f"<b>支出规模接近，转账与消费结构存在差异。</b> 中位月支出 Fundo {fmt_money(fm['exp_p50'])}、"
-        f"WageGo {fmt_money(wm['exp_p50'])}；可识别消费占总支出 "
-        f"{fmt_pct(fm['cons_share_exp_p50'])} vs {fmt_pct(wm['cons_share_exp_p50'])}。"
-        f"外部转账占全部借记 {fmt_pct(fm['ext_transfer_share_global'])} vs "
-        f"{fmt_pct(wm['ext_transfer_share_global'])}，内部转账 "
-        f"{fmt_pct(fm['internal_transfer_share_global'])} vs "
-        f"{fmt_pct(wm['internal_transfer_share_global'])}。{top_cat}"
-    )
-
-    parts.append(
-        f"<b>WageGo 的消费渗透更广，Fundo 的品质消费负担更重。</b> 赌博交易发生率 "
-        f"{fmt_pct(wm['gamb_incidence'])} vs {fmt_pct(fm['gamb_incidence'])}，"
-        f"手续费发生率 {fmt_pct(wm['fees_incidence'])} vs {fmt_pct(fm['fees_incidence'])}，"
-        f"超市 {fmt_pct(wm['cat_pen'].get('groceries'))} vs "
-        f"{fmt_pct(fm['cat_pen'].get('groceries'))}、餐饮 "
-        f"{fmt_pct(wm['cat_pen'].get('dining_out'))} vs "
-        f"{fmt_pct(fm['cat_pen'].get('dining_out'))}。"
-        f"品质消费 / 工资中位 Fundo {fmt_pct(fm['prem_wage_p50'])}、WageGo "
-        f"{fmt_pct(wm['prem_wage_p50'])}，P90 {fmt_pct(fm['prem_wage_p90'])} vs "
-        f"{fmt_pct(wm['prem_wage_p90'])}；重压型 "
-        f"{fmt_pct(seg_val(pf, '重压型', 'prem_wage'))} vs "
-        f"{fmt_pct(seg_val(pw, '重压型', 'prem_wage'))}，两组均为各分层最高。"
-    )
-
-    parts.append(
-        f"<b>两组均以负盈余为主，账户缓冲普遍不足。</b> 中位月盈余 Fundo {fmt_money(fm['sur_p50'])}、"
-        f"WageGo {fmt_money(wm['sur_p50'])}；负盈余用户占比 "
-        f"{fmt_pct(fm['sur_neg'])} vs {fmt_pct(wm['sur_neg'])}。中位账户余额 "
-        f"{fmt_money(fm['bal_p50'])} vs {fmt_money(wm['bal_p50'])}，"
-        f"缓冲不足 7 天的用户占比 {fmt_pct(fm['buffer_lt7'])} vs {fmt_pct(wm['buffer_lt7'])}。"
-    )
-
-    parts.append(
-        f"<b>刚性支出覆盖率接近，但 Fundo 的固定账单负担更重。</b> 固定账单覆盖率 "
-        f"{fmt_pct(fm['fixed_bill_incidence'])} vs {fmt_pct(wm['fixed_bill_incidence'])}，"
-        f"房租 {fmt_pct(fm['rent_incidence'])} vs {fmt_pct(wm['rent_incidence'])}，"
-        f"保险 {fmt_pct(fm['insurance_incidence'])} vs {fmt_pct(wm['insurance_incidence'])}。"
-        f"固定账单 / 工资中位 {fmt_pct(fm['fixed_wage_p50'])} vs "
-        f"{fmt_pct(wm['fixed_wage_p50'])}，P90 {fmt_pct(fm['fixed_wage_p90'])} vs "
-        f"{fmt_pct(wm['fixed_wage_p90'])}；超过 30% 的用户占比 "
-        f"{fmt_pct(fm['fixed_wage_gt30'])} vs {fmt_pct(wm['fixed_wage_gt30'])}。"
-        f"收入 / 支出中位 {fm['income_expense_ratio_p50']:.3f} vs "
-        f"{wm['income_expense_ratio_p50']:.3f}，重压型固定账单 / 工资 "
-        f"{fmt_pct(seg_val(pf, '重压型', 'fixed_wage'))} vs "
-        f"{fmt_pct(seg_val(pw, '重压型', 'fixed_wage'))}。"
-    )
-
-    parts.append(
-        f"<b>WageGo 的借贷参与度和拒付暴露更高。</b> 有借贷放款 "
-        f"{fmt_pct(wm['any_disburse'])} vs Fundo {fmt_pct(fm['any_disburse'])}，"
-        f"现金贷使用率 {fmt_pct(wm['adv_use'])} vs {fmt_pct(fm['adv_use'])}，"
-        f"分期贷 {fmt_pct(wm['loan_use'])} vs {fmt_pct(fm['loan_use'])}。"
-        f"外部借贷覆盖率 {fmt_pct(wm['external_lender_incidence'])} vs "
-        f"{fmt_pct(fm['external_lender_incidence'])}，其中 MyPayNow "
-        f"{fmt_pct(wm['mypaynow_incidence'])} vs {fmt_pct(fm['mypaynow_incidence'])}。"
-        f"偿债 / 收入中位 {fmt_pct(wm['rep_rate_p50'])} vs {fmt_pct(fm['rep_rate_p50'])}；"
-        f"有拒付记录 {fmt_pct(wm['dish_any'])} vs {fmt_pct(fm['dish_any'])}，"
-        f"未解决拒付 {fmt_pct(wm['dish_unres'])} vs {fmt_pct(fm['dish_unres'])}，"
-        f"解决率 {fmt_pct(wm['dish_resolution_rate'])} vs {fmt_pct(fm['dish_resolution_rate'])}。"
-    )
-
-    parts.append(
-        f"<b>WageGo 的赌博强度与费用暴露更高。</b> 赌博占可识别消费 "
-        f"{fmt_pct(wm['gamb_share_cons'])} vs {fmt_pct(fm['gamb_share_cons'])}；"
-        f"手续费 / 透支类交易 {fmt_pct(wm['fees_ticket_incidence'])} vs "
-        f"{fmt_pct(fm['fees_ticket_incidence'])}，催收类拒付 "
-        f"{fmt_pct(wm['collections_inc'])} vs {fmt_pct(fm['collections_inc'])}。"
-    )
-
-    f_heavy, w_heavy = seg_val(pf, "重压型", "share"), seg_val(pw, "重压型", "share")
-    f_surplus, w_surplus = seg_val(pf, "盈余型", "share"), seg_val(pw, "盈余型", "share")
-    parts.append(
-        f"<b>WageGo 的分层结构略好，但重压型仍占两成以上。</b> 盈余型占比 Fundo "
-        f"{fmt_pct(f_surplus)}、WageGo {fmt_pct(w_surplus)}；重压型占比 "
-        f"{fmt_pct(f_heavy)} vs {fmt_pct(w_heavy)}，重压型中位月盈余 "
-        f"{fmt_money(seg_val(pf, '重压型', 'sur_m'))} vs {fmt_money(seg_val(pw, '重压型', 'sur_m'))}。"
-    )
-
-    parts.append(
-        "<b>比较口径提示。</b> Fundo 样本全部为 2026-09，WageGo 覆盖 2026-08 至 2026-10；"
-        "两者均为新客样本且相互独立。以上差异为描述性对比，未做统计显著性检验，也不代表因果。"
-    )
-    return parts
+    return compare_extra.findings(pf, pw)
 
 
 # ---------------------------------------------------------------------------

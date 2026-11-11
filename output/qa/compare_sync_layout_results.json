@@ -1,0 +1,415 @@
+{
+  "errors": [],
+  "slides": [
+    {
+      "slide": 1,
+      "title": "封面",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 2,
+      "title": "两组人群，同一套口径",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 3,
+      "title": "样本与收入",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 4,
+      "title": "样本概览",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 5,
+      "title": "先校准口径，再比较品牌差异",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 6,
+      "title": "核心财务指标分布",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 586,
+          "traces": 8,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 7,
+      "title": "收入与就业",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 586,
+          "traces": 4,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 8,
+      "title": "收入结构与韧性",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 4,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 9,
+      "title": "收入分母统一后，偿债负担如何变化",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 10,
+      "title": "支出、负债与流动性",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 11,
+      "title": "支出与消费",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 689,
+          "h": 586,
+          "traces": 2,
+          "box": 624
+        },
+        {
+          "w": 689,
+          "h": 586,
+          "traces": 14,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 12,
+      "title": "消费深度与品质消费",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 4,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 13,
+      "title": "行为净流出：在同样借贷关系下比较",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 1418,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 14,
+      "title": "刚性支出与工资负担",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 4,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 15,
+      "title": "负债与信用履约",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 586,
+          "traces": 4,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 16,
+      "title": "多头还款：区分关系数量与组内表现",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 17,
+      "title": "现金流与流动性",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 689,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        },
+        {
+          "w": 689,
+          "h": 495,
+          "traces": 5,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 18,
+      "title": "近期变化：用互斥窗口检验资金压力",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 19,
+      "title": "流动性：快照之外的历史压力",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 20,
+      "title": "用户分层",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 689,
+          "h": 495,
+          "traces": 4,
+          "box": 533
+        },
+        {
+          "w": 689,
+          "h": 495,
+          "traces": 2,
+          "box": 533
+        }
+      ]
+    },
+    {
+      "slide": 21,
+      "title": "分层指标明细",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 22,
+      "title": "风险信号",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 586,
+          "traces": 2,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 23,
+      "title": "主要差异",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 1418,
+          "h": 586,
+          "traces": 2,
+          "box": 624
+        }
+      ]
+    },
+    {
+      "slide": 24,
+      "title": "主要差异与解读",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 25,
+      "title": "主要差异与解读（续）",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 26,
+      "title": "主要差异与解读（续）",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 27,
+      "title": "结论",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    }
+  ],
+  "report": "compare_profile_report_slides.html",
+  "sha256": "e439d29c89889cdd9faa9431fb4428410cf47f9ff0152f80245301bcfa469638"
+}

@@ -406,7 +406,7 @@ def finding_cards(items: list[str], start: int = 0) -> str:
     return f'<div class="findings-grid">{cards}</div>'
 
 
-def deck_document(*, title: str, slides: list[str], plotly_js: str = "") -> str:
+def deck_document(*, title: str, slides: list[str], plotly_js: str = "", extra_css: str = "") -> str:
     js_block = f"<script>{plotly_js}</script>" if plotly_js else ""
     body = "".join(slides)
     return f"""<!DOCTYPE html>
@@ -417,7 +417,7 @@ def deck_document(*, title: str, slides: list[str], plotly_js: str = "") -> str:
 <meta name="color-scheme" content="light">
 <title>{esc(title)}</title>
 {js_block}
-<style>{CSS}</style>
+<style>{CSS}{extra_css}</style>
 </head>
 <body>
 

@@ -345,13 +345,14 @@ def cond_share(cond: pd.Series, s: pd.Series | None = None) -> float:
 # ---------------------------------------------------------------------------
 # 数据读取与清洗
 # ---------------------------------------------------------------------------
-def load_data(path: Path, log=print) -> tuple[pd.DataFrame, list[str], int]:
+def load_data(path: Path, log=print, *, extra_columns=()) -> tuple[pd.DataFrame, list[str], int]:
     if not path.exists():
         raise SystemExit(f"数据文件不存在: {path}")
     t0 = time.time()
     header = pd.read_csv(path, nrows=0).columns.tolist()
-    usecols = [c for c in ALL_COLUMNS if c in header]
-    missing = [c for c in ALL_COLUMNS if c not in header]
+    requested = list(dict.fromkeys(ALL_COLUMNS + list(extra_columns)))
+    usecols = [c for c in requested if c in header]
+    missing = [c for c in requested if c not in header]
     log(f"读取数据: {path.name} | 总字段 {len(header):,} | 本次加载 {len(usecols)} 个字段 ...")
     df = pd.read_csv(path, usecols=usecols, low_memory=False)
     log(f"读取完成: {len(df):,} 行，用时 {time.time() - t0:.1f}s")

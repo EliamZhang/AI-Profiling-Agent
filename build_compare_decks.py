@@ -17,7 +17,7 @@ import argparse
 import gc
 import html
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from plotly.offline import get_plotlyjs
@@ -29,6 +29,8 @@ import existing_swap_in_profile_report as swap_in_mod
 import existing_swap_out_profile_report as swap_out_mod
 import fundo_profile_report as fundo_mod
 import wagego_profile_report as wagego_mod
+import compare_profile_enrichment as compare_extra
+import profile_enrichment as profile_extra
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -45,7 +47,7 @@ PAIRS = {
         "brand": "FUNDO <em>×</em> WAGEGO",
         "tag": "PROFILE COMPARISON",
         "title": "Fundo vs WageGo<br>人群画像对比",
-        "subtitle": "同一套银行流水特征口径 · 182 天观察窗口 · 两组独立新客样本",
+        "subtitle": "同一套银行流水特征口径 · 182 天观察窗口 · 两组新客样本",
         "source": "fundo_sample_with_feature_all.csv · wagego_sample_with_feature_all.csv",
         "sample_note": "Fundo 样本全部来自 2026-09，WageGo 覆盖 2026-08 至 2026-10；月份构成差异可能影响部分指标。",
         "status_levels": ("green", "purple"),
@@ -130,6 +132,8 @@ def build_pair_deck(
     section_a = "01 · 样本与收入"
     section_b = "02 · 支出、负债与流动性"
     deep = "income_resilience" in figs
+    enhanced = pair_key == "fundo_wagego" and all("profile_enrichment" in p.m for p in (pf,pw))
+    extras = compare_extra.slides(pair,pf,pw) if enhanced else {}
     k_liability = "2.4" if deep else "2.2"
     k_cashflow = "2.5" if deep else "2.3"
     k_segments = "2.6" if deep else "2.4"
@@ -151,8 +155,8 @@ def build_pair_deck(
             eyebrow=f"人群画像对比 · {generated_at}",
             title=pair["title"],
             desc=(
-                f"使用同一套特征口径对比 {left_name} 与 {right_name} 两组样本，"
-                f"覆盖收入、支出、负债、现金流、用户分层与风险信号，共用 {len(pf.m)} 项指标口径。"
+                f"使用同一套特征口径对比 {left_name} 与 {right_name} 两组样本，" +
+                ("覆盖收入来源、偿债负担、多头还款、近期资金变化、历史余额与消费净流出；新增指标在两组使用相同公式与阈值。" if enhanced else f"覆盖收入、支出、负债、现金流、用户分层与风险信号，共用 {len(pf.m)} 项指标口径。")
             ),
             statuses=[
                 (pair["status_levels"][0], f"{left_name} 有效 {pf.m['n_valid']:,}"),
@@ -223,7 +227,7 @@ def build_pair_deck(
             section="Executive Summary",
             kicker="核心结论",
             title="两组人群，同一套口径",
-            sub=findings[0] if findings else "两组样本的收入、支出、负债与风险信号对比。",
+            sub=("对齐字段、分母和时间窗口，分别查看全期与共同月份结果；同组表现与客群结构分开比较。" if enhanced else findings[0] if findings else "两组样本的收入、支出、负债与风险信号对比。"),
             body=exec_body,
         )
     )
@@ -263,6 +267,9 @@ def build_pair_deck(
             body=overview,
         )
     )
+
+    if enhanced:
+        slides.append(extras["scope"])
 
     # 05 Distributions
     dist_body = (
@@ -392,6 +399,9 @@ def build_pair_deck(
             )
         )
 
+    if enhanced:
+        slides.append(extras["capacity"])
+
     # 08 Divider 02
     slides.append(
         ui.slide_divider(
@@ -401,7 +411,7 @@ def build_pair_deck(
             kicker="Expense, Liability & Liquidity",
             title="支出、负债与流动性",
             desc=(
-                "再看资金去向与周转方式：消费深度、刚性支出与真实可支配收入、借贷使用与偿债压力、账户缓冲厚度。"
+                "再看资金去向与周转方式：消费深度、固定账单与工资负担、借贷使用与偿债压力、账户缓冲厚度。"
                 if deep
                 else "再看资金去向与周转方式：支出刚性与转账流向、借贷使用与偿债压力、账户缓冲厚度。"
             ),
@@ -410,7 +420,7 @@ def build_pair_deck(
                 [
                     (fp(pf.m["fixed_wage_p50"]), f"{left_name} 固定账单 / 工资"),
                     (fp(pw.m["fixed_wage_p50"]), f"{right_name} 固定账单 / 工资"),
-                    (fp(pw.m["external_lender_incidence"]), f"{right_name} 外部借贷覆盖"),
+                    (fp(pw.m["external_lender_incidence"]), f"{right_name} 选定机构覆盖"),
                 ]
                 if deep
                 else [
@@ -508,13 +518,13 @@ def build_pair_deck(
                 section=section_b,
                 kicker="2.2 · Consumption Depth",
                 title="消费深度与品质消费",
-                sub=(
-                    f"{right_name} 的消费渗透更广，尤其赌博与手续费；{left_name} 的品质消费强度更高，"
-                    "重压型达到工资的 13.8%。"
-                ),
+                sub="比较类目覆盖与相对工资的负担；比率差异可能受工资分母影响，不直接等同于消费水平或可压缩空间。",
                 body=cons_depth_body,
             )
         )
+
+    if enhanced:
+        slides.append(extras["gambling"])
 
     # 10 Fixed obligations
     if deep:
@@ -546,7 +556,7 @@ def build_pair_deck(
                         f">30% 占比 {fp(pf.m['fixed_wage_gt30'])} / {fp(pw.m['fixed_wage_gt30'])}",
                     ),
                     (
-                        "收入 / 支出中位",
+                        "标签收入 / 标签支出中位",
                         pair_value(
                             f"{pf.m['income_expense_ratio_p50']:.3f}",
                             f"{pw.m['income_expense_ratio_p50']:.3f}",
@@ -583,10 +593,10 @@ def build_pair_deck(
                 brand=brand,
                 section=section_b,
                 kicker="2.3 · Fixed Obligations",
-                title="刚性支出与真实可支配收入",
+                title="刚性支出与工资负担",
                 sub=(
-                    "覆盖率接近，但 Fundo 的固定账单负担更重、尾部更高；"
-                    "同样的账单结构下，Fundo 的真实可支配收入更薄。"
+                    "分别比较账单覆盖率与相对工资的金额负担；标签收支比属于另一统计体系，"
+                    "不用于解释现金流盈余，也不能直接推算真实可支配收入。"
                 ),
                 body=fixed_body,
             )
@@ -598,7 +608,7 @@ def build_pair_deck(
     )
     if deep:
         net_borrow_sub += (
-            f" · 外部借贷 {fp(pf.m['external_lender_incidence'])} / "
+            f" · 选定机构覆盖 {fp(pf.m['external_lender_incidence'])} / "
             f"{fp(pw.m['external_lender_incidence'])}"
         )
     liability_body = (
@@ -624,6 +634,9 @@ def build_pair_deck(
             body=liability_body,
         )
     )
+
+    if enhanced:
+        slides.append(extras["multi"])
 
     # 10 Cashflow
     cashflow_body = (
@@ -651,6 +664,9 @@ def build_pair_deck(
         )
     )
 
+    if enhanced:
+        slides.extend([extras["recent"],extras["balance"]])
+
     # 11 Segments charts
     segment_body = (
         '<div class="chart-pair">'
@@ -672,7 +688,7 @@ def build_pair_deck(
             section=section_b,
             kicker=f"{k_segments} · Segmentation",
             title="用户分层",
-            sub="按偿债后盈余率分为四层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 <-20%。",
+            sub="按含新增借款的盈余率分层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 <-20%；分层不等于信用等级。",
             body=segment_body,
         )
     )
@@ -695,9 +711,9 @@ def build_pair_deck(
             ]
         )
     seg_table = ui.table_box(
-        ["分层", f"{left_name} 占比", f"{right_name} 占比", "差异", f"{left_name} 月盈余", f"{right_name} 月盈余", f"{left_name} 拒付率", f"{right_name} 拒付率"],
+        ["分层", f"{left_name} 占比", f"{right_name} 占比", "差异", f"{left_name} 月盈余", f"{right_name} 月盈余", f"{left_name} 拒付用户占比", f"{right_name} 拒付用户占比"],
         seg_rows,
-        note="盈余率已截尾至 [-100%, +100%]；拒付率 = 拒付笔数 /（拒付笔数 + 还款笔数）。",
+        note="盈余率含新增借款且截尾至 [-100%, +100%]；此表拒付占比为组内有拒付记录的用户占比，不是按交易笔数计算的拒付率。",
         num_cols=(1, 2, 3, 4, 5, 6, 7),
     )
     slides.append(
@@ -706,7 +722,7 @@ def build_pair_deck(
             section=section_b,
             kicker=f"{k_seg_detail} · Segmentation Detail",
             title="分层指标明细",
-            sub="各分层内部的盈余水平与拒付率，决定尾部风险落在哪一类人群。",
+            sub="分别观察各规则分层的净流量与有拒付记录的用户占比；不把规则分层直接视为风险等级。",
             body=seg_table,
         )
     )
@@ -720,7 +736,7 @@ def build_pair_deck(
                 ("赌博交易发生率", pair_value(fp(pf.m["gamb_incidence"]), fp(pw.m["gamb_incidence"])), f"赌博占可识别消费 {fp(pf.m['gamb_share_cons'])} / {fp(pw.m['gamb_share_cons'])}"),
                 ("手续费支出发生率", pair_value(fp(pf.m["fees_incidence"]), fp(pw.m["fees_incidence"])), f"手续费 / 透支交易发生率 {fp(pf.m['fees_ticket_incidence'])} / {fp(pw.m['fees_ticket_incidence'])}"),
                 ("有拒付记录", pair_value(fp(pf.m["dish_any"]), fp(pw.m["dish_any"])), f"未解决 {fp(pf.m['dish_unres'])} / {fp(pw.m['dish_unres'])}"),
-                ("催收类拒付", pair_value(fp(pf.m["collections_inc"]), fp(pw.m["collections_inc"])), f"债务整合 {fp(pf.m['debt_consolidation_inc'])} / {fp(pw.m['debt_consolidation_inc'])}"),
+                ("催收类支出覆盖", pair_value(fp(pf.m["collections_inc"]), fp(pw.m["collections_inc"])), f"债务整合类支出 {fp(pf.m['debt_consolidation_inc'])} / {fp(pw.m['debt_consolidation_inc'])}"),
             ]
         )
         + "</div>"
@@ -743,7 +759,7 @@ def build_pair_deck(
             section=section_b,
             kicker=f"{k_diff} · Key Differences",
             title="主要差异",
-            sub=f"差值 = {right_name} − {left_name}，单位为百分点；仅列可比的比例类指标，按差值绝对值排序。",
+            sub=f"全期未加权差值 = {right_name} − {left_name}，单位为百分点；比例及比率指标按差值绝对值排序，各自有效分母见对应分析。",
             body=ui.chart_box(figs["difference"], "图中仅展示部分指标；完整指标见各章节明细表。"),
         )
     )
@@ -782,6 +798,14 @@ def build_pair_deck(
         ("流动性与杠杆", f"两组负盈余占比 <b>{fp(pf.m['sur_neg'])}</b> vs <b>{fp(pw.m['sur_neg'])}</b>，缓冲不足 7 天 <b>{fp(pf.m['buffer_lt7'])}</b> vs <b>{fp(pw.m['buffer_lt7'])}</b>；偿债/收入 <b>{fp(pf.m['rep_rate_p50'])}</b> vs <b>{fp(pw.m['rep_rate_p50'])}</b>。"),
         ("风险", f"有拒付记录 <b>{fp(pf.m['dish_any'])}</b> vs <b>{fp(pw.m['dish_any'])}</b>；赌博发生率 <b>{fp(pf.m['gamb_incidence'])}</b> vs <b>{fp(pw.m['gamb_incidence'])}</b>。"),
     ]
+    if enhanced:
+        f,p = pf.m["profile_enrichment"],pw.m["profile_enrichment"]
+        takeaways = [
+            ("还款基础",f"还款/(工资+福利)中位 <b>{fp(f['recurring_p50'])}</b> / <b>{fp(p['recurring_p50'])}</b>；收入代理口径，不是核实可支配收入。"),
+            ("借贷关系",f"≥5 家还款机构覆盖 <b>{fp(f['multi5'])}</b> / <b>{fp(p['multi5'])}</b>；机构数与组内拒付表现分别解读。"),
+            ("历史流动性",f"历史曾有负余额 <b>{fp(f['ever_negative'])}</b> / <b>{fp(p['ever_negative'])}</b>；最近余额非负仍有历史压力的用户需单独识别。"),
+            ("可比性",f"共同月份 <b>{'、'.join(compare_extra.prepare(pf,pw)['common_months'])}</b>，敏感性结果已单列；两组不预设独立，不作因果或审批优劣判断。"),
+        ]
     slides.append(
         ui.slide_closing(
             brand=brand,
@@ -796,7 +820,7 @@ def build_pair_deck(
             ),
             takeaways=takeaways,
             source=(
-                f"<b>数据源</b>：{pair['source']}。两组使用同一套字段清单、缺失哨兵与清洗规则；"
+                f"<b>数据源</b>：{pair['source']}。两组共用分析字段、缺失哨兵与清洗规则，月份按各自元数据解析；"
                 "以上为描述性对比，不做因果推断。"
             ),
             date=f"生成时间 {generated_at}",
@@ -807,10 +831,11 @@ def build_pair_deck(
         title=f"{left_name} vs {right_name} 人群画像对比 · 演示文稿",
         slides=slides,
         plotly_js=get_plotlyjs(),
+        extra_css=profile_extra.EXTRA_CSS+compare_extra.EXTRA_CSS if enhanced else "",
     )
 
 
-def run_pair(pair_key: str, generated_at: str, out_dir: Path) -> None:
+def run_pair(pair_key: str, generated_at: str, out_dir: Path, *, sync_profiles: bool = False) -> None:
     pair = PAIRS[pair_key]
     module = pair["module"]
     left_name, left_mod, left_csv = pair["left"]
@@ -818,6 +843,12 @@ def run_pair(pair_key: str, generated_at: str, out_dir: Path) -> None:
     print(f"[{pair_key}] loading profiles ...")
     pf = module.load_profile(left_name, left_mod, left_csv)
     pw = module.load_profile(right_name, right_mod, right_csv)
+    if pair_key == "fundo_wagego":
+        compare_extra.export(ROOT,pf,pw)
+        if sync_profiles:
+            from build_profile_decks import write_profile_deck
+            write_profile_deck("fundo",generated_at,out_dir,pf.d,pf.m,pf.seg)
+            write_profile_deck("wagego",generated_at,out_dir,pw.d,pw.m,pw.seg)
     figs = {
         "distributions": module.chart_distributions(pf, pw),
         "income_mix": module.chart_income_mix(pf, pw),
@@ -849,13 +880,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="生成人群对比 PPT 式幻灯片 HTML")
     parser.add_argument("--pair", choices=list(PAIRS) + ["all"], default="all")
     parser.add_argument("--out", default="", help="输出目录")
+    parser.add_argument("--sync-profiles", action="store_true", help="同时从本次已加载的数据生成 Fundo 和 WageGo 单独画像")
     args = parser.parse_args()
 
     out_dir = Path(args.out) if args.out else OUT
-    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    generated_at = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
     keys = list(PAIRS) if args.pair == "all" else [args.pair]
     for key in keys:
-        run_pair(key, generated_at, out_dir)
+        run_pair(key, generated_at, out_dir, sync_profiles=args.sync_profiles)
 
 
 if __name__ == "__main__":
