@@ -3,18 +3,28 @@
   "slides": [
     {
       "slide": 1,
-      "title": "封面",
-      "body": null,
+      "title": "收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利",
+      "body": {
+        "height": 600,
+        "scroll": 600
+      },
       "crops": [],
       "escaped": [],
-      "plots": []
+      "plots": [
+        {
+          "w": 834,
+          "h": 385,
+          "traces": 4,
+          "box": 423
+        }
+      ]
     },
     {
       "slide": 2,
-      "title": "收入接近，差异集中在负债与履约",
+      "title": "WageGo 的借贷依赖、还款负担与拒付暴露都显著更高",
       "body": {
-        "height": 626,
-        "scroll": 626
+        "height": 600,
+        "scroll": 600
       },
       "crops": [],
       "escaped": [],
@@ -22,73 +32,25 @@
     },
     {
       "slide": 3,
-      "title": "样本与收入",
-      "body": null,
+      "title": "支出规模接近，WageGo 固定账单负担更低、赌博与手续费更高",
+      "body": {
+        "height": 600,
+        "scroll": 600
+      },
       "crops": [],
       "escaped": [],
-      "plots": []
+      "plots": [
+        {
+          "w": 834,
+          "h": 385,
+          "traces": 2,
+          "box": 423
+        }
+      ]
     },
     {
       "slide": 4,
-      "title": "WageGo 样本更大，有效率也更高",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 5,
-      "title": "共同月份校准后，品牌差异仍成立",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 6,
-      "title": "收入与支出接近，盈余普遍为负",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 585,
-          "traces": 8,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 7,
-      "title": "工资覆盖更高，但七成入账来自其他来源",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 585,
-          "traces": 4,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 8,
-      "title": "WageGo 雇主覆盖更广，行业码不可比",
+      "title": "负盈余与薄缓冲是共同底盘，WageGo 的账户余额更薄",
       "body": {
         "height": 600,
         "scroll": 600
@@ -98,314 +60,13 @@
       "plots": [
         {
           "w": 834,
-          "h": 468,
-          "traces": 4,
-          "box": 507
-        }
-      ]
-    },
-    {
-      "slide": 9,
-      "title": "Fundo 更依赖福利，WageGo 更依赖工资",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 4,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 10,
-      "title": "换成工资+福利分母，负担明显上升",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
+          "h": 385,
           "traces": 2,
-          "box": 533
+          "box": 423
         }
       ]
-    },
-    {
-      "slide": 11,
-      "title": "支出、负债与流动性",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 12,
-      "title": "支出规模接近，资金流向差异更大",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 689,
-          "h": 585,
-          "traces": 2,
-          "box": 624
-        },
-        {
-          "w": 689,
-          "h": 585,
-          "traces": 14,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 13,
-      "title": "品质消费渗透接近，负担差异受工资影响",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 4,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 14,
-      "title": "WageGo 净流出更高，但同机构数组内无一致梯度",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 1418,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 15,
-      "title": "账单覆盖接近，工资负担与尾部差异更大",
-      "body": {
-        "height": 600,
-        "scroll": 600
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 468,
-          "traces": 4,
-          "box": 507
-        }
-      ]
-    },
-    {
-      "slide": 16,
-      "title": "借贷使用与拒付暴露是最大分化维度",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 585,
-          "traces": 4,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 17,
-      "title": "多头覆盖差异大，同组内拒付仍更高",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 18,
-      "title": "两组都以负盈余为主、缓冲极薄",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 689,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        },
-        {
-          "w": 689,
-          "h": 494,
-          "traces": 5,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 19,
-      "title": "近期变化接近，双重压力组未更高拒付",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 20,
-      "title": "快照为正，仍可能隐藏历史压力",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 21,
-      "title": "两组都以赤字型和重压型为主",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 689,
-          "h": 494,
-          "traces": 4,
-          "box": 533
-        },
-        {
-          "w": 689,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 22,
-      "title": "重压型拒付最高，盈余型并非最低",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 23,
-      "title": "WageGo 的赌博、手续费与拒付暴露更高",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 585,
-          "traces": 2,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 24,
-      "title": "差异集中在借贷依赖与拒付暴露",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 1418,
-          "h": 586,
-          "traces": 2,
-          "box": 624
-        }
-      ]
-    },
-    {
-      "slide": 25,
-      "title": "主要差异集中在负担、多头与履约",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 26,
-      "title": "结论",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "c1208a26eadd3ce9d756a199859fc1340a93fff23cd5a6e29240db0fc784aec8"
+  "sha256": "b5ed8d2d8f6919ab9baaed981446f4b201ed10df80b55a3aea7d0c7a67a64a6d"
 }

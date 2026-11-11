@@ -113,6 +113,300 @@ def build_compare_kpis(module, pf, pw, names: tuple[str, str], specs) -> str:
     return ui.cmp_kpi_cards(cards)
 
 
+def build_concise_pair_deck(
+    pair: dict,
+    module,
+    pf,
+    pw,
+    figs: dict[str, str],
+    generated_at: str,
+) -> str:
+    left_name, right_name = pair["left"][0], pair["right"][0]
+    fm = module.fmt_money
+    fp = module.fmt_pct
+    fmetric = module.fmt_metric
+    mv = module.metric_value
+    brand = pair["brand"]
+    f_enrich = pf.m["profile_enrichment"]
+    w_enrich = pw.m["profile_enrichment"]
+    f_ben = pf.m["benefit_type_inc"]
+    w_ben = pw.m["benefit_type_inc"]
+    sv = module.seg_val
+    income_gap = pw.m["inc_p50"] - pf.m["inc_p50"]
+    expense_gap = pf.m["exp_p50"] - pw.m["exp_p50"]
+
+    def delta(key, kind):
+        return module.fmt_delta(mv(pf, key), mv(pw, key), kind)
+
+    slides: list[str] = []
+
+    # 01 收入
+    income_body = (
+        build_compare_kpis(
+            module,
+            pf,
+            pw,
+            (left_name, right_name),
+            [
+                ("中位月收入", "inc_p50", "money"),
+                ("工资覆盖率", "wage_incidence", "pct"),
+                ("福利 / 入账中位", "cent_share_rec_p50", "pct"),
+                ("可识别雇主", "employer_share", "pct"),
+            ],
+        )
+        + '<div class="duo">'
+        + ui.chart_box(
+            figs["income_mix"],
+            f"n = {left_name} {pf.m['n_valid']:,} / {right_name} {pw.m['n_valid']:,}；"
+            "发生率以有效用户为分母，金额占比以分项收入加总为分母。",
+        )
+        + ui.side_cards(
+            [
+                (
+                    "工资占入账",
+                    pair_value(fp(pf.m["wage_share_agg"]), fp(pw.m["wage_share_agg"])),
+                    f"其他入账占比 {fp(pf.m['other_share_agg'])} / {fp(pw.m['other_share_agg'])}",
+                ),
+                (
+                    "收入波动 CV 中位",
+                    pair_value(
+                        fmetric(pf.m["income_cv_p50"], "num"),
+                        fmetric(pw.m["income_cv_p50"], "num"),
+                    ),
+                    f"收入来源中位 {fmetric(pf.m['income_source_p50'], 'num0')} / "
+                    f"{fmetric(pw.m['income_source_p50'], 'num0')} 个；CV 越高越不稳定",
+                ),
+                (
+                    "养老金覆盖率（福利人群）",
+                    pair_value(fp(f_ben.get("pension")), fp(w_ben.get("pension"))),
+                    f"JobSeeker {fp(f_ben.get('jobseeker'))} / {fp(w_ben.get('jobseeker'))}；覆盖率可重叠",
+                ),
+            ]
+        )
+        + "</div>"
+    )
+    slides.append(
+        ui.slide_content(
+            brand=brand,
+            section="01 · 收入",
+            kicker="Income · 01",
+            title="收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利",
+            sub=(
+                f"中位月收入 Fundo {fm(pf.m['inc_p50'])} vs WageGo {fm(pw.m['inc_p50'])}，仅差 "
+                f"{fm(abs(income_gap))}（{abs(income_gap) / pf.m['inc_p50']:.0%}）。WageGo 工资覆盖 "
+                f"{fp(pw.m['wage_incidence'])} vs Fundo {fp(pf.m['wage_incidence'])}、可识别雇主 "
+                f"{fp(mv(pw, 'employer_share'))} vs {fp(mv(pf, 'employer_share'))}；Fundo 福利 / 入账中位 "
+                f"{fp(pf.m['cent_share_rec_p50'])} vs {fp(pw.m['cent_share_rec_p50'])}。"
+            ),
+            body=income_body,
+        )
+    )
+
+    # 02 负债
+    liability_rows = [
+        [
+            "有借贷放款",
+            fp(pf.m["any_disburse"]),
+            fp(pw.m["any_disburse"]),
+            delta("any_disburse", "pct"),
+        ],
+        [
+            "现金贷使用率",
+            fp(pf.m["adv_use"]),
+            fp(pw.m["adv_use"]),
+            delta("adv_use", "pct"),
+        ],
+        [
+            "中位月还款",
+            fm(pf.m["rep_m_p50"]),
+            fm(pw.m["rep_m_p50"]),
+            delta("rep_m_p50", "money"),
+        ],
+        [
+            "中位月新增借款",
+            fm(pf.m["draw_m_p50"]),
+            fm(pw.m["draw_m_p50"]),
+            delta("draw_m_p50", "money"),
+        ],
+        [
+            "还款 /（工资+福利）中位",
+            fp(f_enrich["recurring_p50"]),
+            fp(w_enrich["recurring_p50"]),
+            delta("enrich:recurring_p50", "pct"),
+        ],
+        [
+            "≥5 家还款机构",
+            fp(f_enrich["multi5"]),
+            fp(w_enrich["multi5"]),
+            delta("enrich:multi5", "pct"),
+        ],
+        [
+            "有拒付记录",
+            fp(pf.m["dish_any"]),
+            fp(pw.m["dish_any"]),
+            delta("dish_any", "pct"),
+        ],
+        [
+            "未解决拒付",
+            fp(pf.m["dish_unres"]),
+            fp(pw.m["dish_unres"]),
+            delta("dish_unres", "pct"),
+        ],
+    ]
+    liability_body = ui.table_box(
+        ["指标", left_name, right_name, "差异"],
+        liability_rows,
+        note=(
+            "机构数为 182 天可识别还款关系，不等于当前在贷机构数；拒付为用户占比，不是交易笔数。"
+            "还款负担以工资+福利为分母，属收入代理口径，不能直接视为可支配收入。"
+        ),
+        num_cols=(1, 2, 3),
+    )
+    slides.append(
+        ui.slide_content(
+            brand=brand,
+            section="02 · 负债",
+            kicker="Liability · 02",
+            title="WageGo 的借贷依赖、还款负担与拒付暴露都显著更高",
+            sub=(
+                f"WageGo 有借贷放款 {fp(pw.m['any_disburse'])} vs Fundo {fp(pf.m['any_disburse'])}，"
+                f"中位月还款 {fm(pw.m['rep_m_p50'])} vs {fm(pf.m['rep_m_p50'])}；"
+                f"还款 /（工资+福利）{fp(w_enrich['recurring_p50'])} vs {fp(f_enrich['recurring_p50'])}，"
+                f"≥5 家还款机构 {fp(w_enrich['multi5'])} vs {fp(f_enrich['multi5'])}，"
+                f"有拒付记录 {fp(pw.m['dish_any'])} vs {fp(pf.m['dish_any'])}。"
+            ),
+            body=liability_body,
+        )
+    )
+
+    # 03 支出
+    expense_body = (
+        build_compare_kpis(
+            module,
+            pf,
+            pw,
+            (left_name, right_name),
+            [
+                ("中位月支出", "exp_p50", "money"),
+                ("固定账单 / 工资", "fixed_wage_p50", "pct"),
+                ("品质消费 / 工资", "prem_wage_p50", "pct"),
+                ("赌博占可识别消费", "gamb_share_cons", "pct"),
+            ],
+        )
+        + '<div class="duo">'
+        + ui.chart_box(
+            figs["expense_structure"],
+            "外部 / 内部转账占比以全部借记流水为分母；其余占比分母见指标名。",
+        )
+        + ui.side_cards(
+            [
+                (
+                    "固定账单覆盖率",
+                    pair_value(fp(pf.m["fixed_bill_incidence"]), fp(pw.m["fixed_bill_incidence"])),
+                    f"有账单用户中位 {fm(pf.m['fixed_bill_median_pos'])} / "
+                    f"{fm(pw.m['fixed_bill_median_pos'])}（6 个月）",
+                ),
+                (
+                    "品质消费渗透率",
+                    pair_value(fp(pf.m["premium_incidence"]), fp(pw.m["premium_incidence"])),
+                    f"品质消费 / 工资 P90 {fp(pf.m['prem_wage_p90'])} / {fp(pw.m['prem_wage_p90'])}",
+                ),
+                (
+                    "手续费发生率",
+                    pair_value(fp(pf.m["fees_incidence"]), fp(pw.m["fees_incidence"])),
+                    f"赌博发生率 {fp(pf.m['gamb_incidence'])} / {fp(pw.m['gamb_incidence'])}；"
+                    f"手续费 / 透支 {fp(pf.m['fees_ticket_incidence'])} / {fp(pw.m['fees_ticket_incidence'])}",
+                ),
+            ]
+        )
+        + "</div>"
+    )
+    slides.append(
+        ui.slide_content(
+            brand=brand,
+            section="03 · 支出",
+            kicker="Spending · 03",
+            title="支出规模接近，WageGo 固定账单负担更低、赌博与手续费更高",
+            sub=(
+                f"Fundo 中位月支出 {fm(pf.m['exp_p50'])} vs WageGo {fm(pw.m['exp_p50'])}，差 "
+                f"{fm(abs(expense_gap))}。固定账单覆盖率 {fp(pf.m['fixed_bill_incidence'])} / "
+                f"{fp(pw.m['fixed_bill_incidence'])}，固定账单 / 工资中位 "
+                f"{fp(pf.m['fixed_wage_p50'])} / {fp(pw.m['fixed_wage_p50'])}；品质消费 / 工资中位 "
+                f"{fp(pf.m['prem_wage_p50'])} / {fp(pw.m['prem_wage_p50'])}；WageGo 赌博发生率 "
+                f"{fp(pw.m['gamb_incidence'])} vs Fundo {fp(pf.m['gamb_incidence'])}。"
+            ),
+            body=expense_body,
+        )
+    )
+
+    # 04 流动性
+    liquidity_body = (
+        build_compare_kpis(
+            module,
+            pf,
+            pw,
+            (left_name, right_name),
+            [
+                ("负盈余占比", "sur_neg", "pct"),
+                ("缓冲 < 7 天", "buffer_lt7", "pct"),
+                ("中位账户余额", "bal_p50", "money"),
+                ("历史曾有负余额", "enrich:ever_negative", "pct"),
+            ],
+        )
+        + '<div class="duo">'
+        + ui.chart_box(
+            figs["cashflow"],
+            "占比均以有效用户为分母；缓冲天数 = 账户余额 /（月支出 / 30）。",
+        )
+        + ui.side_cards(
+            [
+                (
+                    "中位月盈余",
+                    pair_value(fm(pf.m["sur_p50"]), fm(pw.m["sur_p50"])),
+                    "两组均为负；负盈余占比见上方",
+                ),
+                (
+                    "重压型占比",
+                    pair_value(fp(sv(pf, "重压型", "share")), fp(sv(pw, "重压型", "share"))),
+                    f"盈余型仅 {fp(sv(pf, '盈余型', 'share'))} / {fp(sv(pw, '盈余型', 'share'))}；"
+                    "分层含新增借款净流量",
+                ),
+                (
+                    "快照非负仍有历史压力",
+                    pair_value(
+                        fp(f_enrich["hidden_share_positive"]),
+                        fp(w_enrich["hidden_share_positive"]),
+                    ),
+                    "历史负余额占比 ≥10%；分母为快照非负用户",
+                ),
+            ]
+        )
+        + "</div>"
+    )
+    slides.append(
+        ui.slide_content(
+            brand=brand,
+            section="04 · 流动性",
+            kicker="Liquidity · 04",
+            title="负盈余与薄缓冲是共同底盘，WageGo 的账户余额更薄",
+            sub=(
+                f"负盈余 {fp(pf.m['sur_neg'])} / {fp(pw.m['sur_neg'])}，缓冲 < 7 天 "
+                f"{fp(pf.m['buffer_lt7'])} / {fp(pw.m['buffer_lt7'])}，中位余额 "
+                f"{fm(pf.m['bal_p50'])} / {fm(pw.m['bal_p50'])}；历史曾有负余额 "
+                f"{fp(f_enrich['ever_negative'])} / {fp(w_enrich['ever_negative'])}，快照非负但历史负余额 "
+                f"≥10% 占 {fp(f_enrich['hidden_share_positive'])} / {fp(w_enrich['hidden_share_positive'])}。"
+            ),
+            body=liquidity_body,
+        )
+    )
+
+    return ui.deck_document(
+        title=f"{left_name} vs {right_name} 人群画像对比 · 4 页版",
+        slides=slides,
+        plotly_js=get_plotlyjs(),
+    )
+
+
 def build_pair_deck(
     pair_key: str,
     pair: dict,
@@ -122,6 +416,9 @@ def build_pair_deck(
     figs: dict[str, str],
     generated_at: str,
 ) -> str:
+    if pair_key == "fundo_wagego":
+        return build_concise_pair_deck(pair, module, pf, pw, figs, generated_at)
+
     left_name, right_name = pair["left"][0], pair["right"][0]
     fm = module.fmt_money
     fp = module.fmt_pct
