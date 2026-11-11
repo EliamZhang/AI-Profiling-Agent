@@ -134,6 +134,7 @@ def build_pair_deck(
     deep = "income_resilience" in figs
     enhanced = pair_key == "fundo_wagego" and all("profile_enrichment" in p.m for p in (pf,pw))
     extras = compare_extra.slides(pair,pf,pw) if enhanced else {}
+    has_employment = "employment" in extras
     k_liability = "2.4" if deep else "2.2"
     k_cashflow = "2.5" if deep else "2.3"
     k_segments = "2.6" if deep else "2.4"
@@ -305,7 +306,7 @@ def build_pair_deck(
                 ("工资覆盖率", pair_value(fp(pf.m["wage_incidence"]), fp(pw.m["wage_incidence"])), f"有工资用户中位 {fm(pf.m['wage_median_m'])} / {fm(pw.m['wage_median_m'])} 每月"),
                 ("工资占入账", pair_value(fp(pf.m["wage_share_agg"]), fp(pw.m["wage_share_agg"])), f"其他入账占比 {fp(pf.m['other_share_agg'])} / {fp(pw.m['other_share_agg'])}"),
                 ("入账 CV 中位", pair_value(fmetric(pf.m["income_cv_p50"], "num"), fmetric(pw.m["income_cv_p50"], "num")), f"收入来源中位 {fmetric(pf.m['income_source_p50'], 'num0')} / {fmetric(pw.m['income_source_p50'], 'num0')} 个"),
-                ("近 3 月工资下降 >10%", pair_value(fp(pf.m["wage_3m6m_decline"]), fp(pw.m["wage_3m6m_decline"])), f"主行业：{pf.m['industry_top_text']} / {pw.m['industry_top_text']}"),
+                ("可识别雇主", pair_value(fp(mv(pf, "employer_share")), fp(mv(pw, "employer_share"))), f"主要行业码（占已分类）：{pf.m['industry_top_text']} / {pw.m['industry_top_text']}；WageGo 高度集中，行业结构不直接对比"),
             ]
         )
         + "</div>"
@@ -322,6 +323,9 @@ def build_pair_deck(
     )
 
     # 07 Income resilience
+    if has_employment:
+        slides.append(extras["employment"])
+
     if deep:
         f_ben = pf.m["benefit_type_inc"]
         w_ben = pw.m["benefit_type_inc"]
@@ -389,7 +393,7 @@ def build_pair_deck(
             ui.slide_content(
                 brand=brand,
                 section=section_a,
-                kicker="1.4 · Income Resilience",
+                kicker=("1.5" if has_employment else "1.4") + " · Income Resilience",
                 title="收入结构与韧性",
                 sub=(
                     f"{left_name} 福利覆盖更高、福利依赖更强；{right_name} 工资覆盖更广，"

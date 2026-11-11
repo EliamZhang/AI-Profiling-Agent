@@ -38,8 +38,8 @@ def main():
     assert len(cohort)==24 and (cohort.valid_n<=cohort.cohort_n).all()
     for key,filename,n_slides,n_charts in [
         ('fundo','fundo_profile_report_slides.html',25,15),
-        ('wagego','wagego_profile_report_slides.html',24,14),
-        ('compare','compare_profile_report_slides.html',27,18),
+        ('wagego','wagego_profile_report_slides.html',25,15),
+        ('compare','compare_profile_report_slides.html',28,19),
     ]:
         source=ROOT/'output/html'/filename
         doc=BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')

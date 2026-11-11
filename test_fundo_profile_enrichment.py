@@ -75,11 +75,25 @@ class FundoEnrichmentTests(unittest.TestCase):
         self.assertEqual(e['unknown_n'],1)
         self.assertEqual(e['no_employer_n'],1)
         self.assertEqual(e['industry_rows'][0]['industry'],'零售')
+        self.assertEqual(e['top_industry'],'零售')
+        self.assertAlmostEqual(e['top_industry_share'],2/3)
+        self.assertFalse(e['industry_concentrated'])
         cycles={r['cycle']:r for r in e['pay_cycle_rows']}
         self.assertAlmostEqual(cycles['weekly']['share'],1/3)
         self.assertAlmostEqual(cycles['fortnightly']['share'],1/3)
         self.assertAlmostEqual(cycles['unidentified']['share'],1/3)
         self.assertIs(m['profile_enrichment']['industry'],e)
+
+    def test_concentrated_industry_is_flagged(self):
+        d=self.sample()
+        for col in extra.INDUSTRY_COLUMNS:
+            d[col]=np.nan
+        d[extra.INDUSTRY_COLUMNS[0]]=[1.,1.,1.,1.]
+        d['bank_txn_industry_primary_industry_code']=[12.,12.,12.,12.]
+        e=extra.analyze(d,{})['industry']
+        self.assertTrue(e['industry_concentrated'])
+        self.assertEqual(e['top_industry'],'零售')
+        self.assertEqual(e['top_industry_share'],1.)
 
     def test_inconsistent_window_or_cashflow_fails_loudly(self):
         d=self.sample(); d.loc[0,extra.S+'income_sum_28d']=101.

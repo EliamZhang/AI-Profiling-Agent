@@ -88,6 +88,24 @@
     },
     {
       "slide": 8,
+      "title": "就业形态：覆盖率与发薪周期",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 393,
+          "traces": 4,
+          "box": 431
+        }
+      ]
+    },
+    {
+      "slide": 9,
       "title": "收入结构与韧性",
       "body": {
         "height": 626,
@@ -105,7 +123,7 @@
       ]
     },
     {
-      "slide": 9,
+      "slide": 10,
       "title": "收入分母统一后，偿债负担如何变化",
       "body": {
         "height": 626,
@@ -123,7 +141,7 @@
       ]
     },
     {
-      "slide": 10,
+      "slide": 11,
       "title": "支出、负债与流动性",
       "body": null,
       "crops": [],
@@ -131,7 +149,7 @@
       "plots": []
     },
     {
-      "slide": 11,
+      "slide": 12,
       "title": "支出与消费",
       "body": {
         "height": 626,
@@ -155,7 +173,7 @@
       ]
     },
     {
-      "slide": 12,
+      "slide": 13,
       "title": "消费深度与品质消费",
       "body": {
         "height": 626,
@@ -173,7 +191,7 @@
       ]
     },
     {
-      "slide": 13,
+      "slide": 14,
       "title": "行为净流出：在同样借贷关系下比较",
       "body": {
         "height": 626,
@@ -191,7 +209,7 @@
       ]
     },
     {
-      "slide": 14,
+      "slide": 15,
       "title": "刚性支出与工资负担",
       "body": {
         "height": 626,
@@ -209,7 +227,7 @@
       ]
     },
     {
-      "slide": 15,
+      "slide": 16,
       "title": "负债与信用履约",
       "body": {
         "height": 626,
@@ -227,7 +245,7 @@
       ]
     },
     {
-      "slide": 16,
+      "slide": 17,
       "title": "多头还款：区分关系数量与组内表现",
       "body": {
         "height": 626,
@@ -245,7 +263,7 @@
       ]
     },
     {
-      "slide": 17,
+      "slide": 18,
       "title": "现金流与流动性",
       "body": {
         "height": 626,
@@ -269,7 +287,7 @@
       ]
     },
     {
-      "slide": 18,
+      "slide": 19,
       "title": "近期变化：用互斥窗口检验资金压力",
       "body": {
         "height": 626,
@@ -280,7 +298,7 @@
       "plots": []
     },
     {
-      "slide": 19,
+      "slide": 20,
       "title": "流动性：快照之外的历史压力",
       "body": {
         "height": 626,
@@ -298,7 +316,7 @@
       ]
     },
     {
-      "slide": 20,
+      "slide": 21,
       "title": "用户分层",
       "body": {
         "height": 626,
@@ -322,7 +340,7 @@
       ]
     },
     {
-      "slide": 21,
+      "slide": 22,
       "title": "分层指标明细",
       "body": {
         "height": 626,
@@ -333,7 +351,7 @@
       "plots": []
     },
     {
-      "slide": 22,
+      "slide": 23,
       "title": "风险信号",
       "body": {
         "height": 626,
@@ -351,7 +369,7 @@
       ]
     },
     {
-      "slide": 23,
+      "slide": 24,
       "title": "主要差异",
       "body": {
         "height": 626,
@@ -369,19 +387,8 @@
       ]
     },
     {
-      "slide": 24,
-      "title": "主要差异与解读",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
       "slide": 25,
-      "title": "主要差异与解读（续）",
+      "title": "主要差异与解读",
       "body": {
         "height": 626,
         "scroll": 626
@@ -403,6 +410,17 @@
     },
     {
       "slide": 27,
+      "title": "主要差异与解读（续）",
+      "body": {
+        "height": 626,
+        "scroll": 626
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 28,
       "title": "结论",
       "body": null,
       "crops": [],
@@ -411,5 +429,5 @@
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "e439d29c89889cdd9faa9431fb4428410cf47f9ff0152f80245301bcfa469638"
+  "sha256": "934bf48ef3d8a133ebe9249e4e5882c7a16b78963aa79648f0fdd71497b86239"
 }

@@ -124,16 +124,43 @@ def gambling_chart(pf,pw):
     return style.fig_html(fig)
 
 
+def employment_chart(pf,pw):
+    fi=pf.m["profile_enrichment"]["industry"]; wi=pw.m["profile_enrichment"]["industry"]
+    labels=[r["label"] for r in fi["pay_cycle_rows"]]
+    fig=make_subplots(rows=1,cols=2,shared_yaxes=True,horizontal_spacing=.14,
+                      subplot_titles=["发薪周期构成","偿债负担中位"],column_widths=[.5,.5])
+    for name,ind in [("Fundo",fi),("WageGo",wi)]:
+        rows=ind["pay_cycle_rows"]
+        fig.add_trace(go.Bar(y=labels,x=[r["share"] for r in rows],name=name,orientation="h",
+            marker_color=COLORS[name],text=[f"{r['share']:.1%}" for r in rows],
+            textposition="outside",cliponaxis=False,textfont=dict(size=10.5),
+            hovertemplate=name+" · %{y}<br>占比 %{x:.1%}<br>n=%{customdata:,}<extra></extra>",
+            customdata=[r["n"] for r in rows]),row=1,col=1)
+        fig.add_trace(go.Bar(y=labels,x=[r["burden_p50"] for r in rows],name=name,orientation="h",
+            marker_color=COLORS[name],text=[f"{r['burden_p50']:.1%}" if np.isfinite(r["burden_p50"]) else "—" for r in rows],
+            textposition="outside",cliponaxis=False,textfont=dict(size=10.5),
+            hovertemplate=name+" · %{y}<br>负担中位 %{x:.1%}<br>n=%{customdata[0]:,}<br>"
+                          "≥5 家机构 %{customdata[1]:.1%}<extra></extra>",
+            customdata=[[r["n"],r["multi5"]] for r in rows]),row=1,col=2)
+    style.base_layout(fig,height=430,margin=dict(l=82,r=112,t=46,b=72),showlegend=True)
+    fig.update_layout(barmode="group",bargap=.24,legend=dict(orientation="h",x=0,y=-.17))
+    fig.update_xaxes(range=[0,.64],tickformat=".0%",title_text="占可识别雇主用户",row=1,col=1)
+    fig.update_xaxes(range=[0,.64],tickformat=".0%",title_text="还款 / (工资+福利) 中位",row=1,col=2)
+    fig.update_yaxes(autorange="reversed",showgrid=False)
+    return style.fig_html(fig,height=430)
+
+
 def slides(pair,pf,pw):
     c=prepare(pf,pw); f=pf.m["profile_enrichment"]; w=pw.m["profile_enrichment"]
+    fi=f["industry"]; wi=w["industry"]
     fp=style.fmt_pct; fm=style.fmt_money; brand=pair["brand"]
     common="、".join(c["common_months"]) or "无"
     def pair_text(a,b,kind="pct"):
         fmt=fp if kind=="pct" else fm if kind=="money" else lambda x:f"{x:,}"
         return f"{fmt(a)}<small> / </small>{fmt(b)}"
-    def slide(title,sub,body,section="补充 · 同口径交叉分析"):
+    def slide(title,sub,body,section="补充 · 同口径交叉分析",kicker="Aligned Comparison"):
         body=body.replace('class="table-box"','class="table-box comparison-evidence"')
-        return ui.slide_content(brand=brand,section=section,kicker="Aligned Comparison",title=title,sub=sub,body=body)
+        return ui.slide_content(brand=brand,section=section,kicker=kicker,title=title,sub=sub,body=body)
     def duo(chart,caption,cards,facts):
         return '<div class="duo">'+ui.chart_box(chart,caption)+ui.side_cards(cards)+"</div>"+ui.fact_strip(facts)
     rows=[]
@@ -148,6 +175,14 @@ def slides(pair,pf,pw):
     out["scope"]=slide("先校准口径，再比较品牌差异",f"共同月份为 {common}；保留全期结果，并补充共同月份的敏感性检查。",
         ui.table_box(["指标","Fundo · 全期","WageGo · 全期","Fundo · 共同月份","WageGo · 共同月份"],rows,note="每格 n 为该指标有效人数。工资福利比要求工资+福利>0；机构数为识别关系；历史余额为账户平均观测占比。共同月份比较未做其他特征匹配。",num_cols=(1,2,3,4))
         +ui.note_strip("两项必要边界",f"现金流收入与标签收入分别核验，不混用收支比。两组有效样本中 user_id 键重合 {c['user_key_overlap']:,} 个；身份命名空间未核实，不预设样本独立。原始申请月份分布不同，以上仍为描述性对比。"))
+    fc={r["cycle"]:r for r in fi["pay_cycle_rows"]}; wc={r["cycle"]:r for r in wi["pay_cycle_rows"]}
+    out["employment"]=slide("就业形态：覆盖率与发薪周期", "先比较雇主识别覆盖，再在各自可识别雇主用户内比较发薪周期构成与偿债负担；行业码不直接对比。",
+        duo(employment_chart(pf,pw),"发薪周期为互斥标记；负担为还款/(工资+福利)中位；n 为各周期可计算人数。",
+            [("可识别雇主",pair_text(fi['employer_share'],wi['employer_share']),f"人数 {fi['employer_n']:,} / {wi['employer_n']:,}；单一雇主 {fp(fi['single_employer_share'])} / {fp(wi['single_employer_share'])}"),
+             ("周薪占比",pair_text(fc['weekly']['share'],wc['weekly']['share']),f"双周薪 {fp(fc['fortnightly']['share'])} / {fp(wc['fortnightly']['share'])}；分母为各自可识别雇主用户"),
+             ("月薪偿债负担中位",pair_text(fc['monthly']['burden_p50'],wc['monthly']['burden_p50']),f"月薪 n={fc['monthly']['n']:,} / {wc['monthly']['n']:,}；周薪 {fp(fc['weekly']['burden_p50'])} / {fp(wc['weekly']['burden_p50'])}")],
+            [(pair_text(fi['top_industry_share'],wi['top_industry_share']),"最大行业码占比"),(fi['top_industry'],"Fundo 最大行业码"),(wi['top_industry'],"WageGo 最大行业码"),("不可直接比较","行业码覆盖与集中度不同")])
+        +ui.note_strip("口径与边界",f"最大行业码占比以各自可识别雇主用户为分母；WageGo 行业码 {fp(wi['top_industry_share'])} 集中于{wi['top_industry']}，行业结构不具备与 Fundo 对比的分层意义；Fundo 的行业码还混合银行代发渠道。发薪周期为描述性分层，月薪组样本较小；未解决拒付未控制收入与客群差异，不能作为独立风险因子或审批规则。"),section="01 · 样本与收入",kicker="1.4 · Employment Structure")
     out["capacity"]=slide("收入分母统一后，偿债负担如何变化", "每个品牌均在同一批可计算用户内更换收入分母；随后对齐负担分组比较未解决拒付。",
         duo(rate_chart(pf,pw,"burden_rows"),"分组依据：还款/(工资+福利)。标签仅为收入代理；横线为 Wilson 95% 区间。",
             [("Fundo · 同用户更换分母",f"{fp(f['same_total_p50'])} → {fp(f['recurring_p50'])}",f"现金流收入 → 工资+福利；n={f['recurring_n']:,}"),

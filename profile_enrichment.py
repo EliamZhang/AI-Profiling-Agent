@@ -173,6 +173,10 @@ def industry_summary(d):
         rows.append(r)
     rows.sort(key=lambda r: r["n"], reverse=True)
     e["industry_rows"] = rows
+    top = rows[0] if rows else None
+    e["top_industry"] = top["industry"] if top else None
+    e["top_industry_share"] = top["share"] if top else float("nan")
+    e["industry_concentrated"] = bool(top and top["share"] >= .8)
     e["groups"] = [
         dict(industry="已知行业合计", code=None, **stats(d[known])),
         dict(industry="行业未知", code=17, **stats(d[unknown])),
@@ -391,12 +395,51 @@ def industry_chart(mod, e):
     return mod.fig_html(fig, height=450)
 
 
+def pay_cycle_chart(mod, e):
+    """Pay-cycle mix and repayment burden where industry codes are too concentrated."""
+    ind = e["industry"]
+    rows = ind["pay_cycle_rows"]
+    labels = [r["label"] for r in rows]
+    colors = ["#2C6CB0", "#5E8BB4", "#C98A2E", "#9AA6B2", "#D9DEE5"]
+    fig = make_subplots(rows=1, cols=2, shared_yaxes=True, horizontal_spacing=.16,
+                        subplot_titles=["发薪周期构成", "偿债负担中位 · 按发薪周期"],
+                        column_widths=[.48, .52])
+    fig.add_trace(go.Bar(
+        y=labels, x=[r["share"] for r in rows], orientation="h", marker_color=colors,
+        text=[f"{r['share']:.1%} · n={r['n']:,}" for r in rows],
+        textposition="outside", cliponaxis=False, textfont=dict(size=10.5),
+        customdata=[r["n"] for r in rows],
+        hovertemplate="%{y}<br>占比 %{x:.1%}<br>n=%{customdata:,}<extra></extra>",
+    ), row=1, col=1)
+    fig.add_trace(go.Bar(
+        y=labels, x=[r["burden_p50"] for r in rows], orientation="h", marker_color=colors,
+        text=[f"{r['burden_p50']:.1%}" if np.isfinite(r["burden_p50"]) else "—" for r in rows],
+        textposition="outside", cliponaxis=False, textfont=dict(size=10.5),
+        customdata=[[r["n"], r["multi5"], r["unresolved"]] for r in rows],
+        hovertemplate="%{y}<br>负担中位 %{x:.1%}<br>n=%{customdata[0]:,}<br>"
+                      "≥5 家机构 %{customdata[1]:.1%}<br>未解决拒付 %{customdata[2]:.1%}<extra></extra>",
+    ), row=1, col=2)
+    aggregate = ind["known"]["burden_p50"]
+    if np.isfinite(aggregate):
+        fig.add_vline(x=aggregate, line_dash="dot", line_color="#898781", row=1, col=2)
+    mod.base_layout(fig, height=430, margin=dict(l=92, r=140, t=46, b=64), showlegend=False)
+    shares = [r["share"] for r in rows]
+    burdens = [r["burden_p50"] for r in rows if np.isfinite(r["burden_p50"])]
+    burden_high = max(burdens) if burdens else 0
+    fig.update_xaxes(range=[0, max(.58, max(shares) * 1.28)], tickformat=".0%",
+                     title_text="占可识别雇主用户", row=1, col=1)
+    fig.update_xaxes(range=[0, max(.55, burden_high * 1.28)], tickformat=".0%",
+                     title_text="还款 / (工资+福利) 中位", row=1, col=2)
+    fig.update_yaxes(autorange="reversed", showgrid=False)
+    return mod.fig_html(fig, height=430)
+
+
 def extra_slides(mod, ds, m):
     """Return named slides for insertion next to their relevant original analysis."""
     e=m["profile_enrichment"]; fp=mod.fmt_pct; fm=mod.fmt_money
     brand=ds["brand"]
     ind=e.get("industry")
-    has_industry=bool(ind and e.get("dataset_key")=="fundo" and ind.get("industry_rows"))
+    has_industry=bool(ind and ind.get("industry_rows"))
     recurring_no="1.4" if has_industry else "1.3"
     gamble_no="1.7" if has_industry else "1.6"
     def slide(title,kicker,sub,body,section="补充分析"):
@@ -470,15 +513,28 @@ def extra_slides(mod, ds, m):
         +ui.note_strip("结论适用范围",f"有效样本 {e['n']:,} 人，样本月份 {m['sample_month']}；按交易数最多申请去重，不是全体客户的随机样本。金额沿用原报告的 $ 记号，币种需由业务确认。阈值为描述性切分；同期拒付既是比较指标，也与机构识别存在共同覆盖，不作为模型性能。"))
     if has_industry:
         cycles={r["cycle"]:r for r in ind["pay_cycle_rows"]}
-        slides["industry"]=slide("就业形态：行业与发薪周期","1.2 · Employment Structure",
-            "先区分无雇主与行业未知；发薪周期与偿债负担、多头关系更相关，行业间拒付差异有限。",
-            chart_body(industry_chart(mod,e),
-                f"仅列样本量前 10 的已知行业；发薪周期为互斥标记；右图横线为已知行业合计 {fp(ind['known']['unresolved'])}，误差线为 Wilson 95% 区间。",
-                [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
-                 ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
-                 ("行业码未知",fp(ind["unknown_share"]),f"{ind['unknown_n']:,} 人 · 有工资但未分类；未解决拒付 {fp(ind['unknown']['unresolved'])}")],
-                [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(f"{fp(ind['unresolved_min'])} – {fp(ind['unresolved_max'])}","未解决拒付 · 行业区间")])
-            +ui.note_strip("口径与边界","无雇主识别不等于无收入：该组仍有福利或转账入账，且拒付率低于有工资群体。行业码为雇主行业/发薪渠道混合分类，不是职业或岗位；code 17 为有工资但行业未分类。未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
+        if ind.get("industry_concentrated"):
+            cycle_rates=[r["unresolved"] for r in ind["pay_cycle_rows"] if r["cycle"]!="unidentified" and np.isfinite(r["unresolved"])]
+            cycle_range=f"{fp(min(cycle_rates))} – {fp(max(cycle_rates))}" if cycle_rates else "—"
+            slides["industry"]=slide("就业形态：发薪周期与偿债负担","1.2 · Employment Structure",
+                "行业码高度集中，无法支持行业分层；改看发薪周期与偿债负担、多头关系的差异。",
+                chart_body(pay_cycle_chart(mod,e),
+                    f"发薪周期为互斥标记；可识别雇主 n={ind['employer_n']:,}；右图横线为可识别雇主合计 {fp(ind['known']['burden_p50'])}，按周期分组的偿债负担中位。",
+                    [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
+                     ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
+                     ("行业码集中度",fp(ind["top_industry_share"]),f"{ind['top_industry']} · 其余行业合计仅 {fp(1-ind['top_industry_share'])}；行业结构不用于分层")],
+                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(cycle_range,"未解决拒付 · 已识别周期区间")])
+                +ui.note_strip("口径与边界",f"{e.get('dataset_name','该品牌')} 行业码 {fp(ind['top_industry_share'])} 集中于{ind['top_industry']}，其余仅少量零售、运输/仓储等；该字段不足以支持行业分层，也不与行业结构分散的样本直接比较。发薪周期为互斥标记，月薪组样本较小；未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
+        else:
+            slides["industry"]=slide("就业形态：行业与发薪周期","1.2 · Employment Structure",
+                "先区分无雇主与行业未知；发薪周期与偿债负担、多头关系更相关，行业间拒付差异有限。",
+                chart_body(industry_chart(mod,e),
+                    f"仅列样本量前 10 的已知行业；发薪周期为互斥标记；右图横线为已知行业合计 {fp(ind['known']['unresolved'])}，误差线为 Wilson 95% 区间。",
+                    [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
+                     ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
+                     ("行业码未知",fp(ind["unknown_share"]),f"{ind['unknown_n']:,} 人 · 有工资但未分类；未解决拒付 {fp(ind['unknown']['unresolved'])}")],
+                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(f"{fp(ind['unresolved_min'])} – {fp(ind['unresolved_max'])}","未解决拒付 · 行业区间")])
+                +ui.note_strip("口径与边界","无雇主识别不等于无收入：该组仍有福利或转账入账，且拒付率低于有工资群体。行业码为雇主行业/发薪渠道混合分类，不是职业或岗位；code 17 为有工资但行业未分类。未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
     return slides
 
 

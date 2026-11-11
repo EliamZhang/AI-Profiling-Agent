@@ -171,9 +171,9 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     depth = "fixed_burden" in figs
     enhanced = "profile_enrichment" in m
     extras = profile_extra.extra_slides(mod, ds, m) if enhanced else {}
-    has_industry = "industry" in extras
+    has_employment = "industry" in extras
     n_income = "1.1"
-    n_resilience = "1.3" if has_industry else "1.2"
+    n_resilience = "1.3" if has_employment else "1.2"
     n_expense = "1.3" if depth else "1.2"
     n_consumption = "1.4" if depth else ""
     n_fixed = "2.1" if depth else ""
@@ -182,7 +182,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
     n_segments = "2.4" if depth else "2.3"
     n_risk = "2.5" if depth else "2.4"
     if enhanced:
-        n_expense, n_consumption = ("1.5", "1.6") if has_industry else ("1.4", "1.5")
+        n_expense, n_consumption = ("1.5", "1.6") if has_employment else ("1.4", "1.5")
         n_cashflow, n_segments, n_risk = "2.4", "2.7", "2.8"
 
     findings = build_profile_findings(mod, m, seg)
@@ -322,7 +322,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         + ui.fact_strip(
             [
                 (f"{m['employer_n'] / m['n_valid']:.1%}" if m["n_valid"] else "—", "可识别雇主占比"),
-                (html.escape(str(m["industry_top_text"] or "—")), "主行业"),
+                (html.escape(str(m["industry_top_text"] or "—")), "主要行业码（占已分类）"),
                 (fp(m["wage_3m6m_decline"]), "近 3 月工资下降 >10%"),
                 (f"{m['wage_count_pm_p50']:.1f} 笔", "工资到账 / 月"),
             ]
@@ -339,7 +339,7 @@ def build_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], generated_a
         )
     )
 
-    if has_industry:
+    if has_employment:
         slides.append(extras["industry"])
 
     if "income_resilience" in figs:
