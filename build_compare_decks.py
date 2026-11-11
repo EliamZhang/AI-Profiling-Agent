@@ -135,6 +135,8 @@ def build_pair_deck(
     enhanced = pair_key == "fundo_wagego" and all("profile_enrichment" in p.m for p in (pf,pw))
     extras = compare_extra.slides(pair,pf,pw) if enhanced else {}
     has_employment = "employment" in extras
+    f_enrich = pf.m.get("profile_enrichment", {})
+    w_enrich = pw.m.get("profile_enrichment", {})
     k_liability = "2.4" if deep else "2.2"
     k_cashflow = "2.5" if deep else "2.3"
     k_segments = "2.6" if deep else "2.4"
@@ -142,6 +144,7 @@ def build_pair_deck(
     k_risk = "2.8" if deep else "2.5"
     k_diff = "2.9" if deep else "2.6"
     findings = [f for f in module.build_findings(pf, pw) if f]
+    income_gap = pw.m["inc_p50"] - pf.m["inc_p50"]
 
     def delta(key, kind):
         return module.fmt_delta(mv(pf, key), mv(pw, key), kind)
@@ -227,8 +230,12 @@ def build_pair_deck(
             brand=brand,
             section="Executive Summary",
             kicker="核心结论",
-            title="两组人群，同一套口径",
-            sub=("对齐字段、分母和时间窗口，分别查看全期与共同月份结果；同组表现与客群结构分开比较。" if enhanced else findings[0] if findings else "两组样本的收入、支出、负债与风险信号对比。"),
+            title="收入接近，差异集中在负债与履约" if enhanced else "两组人群，同一套口径",
+            sub=(
+                f"两组的收入中位仅差 {fm(abs(income_gap))}（{abs(income_gap)/pf.m['inc_p50']:.0%}），"
+                "但 WageGo 的偿债负担、拒付暴露与多头关系明显更高；先看结构差异，不把总体差距归因于收入。"
+                if enhanced else findings[0] if findings else "两组样本的收入、支出、负债与风险信号对比。"
+            ),
             body=exec_body,
         )
     )
@@ -263,8 +270,12 @@ def build_pair_deck(
             brand=brand,
             section=section_a,
             kicker="1.1 · Sample Overview",
-            title="样本概览",
-            sub="两组样本规模与月份构成不同，后续指标差异需要放在这一背景下解读。",
+            title="WageGo 样本更大，有效率也更高" if enhanced else "样本概览",
+            sub=(
+                f"Fundo {pf.m['n_valid']:,} 人、有效率 {fp(pf.m['coverage'])}；"
+                f"WageGo {pw.m['n_valid']:,} 人、{fp(pw.m['coverage'])}。规模与月份构成不同，后续差异需保留这一背景。"
+                if enhanced else "两组样本规模与月份构成不同，后续指标差异需要放在这一背景下解读。"
+            ),
             body=overview,
         )
     )
@@ -291,8 +302,12 @@ def build_pair_deck(
             brand=brand,
             section=section_a,
             kicker="1.2 · Financial Distribution",
-            title="核心财务指标分布",
-            sub="两组收入与支出分布接近，盈余整体位于零以下，余额集中在低位。",
+            title="收入与支出接近，盈余普遍为负" if enhanced else "核心财务指标分布",
+            sub=(
+                f"两组中位收入相差 {fm(abs(income_gap))}、中位支出相差 {fm(abs(pw.m['exp_p50']-pf.m['exp_p50']))}；"
+                f"负盈余占比 {fp(pf.m['sur_neg'])} / {fp(pw.m['sur_neg'])}，余额中位 {fm(pf.m['bal_p50'])} / {fm(pw.m['bal_p50'])}，缓冲都很薄。"
+                if enhanced else "两组收入与支出分布接近，盈余整体位于零以下，余额集中在低位。"
+            ),
             body=dist_body,
         )
     )
@@ -316,8 +331,12 @@ def build_pair_deck(
             brand=brand,
             section=section_a,
             kicker="1.3 · Income & Employment",
-            title="收入与就业",
-            sub="收入水平接近，工资覆盖面与收入结构存在差异；两组入账波动都偏高。",
+            title="工资覆盖更高，但七成入账来自其他来源" if enhanced else "收入与就业",
+            sub=(
+                f"WageGo 工资覆盖 {fp(pw.m['wage_incidence'])}、Fundo {fp(pf.m['wage_incidence'])}；"
+                f"两组其他入账都约占 {fp(pf.m['other_share_agg'])}，收入波动 CV {fmetric(pf.m['income_cv_p50'], 'num')} / {fmetric(pw.m['income_cv_p50'], 'num')}。"
+                if enhanced else "收入水平接近，工资覆盖面与收入结构存在差异；两组入账波动都偏高。"
+            ),
             body=income_body,
         )
     )
@@ -394,8 +413,12 @@ def build_pair_deck(
                 brand=brand,
                 section=section_a,
                 kicker=("1.5" if has_employment else "1.4") + " · Income Resilience",
-                title="收入结构与韧性",
+                title="Fundo 更依赖福利，WageGo 更依赖工资" if enhanced else "收入结构与韧性",
                 sub=(
+                    f"福利覆盖 {fp(pf.m['cent_incidence'])} / {fp(pw.m['cent_incidence'])}，"
+                    f"福利/入账中位 {fp(pf.m['cent_share_rec_p50'])} / {fp(pw.m['cent_share_rec_p50'])}；"
+                    f"重压型工资占比反而最低（{fp(sv(pf, '重压型', 'wage_share'))} / {fp(sv(pw, '重压型', 'wage_share'))}），压力组更依赖非工资入账。"
+                    if enhanced else
                     f"{left_name} 福利覆盖更高、福利依赖更强；{right_name} 工资覆盖更广，"
                     "但重压型同样明显依赖非工资入账。"
                 ),
@@ -448,8 +471,12 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker="2.1 · Expense Structure",
-            title="支出与消费",
-            sub="支出规模接近，但资金流向不同：外部/内部转账结构与赌博类消费是主要差异。",
+            title="支出规模接近，资金流向差异更大" if enhanced else "支出与消费",
+            sub=(
+                f"两组中位支出仅差 {fm(abs(pw.m['exp_p50']-pf.m['exp_p50']))}；"
+                "差异主要在外部/内部转账结构与赌博类消费，而不是总支出水平。"
+                if enhanced else "支出规模接近，但资金流向不同：外部/内部转账结构与赌博类消费是主要差异。"
+            ),
             body=expense_body,
         )
     )
@@ -521,8 +548,14 @@ def build_pair_deck(
                 brand=brand,
                 section=section_b,
                 kicker="2.2 · Consumption Depth",
-                title="消费深度与品质消费",
-                sub="比较类目覆盖与相对工资的负担；比率差异可能受工资分母影响，不直接等同于消费水平或可压缩空间。",
+                title="品质消费渗透接近，负担差异受工资影响" if enhanced else "消费深度与品质消费",
+                sub=(
+                    f"品质消费渗透率 {fp(pf.m['premium_incidence'])} / {fp(pw.m['premium_incidence'])}，"
+                    f"但品质消费/工资中位 {fp(pf.m['prem_wage_p50'])} / {fp(pw.m['prem_wage_p50'])}、"
+                    f"P90 {fp(pf.m['prem_wage_p90'])} / {fp(pw.m['prem_wage_p90'])}；工资分母差异会放大比率差距。"
+                    if enhanced else
+                    "比较类目覆盖与相对工资的负担；比率差异可能受工资分母影响，不直接等同于消费水平或可压缩空间。"
+                ),
                 body=cons_depth_body,
             )
         )
@@ -597,8 +630,14 @@ def build_pair_deck(
                 brand=brand,
                 section=section_b,
                 kicker="2.3 · Fixed Obligations",
-                title="刚性支出与工资负担",
+                title="账单覆盖接近，工资负担与尾部差异更大" if enhanced else "刚性支出与工资负担",
                 sub=(
+                    f"覆盖率 {fp(pf.m['fixed_bill_incidence'])} / {fp(pw.m['fixed_bill_incidence'])}，"
+                    f"固定账单/工资中位 {fp(pf.m['fixed_wage_p50'])} / {fp(pw.m['fixed_wage_p50'])}、"
+                    f"P90 {fp(pf.m['fixed_wage_p90'])} / {fp(pw.m['fixed_wage_p90'])}；"
+                    f"重压型负担 {fp(sv(pf, '重压型', 'fixed_wage'))} / {fp(sv(pw, '重压型', 'fixed_wage'))}。"
+                    "标签收支比属另一体系，不能据此推算可支配收入。"
+                    if enhanced else
                     "分别比较账单覆盖率与相对工资的金额负担；标签收支比属于另一统计体系，"
                     "不用于解释现金流盈余，也不能直接推算真实可支配收入。"
                 ),
@@ -633,8 +672,13 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_liability} · Liability & Repayment",
-            title="负债与信用履约",
-            sub="借贷使用、偿债负担与拒付暴露是两组分化最明显的维度之一。",
+            title="借贷使用与拒付暴露是最大分化维度" if enhanced else "负债与信用履约",
+            sub=(
+                f"有借贷放款 {fp(pf.m['any_disburse'])} / {fp(pw.m['any_disburse'])}，"
+                f"偿债/收入 {fp(pf.m['rep_rate_p50'])} / {fp(pw.m['rep_rate_p50'])}，"
+                f"有拒付记录 {fp(pf.m['dish_any'])} / {fp(pw.m['dish_any'])}；WageGo 的借贷与履约暴露更高。"
+                if enhanced else "借贷使用、偿债负担与拒付暴露是两组分化最明显的维度之一。"
+            ),
             body=liability_body,
         )
     )
@@ -662,8 +706,13 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_cashflow} · Cashflow & Liquidity",
-            title="现金流与流动性",
-            sub="两组都以负盈余为主、账户缓冲极薄；流动性是共同底盘，而非区分两组的主轴。",
+            title="两组都以负盈余为主、缓冲极薄" if enhanced else "现金流与流动性",
+            sub=(
+                f"负盈余 {fp(pf.m['sur_neg'])} / {fp(pw.m['sur_neg'])}，"
+                f"缓冲<7 天 {fp(pf.m['buffer_lt7'])} / {fp(pw.m['buffer_lt7'])}；"
+                "流动性是共同底盘，不是区分品牌的主轴。"
+                if enhanced else "两组都以负盈余为主、账户缓冲极薄；流动性是共同底盘，而非区分两组的主轴。"
+            ),
             body=cashflow_body,
         )
     )
@@ -691,8 +740,13 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_segments} · Segmentation",
-            title="用户分层",
-            sub="按含新增借款的盈余率分层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 <-20%；分层不等于信用等级。",
+            title="两组都以赤字型和重压型为主" if enhanced else "用户分层",
+            sub=(
+                f"Fundo 重压型 {fp(sv(pf, '重压型', 'share'))}、WageGo {fp(sv(pw, '重压型', 'share'))}；"
+                f"盈余型仅 {fp(sv(pf, '盈余型', 'share'))} / {fp(sv(pw, '盈余型', 'share'))}。"
+                "分层按含借款净流量，不等于信用等级。"
+                if enhanced else "按含新增借款的盈余率分层：盈余型 ≥5%、平衡型 -5%~5%、赤字型 -20%~-5%、重压型 <-20%；分层不等于信用等级。"
+            ),
             body=segment_body,
         )
     )
@@ -725,8 +779,13 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_seg_detail} · Segmentation Detail",
-            title="分层指标明细",
-            sub="分别观察各规则分层的净流量与有拒付记录的用户占比；不把规则分层直接视为风险等级。",
+            title="重压型拒付最高，盈余型并非最低" if enhanced else "分层指标明细",
+            sub=(
+                f"重压型有拒付记录 {fp(sv(pf, '重压型', 'dishon'))} / {fp(sv(pw, '重压型', 'dishon'))}，"
+                f"盈余型 {fp(sv(pf, '盈余型', 'dishon'))} / {fp(sv(pw, '盈余型', 'dishon'))}；"
+                "拒付占比按用户数，不是按交易笔数。分层仍不是信用等级。"
+                if enhanced else "分别观察各规则分层的净流量与有拒付记录的用户占比；不把规则分层直接视为风险等级。"
+            ),
             body=seg_table,
         )
     )
@@ -750,8 +809,13 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_risk} · Risk Signals",
-            title="风险信号",
-            sub="赌博、手续费与催收暴露构成收支指标之外的风险信号。",
+            title="WageGo 的赌博、手续费与拒付暴露更高" if enhanced else "风险信号",
+            sub=(
+                f"赌博发生率 {fp(pf.m['gamb_incidence'])} / {fp(pw.m['gamb_incidence'])}，"
+                f"手续费 {fp(pf.m['fees_incidence'])} / {fp(pw.m['fees_incidence'])}，"
+                f"有拒付记录 {fp(pf.m['dish_any'])} / {fp(pw.m['dish_any'])}；这些是同期信号，不作因果判断。"
+                if enhanced else "赌博、手续费与催收暴露构成收支指标之外的风险信号。"
+            ),
             body=risk_body,
         )
     )
@@ -762,27 +826,78 @@ def build_pair_deck(
             brand=brand,
             section=section_b,
             kicker=f"{k_diff} · Key Differences",
-            title="主要差异",
-            sub=f"全期未加权差值 = {right_name} − {left_name}，单位为百分点；比例及比率指标按差值绝对值排序，各自有效分母见对应分析。",
+            title="差异集中在借贷依赖与拒付暴露" if enhanced else "主要差异",
+            sub=(
+                f"全期未加权差值 = {right_name} − {left_name}，按百分点绝对值排序；"
+                "收入水平差异较小，负债、履约与多头关系差异更大。"
+                if enhanced else
+                f"全期未加权差值 = {right_name} − {left_name}，单位为百分点；比例及比率指标按差值绝对值排序，各自有效分母见对应分析。"
+            ),
             body=ui.chart_box(figs["difference"], "图中仅展示部分指标；完整指标见各章节明细表。"),
         )
     )
 
-    # 15-17 Findings
-    for start in range(0, len(findings), 4):
-        chunk = findings[start:start + 4]
-        if not chunk:
-            continue
+    # 15 Findings
+    if enhanced:
+        checks = compare_extra.prepare(pf, pw)
+        common = "、".join(checks["common_months"]) or "无"
+        cf, cw = checks["common"]["Fundo"], checks["common"]["WageGo"]
+        condensed = [
+            f"<b>两套收支口径分别核验。</b> 现金流收入/支出中位比 Fundo {f_enrich['surplus_ratio_p50']:.3f}、"
+            f"WageGo {w_enrich['surplus_ratio_p50']:.3f}；标签体系 {f_enrich['tag_ratio_p50']:.3f}、"
+            f"{w_enrich['tag_ratio_p50']:.3f}。不能把标签比率解释为现金流缺口。",
+            f"<b>换成工资+福利分母，负担接近翻倍。</b> Fundo {fp(f_enrich['same_total_p50'])}→"
+            f"{fp(f_enrich['recurring_p50'])}、WageGo {fp(w_enrich['same_total_p50'])}→"
+            f"{fp(w_enrich['recurring_p50'])}；负担>30% 占 "
+            f"{fp(f_enrich['burden_gt30'])} / {fp(w_enrich['burden_gt30'])}。",
+            f"<b>多头覆盖与同组拒付都更高。</b> ≥5 家机构 "
+            f"{fp(f_enrich['multi5'])} / {fp(w_enrich['multi5'])}；该组未解决拒付 "
+            f"{fp(f_enrich['lender_rows'][-1]['unresolved'])} / {fp(w_enrich['lender_rows'][-1]['unresolved'])}，"
+            f"1 家组 {fp(f_enrich['lender_rows'][1]['unresolved'])} / {fp(w_enrich['lender_rows'][1]['unresolved'])}。",
+            f"<b>快照为正仍可能隐藏历史压力。</b> 历史曾有负余额 "
+            f"{fp(f_enrich['ever_negative'])} / {fp(w_enrich['ever_negative'])}；"
+            f"快照非负但历史负余额≥10% 占 "
+            f"{fp(f_enrich['hidden_share_positive'])} / {fp(w_enrich['hidden_share_positive'])}。",
+            f"<b>近期双重压力组未显示更高拒付。</b> 收入日均下降>20% 且还款上升>20% 的用户，"
+            f"未解决拒付 {fp(f_enrich['double_rate'])} / {fp(w_enrich['double_rate'])}，"
+            f"其余可比组 {fp(f_enrich['other_comparable_rate'])} / {fp(w_enrich['other_comparable_rate'])}。",
+            f"<b>赌博净流出更高，但组内不单调。</b> 正净流出/工资福利>5% 为 "
+            f"{fp(f_enrich['gamble_gt5'])} / {fp(w_enrich['gamble_gt5'])}；"
+            "控制机构数后未形成一致梯度，不直接解释为拒付原因。",
+            f"<b>月份对齐后结论不变，身份命名空间未核实。</b> 共同月份 {common} 下负担 "
+            f"{fp(cf['burden'])} / {fp(cw['burden'])}、≥5 家机构 "
+            f"{fp(cf['multi5'])} / {fp(cw['multi5'])}；两组 user_id 键重合 "
+            f"{checks['user_key_overlap']:,} 个，不预设独立。",
+            f"<b>账单与分层指标不能直接用于审批。</b> 固定账单/工资 "
+            f"{fp(pf.m['fixed_wage_p50'])} / {fp(pw.m['fixed_wage_p50'])}；"
+            f"负盈余 {fp(pf.m['sur_neg'])} / {fp(pw.m['sur_neg'])}。"
+            "标签收支比、含借款净流量与催收口径均有边界，全部为同期描述。",
+        ]
         slides.append(
             ui.slide_content(
                 brand=brand,
                 section="Findings",
-                kicker=f"主要差异 {start + 1:02d}–{start + len(chunk):02d}",
-                title="主要差异与解读" if start == 0 else "主要差异与解读（续）",
-                sub="以下判断来自本期两组样本的描述性对比。",
-                body=ui.finding_cards(chunk, start=start),
+                kicker="主要差异 01–08",
+                title="主要差异集中在负担、多头与履约",
+                sub="8 条判断：前六条是差异结论，后两条是使用边界。",
+                body=ui.finding_cards(condensed),
             )
         )
+    else:
+        for start in range(0, len(findings), 4):
+            chunk = findings[start:start + 4]
+            if not chunk:
+                continue
+            slides.append(
+                ui.slide_content(
+                    brand=brand,
+                    section="Findings",
+                    kicker=f"主要差异 {start + 1:02d}–{start + len(chunk):02d}",
+                    title="主要差异与解读" if start == 0 else "主要差异与解读（续）",
+                    sub="以下判断来自本期两组样本的描述性对比。",
+                    body=ui.finding_cards(chunk, start=start),
+                )
+            )
 
     # 18 Closing
     takeaways = [
@@ -814,8 +929,11 @@ def build_pair_deck(
         ui.slide_closing(
             brand=brand,
             kicker="结论 · Takeaway",
-            title="对比结论",
+            title="没有一方全面占优，差异集中在结构" if enhanced else "对比结论",
             sub=(
+                f"WageGo 收入更高、负盈余更少，但偿债负担、多头关系与拒付暴露更高；Fundo 相反。"
+                "选择应基于目标客群与风险偏好，而不是单指标排名。"
+                if enhanced else
                 f"{left_name} 与 {right_name} 各有短板，没有一方全面占优；"
                 "差异主要集中在收入结构、支出刚性、借贷依赖与拒付暴露。"
                 if deep

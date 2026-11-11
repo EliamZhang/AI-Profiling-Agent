@@ -39,7 +39,7 @@ def main():
     for key,filename,n_slides,n_charts in [
         ('fundo','fundo_profile_report_slides.html',25,15),
         ('wagego','wagego_profile_report_slides.html',25,15),
-        ('compare','compare_profile_report_slides.html',28,19),
+        ('compare','compare_profile_report_slides.html',26,19),
     ]:
         source=ROOT/'output/html'/filename
         doc=BeautifulSoup(source.read_text(encoding='utf-8'),'html.parser')
@@ -54,7 +54,7 @@ def main():
         assert all(p['w']>100 and p['h']>100 and p['traces']>0 for s in layout['slides'] for p in s['plots'])
         print('PASS',key,n_slides,'slides',n_charts,'charts')
     comparison=BeautifulSoup((ROOT/'output/html/compare_profile_report_slides.html').read_text(encoding='utf-8'),'html.parser')
-    seg=next(s for s in comparison.select('.slide') if s.get('aria-label')=='分层指标明细')
+    seg=next(s for s in comparison.select('.slide') if s.get('aria-label')=='重压型拒付最高，盈余型并非最低')
     assert '拒付用户占比' in seg.get_text(' ',strip=True)
     assert '不是按交易笔数' in seg.get_text(' ',strip=True)
     print('PASS shared formulas, full/cohort denominators, output lineage and renderer checks.')

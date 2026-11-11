@@ -75,6 +75,12 @@ PAY_CYCLES = [
     ("unidentified", "未识别"),
 ]
 EXTRA_CSS = """
+  .slide .deck-table th{font-size:10.5px}
+  .slide .deck-table td{font-size:13px}
+  .slide .side-card p{font-size:12px;line-height:1.5}
+  .slide .table-note{font-size:11px;line-height:1.55}
+  .slide .chart-cap{font-size:11px;line-height:1.5}
+  .slide .finding-card p{font-size:15px;line-height:1.65}
   .fundo-evidence .deck-table th{font-size:11px;padding:12px 16px}
   .fundo-evidence .deck-table td{font-size:14px;line-height:1.6;padding:18px 16px}
   .fundo-audit .deck-table td{padding:20px 16px}
@@ -519,22 +525,20 @@ def extra_slides(mod, ds, m):
             slides["industry"]=slide("就业形态：发薪周期与偿债负担","1.2 · Employment Structure",
                 "行业码高度集中，无法支持行业分层；改看发薪周期与偿债负担、多头关系的差异。",
                 chart_body(pay_cycle_chart(mod,e),
-                    f"发薪周期为互斥标记；可识别雇主 n={ind['employer_n']:,}；右图横线为可识别雇主合计 {fp(ind['known']['burden_p50'])}，按周期分组的偿债负担中位。",
+                    f"发薪周期为互斥标记；可识别雇主 n={ind['employer_n']:,}；右图横线为可识别雇主合计 {fp(ind['known']['burden_p50'])}。行业码 {fp(ind['top_industry_share'])} 集中于{ind['top_industry']}，不做行业分层；未解决拒付为同期描述，不作审批规则。",
                     [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
                      ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
                      ("行业码集中度",fp(ind["top_industry_share"]),f"{ind['top_industry']} · 其余行业合计仅 {fp(1-ind['top_industry_share'])}；行业结构不用于分层")],
-                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(cycle_range,"未解决拒付 · 已识别周期区间")])
-                +ui.note_strip("口径与边界",f"{e.get('dataset_name','该品牌')} 行业码 {fp(ind['top_industry_share'])} 集中于{ind['top_industry']}，其余仅少量零售、运输/仓储等；该字段不足以支持行业分层，也不与行业结构分散的样本直接比较。发薪周期为互斥标记，月薪组样本较小；未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
+                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(cycle_range,"未解决拒付 · 已识别周期区间")]),"01 · 收入与支出")
         else:
             slides["industry"]=slide("就业形态：行业与发薪周期","1.2 · Employment Structure",
                 "先区分无雇主与行业未知；发薪周期与偿债负担、多头关系更相关，行业间拒付差异有限。",
                 chart_body(industry_chart(mod,e),
-                    f"仅列样本量前 10 的已知行业；发薪周期为互斥标记；右图横线为已知行业合计 {fp(ind['known']['unresolved'])}，误差线为 Wilson 95% 区间。",
+                    f"仅列样本量前 10 的已知行业；发薪周期为互斥标记；右图横线为已知行业合计 {fp(ind['known']['unresolved'])}，误差线为 Wilson 95% 区间。无雇主识别不等于无收入；行业码不是职业或岗位；未解决拒付为同期描述，不作审批规则。",
                     [("可识别雇主",fp(ind["employer_share"]),f"{ind['employer_n']:,} 人 · 单一雇主 {fp(ind['single_employer_share'])}，2 家及以上 {fp(ind['multi_employer_share'])}"),
                      ("未识别雇主",fp(ind["no_employer_share"]),f"{ind['no_employer_n']:,} 人 · 无工资入账；未解决拒付 {fp(ind['no_employer']['unresolved'])}"),
                      ("行业码未知",fp(ind["unknown_share"]),f"{ind['unknown_n']:,} 人 · 有工资但未分类；未解决拒付 {fp(ind['unknown']['unresolved'])}")],
-                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(f"{fp(ind['unresolved_min'])} – {fp(ind['unresolved_max'])}","未解决拒付 · 行业区间")])
-                +ui.note_strip("口径与边界","无雇主识别不等于无收入：该组仍有福利或转账入账，且拒付率低于有工资群体。行业码为雇主行业/发薪渠道混合分类，不是职业或岗位；code 17 为有工资但行业未分类。未解决拒付为同期描述，未控制收入与客群差异，不能作为独立风险因子或审批规则。"),"01 · 收入与支出")
+                    [(fp(cycles['weekly']['share']),"周薪 · 发薪周期占比"),(fp(cycles['fortnightly']['share']),"双周薪 · 发薪周期占比"),(f"{fp(cycles['monthly']['burden_p50'])} / {fp(cycles['weekly']['burden_p50'])}",f"月薪(n={cycles['monthly']['n']:,}) / 周薪偿债负担中位"),(f"{fp(ind['unresolved_min'])} – {fp(ind['unresolved_max'])}","未解决拒付 · 行业区间")]),"01 · 收入与支出")
     return slides
 
 

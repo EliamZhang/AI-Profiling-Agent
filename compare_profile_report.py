@@ -961,7 +961,7 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
             text=[f"{d:+.1f}pp" if d is not None else "" for d in pos],
             textposition="outside",
             cliponaxis=False,
-            textfont=dict(color=INK2, size=10.5),
+            textfont=dict(color=INK2, size=11.5),
             hovertemplate="WageGo 高 %{x:.1f}pp<extra>%{y}</extra>",
         )
     )
@@ -982,7 +982,7 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
             text=[f"{d:+.1f}pp" if d is not None else "" for d in neg],
             textposition="outside",
             cliponaxis=False,
-            textfont=dict(color=INK2, size=10.5),
+            textfont=dict(color=INK2, size=11.5),
             hovertemplate="Fundo 高 %{x:.1f}pp<extra>%{y}</extra>",
         )
     )
@@ -995,13 +995,13 @@ def chart_difference_overview(pf: Profile, pw: Profile) -> str:
         zerolinewidth=1,
     )
     fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
-    base_layout(fig, height=max(420, 30 * len(labels) + 130), margin=dict(l=140, r=30, t=46, b=70), showlegend=True)
+    base_layout(fig, height=max(420, 30 * len(labels) + 130), margin=dict(l=140, r=42, t=46, b=88), showlegend=True)
     fig.update_layout(
         barmode="relative",
         bargap=0.32,
         legend=dict(
-            orientation="h", x=0, xanchor="left", y=-0.14, yanchor="top",
-            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+            orientation="h", x=0, xanchor="left", y=-0.06, yanchor="top",
+            font=dict(size=11.5), bgcolor="rgba(0,0,0,0)",
         ),
     )
     return fig_html(fig, max(420, 30 * len(labels) + 130))

@@ -1094,7 +1094,7 @@ def chart_income(m: dict) -> str:
             hovertemplate="收入金额占比 %{x:.1f}%<br>%{y}<extra></extra>",
         )
     )
-    base_layout(left, height=430, margin=dict(l=82, r=18, t=64, b=76), showlegend=True)
+    base_layout(left, height=430, margin=dict(l=82, r=18, t=78, b=76), showlegend=True)
     left.update_layout(
         barmode="group",
         bargap=0.32,
@@ -1152,7 +1152,7 @@ def chart_income(m: dict) -> str:
                 hovertemplate="%{y}<br>%{customdata[0]}：%{customdata[1]:.1f}%<extra></extra>",
             )
         )
-    base_layout(right, height=430, margin=dict(l=84, r=18, t=64, b=76))
+    base_layout(right, height=430, margin=dict(l=84, r=18, t=78, b=76))
     right.update_layout(barmode="stack", bargap=0.45)
     right.update_xaxes(
         range=[0, 100],
@@ -1560,7 +1560,7 @@ def chart_liability(m: dict) -> str:
             hovertemplate="%{y}<br>放款金额占比 %{x:.1f}%<extra></extra>",
         )
     )
-    base_layout(left, height=430, margin=dict(l=156, r=40, t=64, b=64), showlegend=True)
+    base_layout(left, height=430, margin=dict(l=156, r=40, t=78, b=64), showlegend=True)
     left.update_layout(
         legend=dict(
             orientation="h",
@@ -1625,7 +1625,7 @@ def chart_liability(m: dict) -> str:
             hovertemplate="%{y}<br>未解决 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
         )
     )
-    base_layout(right, height=430, margin=dict(l=72, r=28, t=64, b=64), showlegend=True)
+    base_layout(right, height=430, margin=dict(l=72, r=28, t=78, b=64), showlegend=True)
     right.update_layout(
         barmode="stack",
         bargap=0.45,

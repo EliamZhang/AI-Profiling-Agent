@@ -17,6 +17,11 @@ EXTRA_CSS="""
  .comparison-evidence .deck-table td{padding:14px 13px;font-size:13px;line-height:1.5}
  .comparison-evidence .deck-table td small{font-size:10.5px;color:var(--faint)}
  .comparison-evidence .table-note{font-size:11px}
+ .slide .side-card p{font-size:12px;line-height:1.5}
+ .slide .deck-table th{font-size:10.5px}
+ .slide .table-note{font-size:11px;line-height:1.55}
+ .slide .chart-cap{font-size:11px;line-height:1.5}
+ .slide .finding-card p{font-size:15px;line-height:1.65}
 """
 COHORT_SPECS=[
     ("现金流月收入中位","income","money"),
@@ -133,17 +138,17 @@ def employment_chart(pf,pw):
         rows=ind["pay_cycle_rows"]
         fig.add_trace(go.Bar(y=labels,x=[r["share"] for r in rows],name=name,orientation="h",
             marker_color=COLORS[name],text=[f"{r['share']:.1%}" for r in rows],
-            textposition="outside",cliponaxis=False,textfont=dict(size=10.5),
+            textposition="outside",cliponaxis=False,textfont=dict(size=11),
             hovertemplate=name+" · %{y}<br>占比 %{x:.1%}<br>n=%{customdata:,}<extra></extra>",
             customdata=[r["n"] for r in rows]),row=1,col=1)
         fig.add_trace(go.Bar(y=labels,x=[r["burden_p50"] for r in rows],name=name,orientation="h",
             marker_color=COLORS[name],text=[f"{r['burden_p50']:.1%}" if np.isfinite(r["burden_p50"]) else "—" for r in rows],
-            textposition="outside",cliponaxis=False,textfont=dict(size=10.5),
+            textposition="outside",cliponaxis=False,textfont=dict(size=11),
             hovertemplate=name+" · %{y}<br>负担中位 %{x:.1%}<br>n=%{customdata[0]:,}<br>"
                           "≥5 家机构 %{customdata[1]:.1%}<extra></extra>",
             customdata=[[r["n"],r["multi5"]] for r in rows]),row=1,col=2)
-    style.base_layout(fig,height=430,margin=dict(l=82,r=112,t=46,b=72),showlegend=True)
-    fig.update_layout(barmode="group",bargap=.24,legend=dict(orientation="h",x=0,y=-.17))
+    style.base_layout(fig,height=430,margin=dict(l=82,r=112,t=46,b=88),showlegend=True)
+    fig.update_layout(barmode="group",bargap=.24,legend=dict(orientation="h",x=0,y=-.12,font=dict(size=11.5)))
     fig.update_xaxes(range=[0,.64],tickformat=".0%",title_text="占可识别雇主用户",row=1,col=1)
     fig.update_xaxes(range=[0,.64],tickformat=".0%",title_text="还款 / (工资+福利) 中位",row=1,col=2)
     fig.update_yaxes(autorange="reversed",showgrid=False)
@@ -155,6 +160,7 @@ def slides(pair,pf,pw):
     fi=f["industry"]; wi=w["industry"]
     fp=style.fmt_pct; fm=style.fmt_money; brand=pair["brand"]
     common="、".join(c["common_months"]) or "无"
+    cf,cw=c["common"]["Fundo"],c["common"]["WageGo"]
     def pair_text(a,b,kind="pct"):
         fmt=fp if kind=="pct" else fm if kind=="money" else lambda x:f"{x:,}"
         return f"{fmt(a)}<small> / </small>{fmt(b)}"
@@ -172,24 +178,27 @@ def slides(pair,pf,pw):
             values.append(f"{fmt(r[key])}<br><small>n={r[key+'_n']:,}</small>")
         rows.append([label]+values)
     out={}
-    out["scope"]=slide("先校准口径，再比较品牌差异",f"共同月份为 {common}；保留全期结果，并补充共同月份的敏感性检查。",
+    out["scope"]=slide("共同月份校准后，品牌差异仍成立",
+        f"以共同月份 {common} 对齐后，WageGo 偿债/工资福利 {fp(cw['burden'])}、Fundo {fp(cf['burden'])}；多头与未解决拒付差距仍在，月份结构不是主要解释。",
         ui.table_box(["指标","Fundo · 全期","WageGo · 全期","Fundo · 共同月份","WageGo · 共同月份"],rows,note="每格 n 为该指标有效人数。工资福利比要求工资+福利>0；机构数为识别关系；历史余额为账户平均观测占比。共同月份比较未做其他特征匹配。",num_cols=(1,2,3,4))
         +ui.note_strip("两项必要边界",f"现金流收入与标签收入分别核验，不混用收支比。两组有效样本中 user_id 键重合 {c['user_key_overlap']:,} 个；身份命名空间未核实，不预设样本独立。原始申请月份分布不同，以上仍为描述性对比。"))
     fc={r["cycle"]:r for r in fi["pay_cycle_rows"]}; wc={r["cycle"]:r for r in wi["pay_cycle_rows"]}
-    out["employment"]=slide("就业形态：覆盖率与发薪周期", "先比较雇主识别覆盖，再在各自可识别雇主用户内比较发薪周期构成与偿债负担；行业码不直接对比。",
-        duo(employment_chart(pf,pw),"发薪周期为互斥标记；负担为还款/(工资+福利)中位；n 为各周期可计算人数。",
+    out["employment"]=slide("WageGo 雇主覆盖更广，行业码不可比",
+        f"可识别雇主 {fp(fi['employer_share'])} / {fp(wi['employer_share'])}（Fundo / WageGo）；WageGo 行业码 {fp(wi['top_industry_share'])} 集中于{wi['top_industry']}，不能做行业分层。发薪周期差异有限，月薪组负担 {fp(fc['monthly']['burden_p50'])} / {fp(wc['monthly']['burden_p50'])} 但样本较小。",
+        duo(employment_chart(pf,pw),"发薪周期为互斥标记；负担为还款/(工资+福利)中位；n 为各周期可计算人数。行业码分母为可识别雇主用户；WageGo 行业高度集中，不做行业分层。",
             [("可识别雇主",pair_text(fi['employer_share'],wi['employer_share']),f"人数 {fi['employer_n']:,} / {wi['employer_n']:,}；单一雇主 {fp(fi['single_employer_share'])} / {fp(wi['single_employer_share'])}"),
              ("周薪占比",pair_text(fc['weekly']['share'],wc['weekly']['share']),f"双周薪 {fp(fc['fortnightly']['share'])} / {fp(wc['fortnightly']['share'])}；分母为各自可识别雇主用户"),
              ("月薪偿债负担中位",pair_text(fc['monthly']['burden_p50'],wc['monthly']['burden_p50']),f"月薪 n={fc['monthly']['n']:,} / {wc['monthly']['n']:,}；周薪 {fp(fc['weekly']['burden_p50'])} / {fp(wc['weekly']['burden_p50'])}")],
-            [(pair_text(fi['top_industry_share'],wi['top_industry_share']),"最大行业码占比"),(fi['top_industry'],"Fundo 最大行业码"),(wi['top_industry'],"WageGo 最大行业码"),("不可直接比较","行业码覆盖与集中度不同")])
-        +ui.note_strip("口径与边界",f"最大行业码占比以各自可识别雇主用户为分母；WageGo 行业码 {fp(wi['top_industry_share'])} 集中于{wi['top_industry']}，行业结构不具备与 Fundo 对比的分层意义；Fundo 的行业码还混合银行代发渠道。发薪周期为描述性分层，月薪组样本较小；未解决拒付未控制收入与客群差异，不能作为独立风险因子或审批规则。"),section="01 · 样本与收入",kicker="1.4 · Employment Structure")
-    out["capacity"]=slide("收入分母统一后，偿债负担如何变化", "每个品牌均在同一批可计算用户内更换收入分母；随后对齐负担分组比较未解决拒付。",
+            [(pair_text(fi['top_industry_share'],wi['top_industry_share']),"最大行业码占比"),(fi['top_industry'],"Fundo 最大行业码"),(wi['top_industry'],"WageGo 最大行业码"),("不可直接比较","Fundo 行业码混合代发渠道")]),section="01 · 样本与收入",kicker="1.4 · Employment Structure")
+    out["capacity"]=slide("换成工资+福利分母，负担明显上升",
+        f"Fundo {fp(f['same_total_p50'])}→{fp(f['recurring_p50'])}，WageGo {fp(w['same_total_p50'])}→{fp(w['recurring_p50'])}；>30% 负担占比 {fp(f['burden_gt30'])} / {fp(w['burden_gt30'])}。分母换成经常性入账后，WageGo 的负担差距更大。",
         duo(rate_chart(pf,pw,"burden_rows"),"分组依据：还款/(工资+福利)。标签仅为收入代理；横线为 Wilson 95% 区间。",
             [("Fundo · 同用户更换分母",f"{fp(f['same_total_p50'])} → {fp(f['recurring_p50'])}",f"现金流收入 → 工资+福利；n={f['recurring_n']:,}"),
              ("WageGo · 同用户更换分母",f"{fp(w['same_total_p50'])} → {fp(w['recurring_p50'])}",f"现金流收入 → 工资+福利；n={w['recurring_n']:,}"),
              ("负担 >30% · Fundo / WageGo",pair_text(f['burden_gt30'],w['burden_gt30']),"分母为各自工资福利为正且还款可观测用户")],
             [(pair_text(f['recurring_absent_n'],w['recurring_absent_n'],'int'),"未识别工资福利人数"),(pair_text(f['recurring_absent_repay_n'],w['recurring_absent_repay_n'],'int'),"其中有还款的人数"),("同口径分组","每根柱标出有效人数"),("代理指标","不能直接称为可支配收入")]))
-    out["multi"]=slide("多头还款：区分关系数量与组内表现", "同时对比多头关系的覆盖率，以及同样机构数组内的未解决拒付率，避免只比较总体拒付。",
+    out["multi"]=slide("多头覆盖差异大，同组内拒付仍更高",
+        f"≥5 家机构 {fp(f['multi5'])} / {fp(w['multi5'])}；≥5 家组未解决拒付 {fp(f['lender_rows'][-1]['unresolved'])} / {fp(w['lender_rows'][-1]['unresolved'])}，1 家组 {fp(f['lender_rows'][1]['unresolved'])} / {fp(w['lender_rows'][1]['unresolved'])}。机构数是关系覆盖，不是合同数。",
         duo(rate_chart(pf,pw,"lender_rows"),"182 天识别出还款交易的机构数；不等于当前在贷机构数。无已识别机构不等于真实无债。",
             [("≥5 家还款机构 · Fundo / WageGo",pair_text(f['multi5'],w['multi5']),f"人数 {f['multi5_n']:,} / {w['multi5_n']:,}"),
              ("近28天仍向 ≥3 家机构还款",pair_text(f['recent_multi3'],w['recent_multi3']),"以各自全部有效用户为分母"),
@@ -201,16 +210,23 @@ def slides(pair,pf,pw):
     cards=[]
     for label,key in [("双重压力 / 全部用户","double_all_share"),("双重压力 / 可比用户","double_comparable_share"),("双重压力组 · 未解决拒付","double_rate"),("其余可比组 · 未解决拒付","other_comparable_rate")]:
         cards.append(dict(label=label,left_name="Fundo",right_name="WageGo",left_value=fp(f[key]),right_value=fp(w[key]),left_color=COLORS['Fundo'],right_color=COLORS['WageGo'],delta="同品牌组内比较，保留分母差异"))
-    out["recent"]=slide("近期变化：用互斥窗口检验资金压力", "最近 28 天与此前 154 天分别换算日均；只在历史基数为正的用户中计算逐户比值。",
+    out["recent"]=slide("近期变化接近，双重压力组未更高拒付",
+        f"收入日均比 {f['recent_rows'][0]['paired_ratio_p50']:.3f} / {w['recent_rows'][0]['paired_ratio_p50']:.3f}，"
+        f"还本付息 {f['recent_rows'][2]['paired_ratio_p50']:.3f} / {w['recent_rows'][2]['paired_ratio_p50']:.3f}；"
+        f"双重压力组未解决拒付 {fp(f['double_rate'])} / {fp(w['double_rate'])}，"
+        f"与其余可比组 {fp(f['other_comparable_rate'])} / {fp(w['other_comparable_rate'])} 接近。",
         ui.table_box(["指标","Fundo · 日均比中位","Fundo · n","WageGo · 日均比中位","WageGo · n"],recent,note="日均比=(28天金额/28)÷[(182天金额−28天金额)/154]；每项独立筛选有效基数。比值>1代表上升，不能以两个总体中位数判断借新还旧。",num_cols=(1,2,3,4))
         +ui.cmp_kpi_cards(cards)+ui.note_strip("双重压力定义",f"收入日均下降>20%且还款日均上升>20%：Fundo {f['double_n']:,} 人 / 可比 {f['recent_comparable_n']:,} 人，WageGo {w['double_n']:,} 人 / 可比 {w['recent_comparable_n']:,} 人。与其余可比用户的同期拒付率并未形成一致的更高梯度，不解释为未来风险预测。"))
-    out["balance"]=slide("流动性：快照之外的历史压力", "使用相同的账户平均负余额占比分组；将曾经负余额与最近快照分开比较。",
+    out["balance"]=slide("快照为正，仍可能隐藏历史压力",
+        f"历史曾有负余额 {fp(f['ever_negative'])} / {fp(w['ever_negative'])}；"
+        f"快照非负但历史负余额≥10% 占 {fp(f['hidden_share_positive'])} / {fp(w['hidden_share_positive'])}。单次余额回补不代表持续充足。",
         duo(rate_chart(pf,pw,"balance_rows"),"账户等权平均的负余额观测占比；不是用户精确透支天数。每根柱标出拒付标签有效人数。",
             [("历史曾有负余额 · Fundo / WageGo",pair_text(f['ever_negative'],w['ever_negative']),"分母为历史占比字段可观测用户"),
              ("快照非负仍存在历史压力",pair_text(f['hidden_share_positive'],w['hidden_share_positive']),f"历史负余额占比≥10%；人数 {f['hidden_n']:,}/{f['positive_snapshot_n']:,} 与 {w['hidden_n']:,}/{w['positive_snapshot_n']:,}"),
              ("覆盖一月固定支出的观测占比",pair_text(f['fixedcover_p50'],w['fixedcover_p50']),f"预计算字段中位；n={f['fixedcover_n']:,} / {w['fixedcover_n']:,}")],
             [(pair_text(f['balance_rows'][0]['unresolved'],w['balance_rows'][0]['unresolved']),"未见负余额组未解决拒付率"),(pair_text(f['balance_rows'][-1]['unresolved'],w['balance_rows'][-1]['unresolved']),"负余额占比>25%组未解决拒付率"),("账户平均","不等同于全账户合并余额"),("静态快照","不能代表持续可用资金")]))
-    out["gambling"]=slide("行为净流出：在同样借贷关系下比较", "两侧采用同一 0–100% 色阶；各格为未解决拒付率和人数，按机构数控制共同借贷暴露。",
+    out["gambling"]=slide("WageGo 净流出更高，但同机构数组内无一致梯度",
+        f"正净流出/工资福利>5% 为 {fp(f['gamble_gt5'])} / {fp(w['gamble_gt5'])}；同机构数组内未形成一致梯度，不能把行为直接解释为拒付原因。",
         ui.chart_box(gambling_chart(pf,pw),f"正净流出=max(赌博借记−同类贷记,0)，再除以工资+福利；分母为正且借贷记可观测 n={f['gamble_n']:,} / {w['gamble_n']:,}。n<30不显示比例。净额不是博彩损失；不能据此作因果或独立风险判断。")
         +ui.fact_strip([(pair_text(f['gamble_gt5'],w['gamble_gt5']),"正净流出/工资福利>5%"),(f"{f['gamble_n']:,} / {w['gamble_n']:,}","行为负担比有效用户"),("同机构数组","仍可能存在收入与金额等混杂"),("借记与贷记净额","不与其他入账重复相加")]))
     return out
