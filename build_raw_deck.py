@@ -17,7 +17,10 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.offline import get_plotlyjs
 
+import compare_swap_profile_report as chart_ui
 import deck_framework as ui
 import swap_in_out_analysis as ana
 import swap_in_out_profile_report as rep
@@ -539,12 +542,336 @@ def build_deck(users: pd.DataFrame, tx: pd.DataFrame, generated_at: str) -> str:
     )
 
 
+def build_concise_deck(users: pd.DataFrame, tx: pd.DataFrame, generated_at: str) -> str:
+    """Four-page deck: income, liability, spending, liquidity."""
+    grp = {name: users[users["group"] == name] for name in ("Swap In", "Swap Out")}
+    si, so = (rep.summary(grp[name]) for name in ("Swap In", "Swap Out"))
+    mi, mo = (rep.income_mix(grp[name]) for name in ("Swap In", "Swap Out"))
+    oi, oo = (rep.outflow_mix(grp[name]) for name in ("Swap In", "Swap Out"))
+    n_note = f"n = Swap In {si['n']:,} / Swap Out {so['n']:,}"
+
+    def kpi_row(cards):
+        inner = ""
+        for label, value, note, var in cards:
+            inner += (
+                '<div class="cmp-kpi solo">'
+                f'<div class="label"><span>{label}</span><code class="var">{var}</code></div>'
+                f'<div class="pair"><span class="val">{value}</span></div>'
+                f'<div class="delta">{note}</div>'
+                "</div>"
+            )
+        return f'<div class="cmp-kpi-row reveal d1">{inner}</div>'
+
+    def cmp_cards(cards):
+        inner = ""
+        for label, iv, ov, note, var in cards:
+            inner += (
+                '<div class="side-card cmp">'
+                f'<div class="k"><span>{label}</span><code class="var">{var}</code></div>'
+                f'<div class="prow"><span class="who"><i style="background:{IN_COLOR}"></i>Swap In</span>'
+                f"<b>{iv}</b></div>"
+                f'<div class="prow"><span class="who"><i style="background:{OUT_COLOR}"></i>Swap Out</span>'
+                f"<b>{ov}</b></div>"
+                f"<p>{note}</p></div>"
+            )
+        return f'<div class="side-stack reveal d2">{inner}</div>'
+
+    def pct_chart(labels, in_vals, out_vals, digits=1):
+        fig = go.Figure()
+        chart_ui.add_grouped_bars(
+            fig,
+            labels,
+            [v * 100 for v in in_vals],
+            [v * 100 for v in out_vals],
+            kind="pct",
+            digits=digits,
+        )
+        vals = [v * 100 for v in in_vals + out_vals if v == v]
+        mx = max(vals + [1]) * 1.24
+        fig.update_xaxes(range=[0, mx], ticksuffix="%")
+        fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
+        chart_ui.base_layout(fig, height=420, margin=dict(l=150, r=24, t=44, b=70), showlegend=True)
+        fig.update_layout(
+            barmode="group",
+            bargap=0.34,
+            bargroupgap=0.08,
+            legend=dict(
+                orientation="h", x=0, xanchor="left", y=-0.22, yanchor="top",
+                font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+            ),
+        )
+        return chart_ui.fig_html(fig, 420)
+
+    slides: list[str] = []
+
+    # 01 收入
+    income_chart = pct_chart(
+        ["工资 / 入账", "福利 / 入账", "其他 / 入账", "转账入账 / 外部入账", "借贷入账 / 外部入账"],
+        [mi["wage_share"], mi["welfare_share"], mi["other_share"], mi["transfer_in"], mi["loan_in_ratio"]],
+        [mo["wage_share"], mo["welfare_share"], mo["other_share"], mo["transfer_in"], mo["loan_in_ratio"]],
+    )
+    slides.append(
+        ui.slide_content(
+            brand=BRAND,
+            section="01 · 收入",
+            kicker="Income · 01",
+            title="Swap Out 收入更高、工资占比更高，Swap In 更依赖福利与其他入账",
+            body=kpi_row(
+                [
+                    ("中位真实收入", rep.m(si["income"]), f"Swap Out {rep.m(so['income'])}", "income"),
+                    ("工资覆盖率", rep.p(si["any_wage"]), f"Swap Out {rep.p(so['any_wage'])}", "any_wage"),
+                    ("工资 / 入账中位", rep.p(si["wage_ratio"]), f"Swap Out {rep.p(so['wage_ratio'])}", "wage_ratio"),
+                    ("收入波动 CV 中位", rep.n(si["income_cv"], 2), f"Swap Out {rep.n(so['income_cv'], 2)}", "income_cv"),
+                ]
+            )
+            + '<div class="duo">'
+            + ui.chart_box(
+                income_chart,
+                f"{n_note}；工资、福利、其他占比以分项入账为分母，"
+                "转账与借贷占比以外部入账为分母。变量：income_mix().wage_share / welfare_share / "
+                "other_share / transfer_in / loan_in_ratio。",
+            )
+            + cmp_cards(
+                [
+                    (
+                        "真实收入 / 外部入账",
+                        rep.p(si["true_income_ratio"]),
+                        rep.p(so["true_income_ratio"]),
+                        "真实收入定义为工资 + 福利 + 其他入账",
+                        "true_income_ratio",
+                    ),
+                    (
+                        "借贷入账 / 外部入账",
+                        rep.p(mi["loan_in_ratio"]),
+                        rep.p(mo["loan_in_ratio"]),
+                        "外部入账含转账、借贷与真实收入",
+                        "income_mix().loan_in_ratio",
+                    ),
+                    (
+                        "中位交易笔数",
+                        rep.n(si["txn"]),
+                        rep.n(so["txn"]),
+                        "观察窗口内每人借记与贷记合计",
+                        "txn",
+                    ),
+                    (
+                        "中位账户数",
+                        rep.n(si["accounts"]),
+                        rep.n(so["accounts"]),
+                        "可识别银行账户数量",
+                        "accounts",
+                    ),
+                ]
+            )
+            + "</div>",
+        )
+    )
+
+    # 02 负债
+    liability_chart = pct_chart(
+        ["有借贷放款", "现金贷", "BNPL", "个人贷", "银行贷款", "有拒付"],
+        [si["any_loan_draw"], si["cash_advance"], si["bnpl"], si["personal_loan"], si["bank_loan"], si["any_dishonour"]],
+        [so["any_loan_draw"], so["cash_advance"], so["bnpl"], so["personal_loan"], so["bank_loan"], so["any_dishonour"]],
+    )
+    slides.append(
+        ui.slide_content(
+            brand=BRAND,
+            section="02 · 负债",
+            kicker="Liability · 02",
+            title="Swap Out 借贷渗透更高、拒付笔数接近三倍，还款负担超过两成",
+            body=kpi_row(
+                [
+                    ("有借贷放款", rep.p(si["any_loan_draw"]), f"Swap Out {rep.p(so['any_loan_draw'])}", "any_loan_draw"),
+                    ("现金贷使用率", rep.p(si["cash_advance"]), f"Swap Out {rep.p(so['cash_advance'])}", "cash_advance"),
+                    ("偿债 / 收入中位", rep.p(si["repay_rate"]), f"Swap Out {rep.p(so['repay_rate'])}", "repay_rate"),
+                    ("有拒付记录", rep.p(si["any_dishonour"]), f"Swap Out {rep.p(so['any_dishonour'])}", "any_dishonour"),
+                ]
+            )
+            + '<div class="duo">'
+            + ui.chart_box(
+                liability_chart,
+                f"{n_note}；发生率以有效用户为分母。"
+                "变量：any_loan_draw / cash_advance / bnpl / personal_loan / bank_loan / any_dishonour。",
+            )
+            + cmp_cards(
+                [
+                    (
+                        "活跃借贷机构中位",
+                        rep.n(si["active_lender"], 0),
+                        rep.n(so["active_lender"], 0),
+                        "观察窗口内发生放款或还款的机构数",
+                        "active_lender",
+                    ),
+                    (
+                        "拒付笔数中位",
+                        rep.n(si["dishonour_cnt"], 0),
+                        rep.n(so["dishonour_cnt"], 0),
+                        "Swap Out 接近 Swap In 的三倍",
+                        "dishonour_cnt",
+                    ),
+                    (
+                        "拒付金额中位",
+                        rep.m(si["dishonour_amt"]),
+                        rep.m(so["dishonour_amt"]),
+                        "按用户汇总的拒付金额中位",
+                        "dishonour_amt",
+                    ),
+                    (
+                        "个人贷使用率",
+                        rep.p(si["personal_loan"]),
+                        rep.p(so["personal_loan"]),
+                        f"BNPL {rep.p(si['bnpl'])} / {rep.p(so['bnpl'])}",
+                        "personal_loan",
+                    ),
+                ]
+            )
+            + "</div>",
+        )
+    )
+
+    # 03 支出
+    spend_labels = ["消费", "外部转账", "内部转账", "还债", "赌博", "费用", "取现", "其他"]
+    spend_keys = ["consumption", "ext_transfer_out", "internal_transfer_out", "debt_repay", "gambling", "fees", "cash", "other_debit"]
+    spend_chart = pct_chart(
+        spend_labels,
+        [oi[k] for k in spend_keys],
+        [oo[k] for k in spend_keys],
+        digits=1,
+    )
+    slides.append(
+        ui.slide_content(
+            brand=BRAND,
+            section="03 · 支出",
+            kicker="Spending · 03",
+            title="Swap Out 外部转账与还债占比更高，Swap In 内部周转更重",
+            body=kpi_row(
+                [
+                    ("消费 / 总支出", rep.p(si["consumption_share"]), f"Swap Out {rep.p(so['consumption_share'])}", "consumption_share"),
+                    ("外部转账 / 总支出", rep.p(si["ext_transfer_share"]), f"Swap Out {rep.p(so['ext_transfer_share'])}", "ext_transfer_share"),
+                    ("内部转账 / 总支出", rep.p(si["internal_transfer_share"]), f"Swap Out {rep.p(so['internal_transfer_share'])}", "internal_transfer_share"),
+                    ("还债 / 总支出", rep.p(si["debt_share"]), f"Swap Out {rep.p(so['debt_share'])}", "debt_share"),
+                ]
+            )
+            + '<div class="duo">'
+            + ui.chart_box(
+                spend_chart,
+                f"{n_note}；金额占比以全部借记流水为分母，非用户中位。"
+                "变量：outflow_mix().consumption / ext_transfer_out / internal_transfer_out / "
+                "debt_repay / gambling / fees / cash / other_debit。",
+            )
+            + cmp_cards(
+                [
+                    (
+                        "赌博 / 支出中位",
+                        rep.p(si["gambling_share"]),
+                        rep.p(so["gambling_share"]),
+                        f"高赌博标识 {rep.p(si['gambling_high'])} / {rep.p(so['gambling_high'])}",
+                        "gambling_share",
+                    ),
+                    (
+                        "取现 / 总支出",
+                        rep.p(oi["cash"]),
+                        rep.p(oo["cash"]),
+                        f"其他支出 {rep.p(oi['other_debit'])} / {rep.p(oo['other_debit'])}",
+                        "outflow_mix().cash",
+                    ),
+                    (
+                        "高赌博标识",
+                        rep.p(si["gambling_high"]),
+                        rep.p(so["gambling_high"]),
+                        "赌博占支出 ≥5% 或金额 ≥$1,000",
+                        "gambling_high",
+                    ),
+                    (
+                        "中位交易笔数",
+                        rep.n(si["txn"]),
+                        rep.n(so["txn"]),
+                        "流水越活跃，分类覆盖率越高",
+                        "txn",
+                    ),
+                ]
+            )
+            + "</div>",
+        )
+    )
+
+    # 04 流动性
+    liquidity_chart = pct_chart(
+        ["缓冲 < 7 天", "缓冲 < 1 天", "负余额天数占比", "低余额天数占比"],
+        [si["buffer_lt7"], si["buffer_lt1"], si["neg_days"], si["low_days"]],
+        [so["buffer_lt7"], so["buffer_lt1"], so["neg_days"], so["low_days"]],
+    )
+    slides.append(
+        ui.slide_content(
+            brand=BRAND,
+            section="04 · 流动性",
+            kicker="Liquidity · 04",
+            title="账户缓冲不足半天，Swap Out 的负余额与拒付压力更高",
+            body=kpi_row(
+                [
+                    ("中位账户余额", rep.m(si["balance"]), f"Swap Out {rep.m(so['balance'])}", "balance"),
+                    ("中位缓冲天数", f"{rep.n(si['buffer'], 2)} 天", f"Swap Out {rep.n(so['buffer'], 2)} 天", "buffer"),
+                    ("缓冲 < 7 天", rep.p(si["buffer_lt7"]), f"Swap Out {rep.p(so['buffer_lt7'])}", "buffer_lt7"),
+                    ("负余额天数占比", rep.p(si["neg_days"]), f"Swap Out {rep.p(so['neg_days'])}", "neg_days_share"),
+                ]
+            )
+            + '<div class="duo">'
+            + ui.chart_box(
+                liquidity_chart,
+                f"{n_note}；缓冲天数 = 余额 /（日均支出）；"
+                "负余额与低余额为观察窗口内天数占比。变量：buffer_lt7 / buffer_lt1 / "
+                "neg_days_share / low_balance_days_share。",
+            )
+            + cmp_cards(
+                [
+                    (
+                        "缓冲 < 1 天",
+                        rep.p(si["buffer_lt1"]),
+                        rep.p(so["buffer_lt1"]),
+                        "账户余额不足一天支出",
+                        "buffer_lt1",
+                    ),
+                    (
+                        "低余额天数占比",
+                        rep.p(si["low_days"]),
+                        rep.p(so["low_days"]),
+                        "观察窗口内余额处于低位的天数占比",
+                        "low_balance_days_share",
+                    ),
+                    (
+                        "拒付笔数中位",
+                        rep.n(si["dishonour_cnt"], 0),
+                        rep.n(so["dishonour_cnt"], 0),
+                        "与薄缓冲同时出现，履约压力更直接",
+                        "dishonour_cnt",
+                    ),
+                    (
+                        "拒付金额中位",
+                        rep.m(si["dishonour_amt"]),
+                        rep.m(so["dishonour_amt"]),
+                        "按用户汇总的拒付金额中位",
+                        "dishonour_amt",
+                    ),
+                ]
+            )
+            + "</div>",
+        )
+    )
+
+    return ui.deck_document(
+        title="Swap In vs Swap Out 人群画像对比 · 4 页版",
+        slides=slides,
+        plotly_js=get_plotlyjs(),
+        extra_css=ui.CONCISE_CSS,
+    )
+
+
 def main() -> None:
     frames = [ana.load_group(name, path) for name, path in ana.DATA.items()]
     tx = pd.concat(frames, ignore_index=True)
     users = rep.assign_segments(ana.user_metrics(tx))
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
-    report = build_deck(users, tx, generated_at)
+    report = build_concise_deck(users, tx, generated_at)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(report, encoding="utf-8")
     print(f"deck -> {OUT} ({len(report)/1e6:.1f} MB)")

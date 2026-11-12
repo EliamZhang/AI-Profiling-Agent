@@ -5,17 +5,17 @@
       "slide": 1,
       "title": "收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利",
       "body": {
-        "height": 600,
-        "scroll": 600
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 834,
-          "h": 385,
+          "h": 438,
           "traces": 4,
-          "box": 423
+          "box": 493
         }
       ]
     },
@@ -23,8 +23,8 @@
       "slide": 2,
       "title": "WageGo 的借贷依赖、还款负担与拒付暴露都显著更高",
       "body": {
-        "height": 600,
-        "scroll": 600
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
@@ -34,17 +34,17 @@
       "slide": 3,
       "title": "支出规模接近，WageGo 固定账单负担更低、赌博与手续费更高",
       "body": {
-        "height": 600,
-        "scroll": 600
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 834,
-          "h": 385,
+          "h": 438,
           "traces": 2,
-          "box": 423
+          "box": 493
         }
       ]
     },
@@ -52,21 +52,21 @@
       "slide": 4,
       "title": "负盈余与薄缓冲是共同底盘，WageGo 的账户余额更薄",
       "body": {
-        "height": 600,
-        "scroll": 600
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 834,
-          "h": 385,
+          "h": 454,
           "traces": 2,
-          "box": 423
+          "box": 493
         }
       ]
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "b5ed8d2d8f6919ab9baaed981446f4b201ed10df80b55a3aea7d0c7a67a64a6d"
+  "sha256": "b5ced21a526b02a2a494e0f1d3716713c7f64c8e5daf3945018734b4e681514c"
 }

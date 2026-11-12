@@ -1,0 +1,91 @@
+{
+  "errors": [],
+  "slides": [
+    {
+      "slide": 1,
+      "title": "收入来源分散：工资覆盖 81.0%，工资仅占入账 19.9%",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 439,
+          "h": 490,
+          "traces": 2,
+          "box": 545
+        },
+        {
+          "w": 381,
+          "h": 490,
+          "traces": 4,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 2,
+      "title": "负债与履约压力并存：借贷使用 72.7%，未解决拒付 52.0%",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 410,
+          "h": 507,
+          "traces": 6,
+          "box": 545
+        },
+        {
+          "w": 410,
+          "h": 507,
+          "traces": 2,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 3,
+      "title": "支出结构偏刚性：必需品占消费 39.2%，赌博渗透 55.2%",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 506,
+          "traces": 1,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 4,
+      "title": "流动性极薄：负盈余 99.2%，缓冲不足 7 天 93.1%",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 506,
+          "traces": 3,
+          "box": 545
+        }
+      ]
+    }
+  ],
+  "report": "existing_swap_in_profile_report_slides.html",
+  "sha256": "256868e9b079b47b49d98537297d52d11b125fe3f5e9de03ec599e90d32e2e14"
+}

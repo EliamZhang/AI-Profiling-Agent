@@ -1,0 +1,72 @@
+{
+  "errors": [],
+  "slides": [
+    {
+      "slide": 1,
+      "title": "Swap Out 收入更高、工资覆盖更完整，Swap In 更依赖其他入账",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 438,
+          "traces": 4,
+          "box": 493
+        }
+      ]
+    },
+    {
+      "slide": 2,
+      "title": "Swap Out 借贷渗透与还款负担更高，两组拒付暴露都在高位",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 3,
+      "title": "Swap Out 支出更高、必需品占比更高；Swap In 赌博占比更高",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 438,
+          "traces": 2,
+          "box": 493
+        }
+      ]
+    },
+    {
+      "slide": 4,
+      "title": "负盈余与薄缓冲是共同底盘，Swap In 的重压型占比更高",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 454,
+          "traces": 2,
+          "box": 493
+        }
+      ]
+    }
+  ],
+  "report": "compare_swap_profile_report_slides.html",
+  "sha256": "be21a2095fd74cdbe7ea6f7157e6a09b64d341a02241036ae74256f89288c4e1"
+}

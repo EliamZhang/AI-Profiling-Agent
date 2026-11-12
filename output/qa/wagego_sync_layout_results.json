@@ -3,371 +3,89 @@
   "slides": [
     {
       "slide": 1,
-      "title": "封面",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 2,
-      "title": "多维度看人群底盘",
+      "title": "收入来源分散：工资覆盖 86.4%，工资仅占入账 26.4%",
       "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 3,
-      "title": "先统一口径，再解释缺口",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 4,
-      "title": "收入与支出",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 5,
-      "title": "收入与就业",
-      "body": {
-        "height": 626,
-        "scroll": 626
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 439,
-          "h": 470,
+          "h": 490,
           "traces": 2,
-          "box": 508
+          "box": 545
         },
         {
           "w": 381,
-          "h": 470,
+          "h": 490,
           "traces": 4,
-          "box": 508
+          "box": 545
         }
       ]
     },
     {
-      "slide": 6,
-      "title": "就业形态：发薪周期与偿债负担",
+      "slide": 2,
+      "title": "负债与履约压力并存：借贷使用 82.4%，未解决拒付 57.7%",
       "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 478,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 7,
-      "title": "收入结构与韧性",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 4,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 8,
-      "title": "收入来源与偿债承受力",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 1,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 9,
-      "title": "支出与消费",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 469,
-          "traces": 1,
-          "box": 508
-        }
-      ]
-    },
-    {
-      "slide": 10,
-      "title": "消费渗透与品质消费",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 11,
-      "title": "消费行为：看净流出，并控制多头暴露",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 1,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 12,
-      "title": "负债、流动性与风险",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 13,
-      "title": "刚性支出与工资负担",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 2,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 14,
-      "title": "负债与信用履约",
-      "body": {
-        "height": 626,
-        "scroll": 626
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 410,
-          "h": 495,
+          "h": 507,
           "traces": 6,
-          "box": 533
+          "box": 545
         },
         {
           "w": 410,
-          "h": 495,
+          "h": 507,
           "traces": 2,
-          "box": 533
+          "box": 545
         }
       ]
     },
     {
-      "slide": 15,
-      "title": "多头借贷：还款关系比新增借款更广",
+      "slide": 3,
+      "title": "支出结构偏刚性：必需品占消费 39.1%，赌博渗透 60.9%",
       "body": {
-        "height": 626,
-        "scroll": 626
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 834,
-          "h": 494,
+          "h": 506,
           "traces": 1,
-          "box": 533
+          "box": 545
         }
       ]
     },
     {
-      "slide": 16,
-      "title": "现金流与流动性",
+      "slide": 4,
+      "title": "流动性极薄：负盈余 89.9%，缓冲不足 7 天 91.6%",
       "body": {
-        "height": 626,
-        "scroll": 626
+        "height": 674,
+        "scroll": 674
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 834,
-          "h": 494,
+          "h": 506,
           "traces": 3,
-          "box": 533
+          "box": 545
         }
       ]
-    },
-    {
-      "slide": 17,
-      "title": "近期压力：收入回落与还款上升叠加",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 18,
-      "title": "余额为正，也可能存在持续资金压力",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 834,
-          "h": 494,
-          "traces": 1,
-          "box": 533
-        }
-      ]
-    },
-    {
-      "slide": 19,
-      "title": "用户分层",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": [
-        {
-          "w": 1418,
-          "h": 274,
-          "traces": 4,
-          "box": 313
-        }
-      ]
-    },
-    {
-      "slide": 20,
-      "title": "交易行为与风险信号",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 21,
-      "title": "变量审查：补充关系，保留边界",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 22,
-      "title": "主要发现",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 23,
-      "title": "主要发现（续）",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 24,
-      "title": "主要发现（续）",
-      "body": {
-        "height": 626,
-        "scroll": 626
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 25,
-      "title": "结论",
-      "body": null,
-      "crops": [],
-      "escaped": [],
-      "plots": []
     }
   ],
   "report": "wagego_profile_report_slides.html",
-  "sha256": "2d1ffde7dacc44c21a2fbd24154a001573b5275a3e4ff79ab7e8a7bbb2532c2f"
+  "sha256": "61cf224f938b5d49993d0487eac58b4bac5584e0162096f9455f2f204c11a74e"
 }

@@ -15,7 +15,11 @@ OUT=ROOT/'output/qa'
 REPORTS={
     'fundo':'fundo_profile_report_slides.html',
     'wagego':'wagego_profile_report_slides.html',
+    'swap_in':'existing_swap_in_profile_report_slides.html',
+    'swap_out':'existing_swap_out_profile_report_slides.html',
     'compare':'compare_profile_report_slides.html',
+    'compare_swap':'compare_swap_profile_report_slides.html',
+    'raw_swap':'swap_in_out_profile_report_slides.html',
 }
 SAMPLE_TITLES={
     '收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利',
@@ -37,6 +41,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--report',choices=list(REPORTS)+['all'],default='all')
     parser.add_argument('--screenshots',action='store_true')
+    parser.add_argument('--all-slides',action='store_true')
     args=parser.parse_args()
     # Reuse the established settled-layout checker without executing that script.
     nodes=ast.parse((OUT/'verify_fundo_layout.py').read_text(encoding='utf-8'))
@@ -58,7 +63,7 @@ def main():
             still=OUT/f'{key}_sync_still.html'
             still.write_text(checked,encoding='utf-8')
             for i,slide in enumerate(slides,1):
-                if slide.get('aria-label') not in SAMPLE_TITLES:
+                if not args.all_slides and slide.get('aria-label') not in SAMPLE_TITLES:
                     continue
                 target=OUT/f'{key}_sync_slide_{i:02d}.png'
                 result=subprocess.run(common+['--virtual-time-budget=1600','--screenshot='+str(target),still.as_uri()+f'#slide-{i}'],capture_output=True,text=True,encoding='utf-8',errors='replace',timeout=40)

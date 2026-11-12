@@ -133,6 +133,36 @@ EXTRA_CSS = """
 
 CSS = BASE_CSS + EXTRA_CSS
 
+# Shared styling for the condensed 4-page decks.
+CONCISE_CSS = """
+  .slide .s-head{margin-bottom:18px}
+  .slide .s-head h2{font-size:38px}
+  .slide .s-body{gap:16px}
+  .slide .cmp-kpi{padding:14px 18px 12px}
+  .slide .cmp-kpi .val{font-size:22px}
+  .slide .cmp-kpi .delta{margin-top:8px;padding-top:7px;font-size:11.5px;font-weight:700;color:var(--navy)}
+  .slide .side-stack{gap:10px}
+  .slide .side-card{padding:12px 16px}
+  .slide .side-card.cmp{gap:2px}
+  .slide .side-card.cmp .prow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .slide .side-card.cmp .who{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+  .slide .side-card.cmp .who i{width:7px;height:7px;border-radius:50%;flex:none}
+  .slide .side-card.cmp .prow b{font-size:21px;line-height:1.15;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .slide .side-card.cmp p{font-size:11px;line-height:1.45;color:var(--muted);margin-top:3px}
+  .slide .side-card.solo .prow b{font-size:24px}
+  .slide .table-box .deck-table{height:100%}
+  .slide .table-box .deck-table th{padding:11px 16px;font-size:10.5px}
+  .slide .table-box .deck-table td{padding:12px 16px;font-size:14.5px;vertical-align:middle}
+  .slide .table-box .deck-table td:first-child{font-weight:600;color:var(--navy)}
+  .slide .table-box .table-note{font-size:12px;line-height:1.55}
+  .slide .table-box .delta{font-size:12px;font-weight:700;color:var(--navy)}
+  .slide .chart-cap{font-size:11px}
+  .slide .var{font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:9.5px;font-weight:500;color:var(--faint);letter-spacing:0;text-transform:none}
+  .slide .cmp-kpi .label{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .slide .side-card.cmp .k{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .slide .table-box .deck-table td .var{display:block;margin-top:2px;font-size:9.5px;color:var(--faint)}
+"""
+
 FIT_JS = """
 (function () {
   function fitPlots() {
@@ -316,9 +346,10 @@ def cmp_kpi_cards(cards: list[dict]) -> str:
     """cards: label, left_name, left_value, right_name, right_value, delta, colors."""
     inner = ""
     for c in cards:
+        var = f'<code class="var">{c["var"]}</code>' if c.get("var") else ""
         inner += (
             '<div class="cmp-kpi">'
-            f'<div class="label">{esc(c["label"])}</div>'
+            f'<div class="label"><span>{esc(c["label"])}</span>{var}</div>'
             '<div class="pair"><span class="who">'
             f'<i style="background:{c.get("left_color", "#1D4E79")}"></i>{esc(c["left_name"])}</span>'
             f'<span class="val">{c["left_value"]}</span></div>'

@@ -1,0 +1,79 @@
+{
+  "errors": [],
+  "slides": [
+    {
+      "slide": 1,
+      "title": "Swap Out 收入更高、工资占比更高，Swap In 更依赖福利与其他入账",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 490,
+          "traces": 2,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 2,
+      "title": "Swap Out 借贷渗透更高、拒付笔数接近三倍，还款负担超过两成",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 506,
+          "traces": 2,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 3,
+      "title": "Swap Out 外部转账与还债占比更高，Swap In 内部周转更重",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 490,
+          "traces": 2,
+          "box": 545
+        }
+      ]
+    },
+    {
+      "slide": 4,
+      "title": "账户缓冲不足半天，Swap Out 的负余额与拒付压力更高",
+      "body": {
+        "height": 674,
+        "scroll": 674
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 834,
+          "h": 490,
+          "traces": 2,
+          "box": 545
+        }
+      ]
+    }
+  ],
+  "report": "swap_in_out_profile_report_slides.html",
+  "sha256": "d6aec16815830dc6949f5376ffdf9eab64d0cfd8187ef5df3f4ecb43f7b94a19"
+}

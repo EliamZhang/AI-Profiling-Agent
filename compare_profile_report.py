@@ -45,7 +45,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 POP_COLORS = {"Fundo": "#0E7558", "WageGo": "#6B4FA8"}
 POP_Y_ORDER = ["WageGo", "Fundo"]  # 水平图中 Fundo 在上
-HILITE = "#d9a441"  # 结论对应数据的金色描边
+HILITE = "rgba(0,0,0,0)"  # 不再使用金色描边强调
 SEG_COLORS = {
     "盈余型": (STATUS["good"], "#ffffff"),
     "平衡型": (STATUS["warning"], INK),
