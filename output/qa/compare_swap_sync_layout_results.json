@@ -13,9 +13,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 438,
+          "h": 431,
           "traces": 4,
-          "box": 493
+          "box": 486
         }
       ]
     },
@@ -42,9 +42,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 438,
+          "h": 431,
           "traces": 2,
-          "box": 493
+          "box": 486
         }
       ]
     },
@@ -60,13 +60,13 @@
       "plots": [
         {
           "w": 834,
-          "h": 454,
+          "h": 447,
           "traces": 2,
-          "box": 493
+          "box": 486
         }
       ]
     }
   ],
   "report": "compare_swap_profile_report_slides.html",
-  "sha256": "be21a2095fd74cdbe7ea6f7157e6a09b64d341a02241036ae74256f89288c4e1"
+  "sha256": "65dec6b78fccffb040dfe80a7233a986d648ba7ca6ab2ca09f3a46d134968be7"
 }

@@ -13,9 +13,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 490,
+          "h": 485,
           "traces": 2,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -31,9 +31,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 506,
+          "h": 501,
           "traces": 2,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -49,9 +49,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 490,
+          "h": 485,
           "traces": 2,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -67,13 +67,13 @@
       "plots": [
         {
           "w": 834,
-          "h": 490,
+          "h": 485,
           "traces": 2,
-          "box": 545
+          "box": 540
         }
       ]
     }
   ],
   "report": "swap_in_out_profile_report_slides.html",
-  "sha256": "d6aec16815830dc6949f5376ffdf9eab64d0cfd8187ef5df3f4ecb43f7b94a19"
+  "sha256": "9d71bdcda03c724f96042f204be3d278231a81b036ad83269184660f72673c5f"
 }

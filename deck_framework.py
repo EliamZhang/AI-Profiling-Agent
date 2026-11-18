@@ -139,17 +139,23 @@ CONCISE_CSS = """
   .slide .s-head h2{font-size:38px}
   .slide .s-body{gap:16px}
   .slide .cmp-kpi{padding:14px 18px 12px}
-  .slide .cmp-kpi .val{font-size:22px}
-  .slide .cmp-kpi .delta{margin-top:8px;padding-top:7px;font-size:11.5px;font-weight:700;color:var(--navy)}
+  .slide .cmp-kpi .label{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--navy)}
+  .slide .cmp-kpi .who{font-size:11.5px}
+  .slide .cmp-kpi .val{font-size:24px}
+  .slide .cmp-kpi .delta{margin-top:8px;padding-top:7px;font-size:12.5px;font-weight:700;color:var(--navy)}
   .slide .side-stack{gap:10px}
-  .slide .side-card{padding:12px 16px}
-  .slide .side-card.cmp{gap:2px}
+  .slide .side-card{padding:10px 16px}
+  .slide .side-card .k{font-size:12.5px;color:var(--navy);letter-spacing:.06em}
+  .slide .side-card .v{font-size:28px}
+  .slide .side-card .v small{font-size:13px}
+  .slide .side-card p{font-size:12.5px;line-height:1.5}
+  .slide .side-card.cmp{gap:1px}
   .slide .side-card.cmp .prow{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-  .slide .side-card.cmp .who{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+  .slide .side-card.cmp .who{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
   .slide .side-card.cmp .who i{width:7px;height:7px;border-radius:50%;flex:none}
-  .slide .side-card.cmp .prow b{font-size:21px;line-height:1.15;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  .slide .side-card.cmp p{font-size:11px;line-height:1.45;color:var(--muted);margin-top:3px}
-  .slide .side-card.solo .prow b{font-size:24px}
+  .slide .side-card.cmp .prow b{font-size:23px;line-height:1.15;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .slide .side-card.cmp p{font-size:12.5px;line-height:1.5;color:var(--muted);margin-top:3px}
+  .slide .side-card.solo .prow b{font-size:28px}
   .slide .table-box .deck-table{height:100%}
   .slide .table-box .deck-table th{padding:11px 16px;font-size:10.5px}
   .slide .table-box .deck-table td{padding:12px 16px;font-size:14.5px;vertical-align:middle}
@@ -158,9 +164,41 @@ CONCISE_CSS = """
   .slide .table-box .delta{font-size:12px;font-weight:700;color:var(--navy)}
   .slide .chart-cap{font-size:11px}
   .slide .var{font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:9.5px;font-weight:500;color:var(--faint);letter-spacing:0;text-transform:none}
-  .slide .cmp-kpi .label{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   .slide .side-card.cmp .k{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
   .slide .table-box .deck-table td .var{display:block;margin-top:2px;font-size:9.5px;color:var(--faint)}
+
+  /* Analysis layout: one evidence chart + three insight cards */
+  .slide .analysis{display:grid;grid-template-columns:1.32fr 1fr;gap:18px;flex:1;min-height:0}
+  .slide .analysis .chart-col{display:flex;min-width:0;min-height:0}
+  .slide .analysis .chart-col .chart-box{flex:1;justify-content:center}
+  .slide .insight-col{display:flex;flex-direction:column;gap:11px;min-height:0}
+  .slide .insight{
+    flex:1;min-height:0;background:#FBFCFE;border:1px solid var(--line);border-radius:14px;
+    padding:13px 17px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;
+  }
+  .slide .insight .k{
+    display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;
+    letter-spacing:.08em;color:var(--blue);text-transform:uppercase;
+  }
+  .slide .insight .k .n{
+    display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;
+    background:var(--blue-soft);color:var(--blue);font-size:11px;letter-spacing:0;
+  }
+  .slide .insight h3{
+    font-size:20px;line-height:1.42;font-weight:700;color:var(--navy);letter-spacing:-.005em;
+  }
+  .slide .insight .data-row{display:flex;align-items:baseline;gap:28px;flex-wrap:wrap;margin-top:1px}
+  .slide .insight .data-row .d{display:inline-flex;align-items:baseline;gap:7px}
+  .slide .insight .data-row .who{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;
+    color:var(--muted);white-space:nowrap;
+  }
+  .slide .insight .data-row .who i{width:7px;height:7px;border-radius:50%;flex:none}
+  .slide .insight .data-row b{
+    font-size:28px;line-height:1.15;font-weight:700;color:var(--navy);
+    font-variant-numeric:tabular-nums;letter-spacing:-.01em;
+  }
+  .slide .insight p{font-size:13px;line-height:1.55;color:var(--muted)}
 """
 
 FIT_JS = """

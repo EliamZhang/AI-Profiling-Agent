@@ -338,6 +338,40 @@ def chart_income_mix(pf: Profile, pw: Profile) -> str:
     return fig_html(fig, 420)
 
 
+def chart_income_focus(pf: Profile, pw: Profile) -> str:
+    labels = ["工资", "福利"]
+    fm, wm = pf.m, pw.m
+    f_inc = [fm["wage_incidence"] * 100, fm["cent_incidence"] * 100]
+    w_inc = [wm["wage_incidence"] * 100, wm["cent_incidence"] * 100]
+    f_amt = [fm["wage_share_agg"] * 100, fm["cent_share_agg"] * 100]
+    w_amt = [wm["wage_share_agg"] * 100, wm["cent_share_agg"] * 100]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.24,
+        subplot_titles=("有该类收入的用户占比", "收入金额占比"),
+    )
+    add_grouped_bars(fig, labels, f_inc, w_inc, row=1, col=1, showlegend=True)
+    add_grouped_bars(fig, labels, f_amt, w_amt, row=1, col=2, showlegend=False)
+
+    mx = max([v for v in f_inc + w_inc + f_amt + w_amt if valid(v)] + [0]) * 1.2
+    fig.update_xaxes(range=[0, mx], ticksuffix="%")
+    fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
+    base_layout(fig, height=420, margin=dict(l=64, r=28, t=64, b=70), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.42,
+        bargroupgap=0.1,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.2, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 420)
+
+
 def chart_income_resilience(pf: Profile, pw: Profile) -> str:
     ben_defs = [
         ("pension", "养老金"),
@@ -508,6 +542,53 @@ def chart_expense_structure(pf: Profile, pw: Profile) -> str:
             font=dict(size=11), bgcolor="rgba(0,0,0,0)",
         ),
     )
+    return fig_html(fig, 420)
+
+
+def chart_expense_focus(pf: Profile, pw: Profile) -> str:
+    struct_labels = ["必需品", "可选消费", "其他"]
+    f_struct = [pf.m["ess_share_cons"] * 100, pf.m["dis_share_cons"] * 100]
+    w_struct = [pw.m["ess_share_cons"] * 100, pw.m["dis_share_cons"] * 100]
+    f_struct.append(max(0.0, 100 - sum(f_struct)))
+    w_struct.append(max(0.0, 100 - sum(w_struct)))
+
+    risk_labels = ["赌博", "手续费"]
+    f_risk = [pf.m["gamb_incidence"] * 100, pf.m["fees_incidence"] * 100]
+    w_risk = [pw.m["gamb_incidence"] * 100, pw.m["fees_incidence"] * 100]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.24,
+        subplot_titles=("消费结构（占可识别消费）", "风险类交易发生率"),
+        column_widths=[0.58, 0.42],
+    )
+    add_grouped_bars(fig, struct_labels, f_struct, w_struct, row=1, col=1, digits=1,
+                     showlegend=True)
+    add_grouped_bars(fig, risk_labels, f_risk, w_risk, row=1, col=2, digits=1,
+                     showlegend=False)
+
+    mx = max([v for v in f_struct + w_struct + f_risk + w_risk if valid(v)] + [0]) * 1.18
+    fig.update_xaxes(range=[0, mx], ticksuffix="%")
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(struct_labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(risk_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=420, margin=dict(l=76, r=26, t=64, b=72), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.4,
+        bargroupgap=0.1,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.2, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
     return fig_html(fig, 420)
 
 
@@ -742,6 +823,50 @@ def chart_liability(pf: Profile, pw: Profile) -> str:
     return fig_html(fig, 460)
 
 
+def chart_liability_focus(pf: Profile, pw: Profile) -> str:
+    use_labels = ["有借贷放款", "现金贷使用", "≥5 家还款机构"]
+    use_keys = ["any_disburse", "adv_use", "enrich:multi5"]
+    dish_labels = ["有拒付记录", "未解决拒付"]
+    dish_keys = ["dish_any", "dish_unres"]
+    f_use = [metric_value(pf, k) * 100 for k in use_keys]
+    w_use = [metric_value(pw, k) * 100 for k in use_keys]
+    f_dish = [metric_value(pf, k) * 100 for k in dish_keys]
+    w_dish = [metric_value(pw, k) * 100 for k in dish_keys]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.26,
+        subplot_titles=("借贷规模与结构", "履约压力"),
+        column_widths=[0.58, 0.42],
+    )
+    add_grouped_bars(fig, use_labels, f_use, w_use, row=1, col=1, showlegend=True)
+    add_grouped_bars(fig, dish_labels, f_dish, w_dish, row=1, col=2, showlegend=False)
+
+    mx = max([v for v in f_use + w_use + f_dish + w_dish if valid(v)] + [0]) * 1.2
+    fig.update_xaxes(range=[0, mx], ticksuffix="%")
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(use_labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(dish_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=420, margin=dict(l=112, r=24, t=64, b=72), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.4,
+        bargroupgap=0.1,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.2, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 420)
+
+
 def chart_cashflow(pf: Profile, pw: Profile) -> str:
     labels = [
         "偿债前收不抵支",
@@ -780,6 +905,50 @@ def chart_cashflow(pf: Profile, pw: Profile) -> str:
         ),
     )
     return fig_html(fig, 400)
+
+
+def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
+    flow_labels = ["负盈余", "偿债前收不抵支", "储蓄率为负"]
+    flow_keys = ["sur_neg", "pre_debt_neg", "savings_neg"]
+    stock_labels = ["余额 < $100", "缓冲 < 7 天", "历史曾有负余额"]
+    stock_keys = ["bal_lt100", "buffer_lt7", "enrich:ever_negative"]
+    f_flow = [metric_value(pf, k) * 100 for k in flow_keys]
+    w_flow = [metric_value(pw, k) * 100 for k in flow_keys]
+    f_stock = [metric_value(pf, k) * 100 for k in stock_keys]
+    w_stock = [metric_value(pw, k) * 100 for k in stock_keys]
+
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        horizontal_spacing=0.26,
+        subplot_titles=("现金流压力（发生比例）", "账户缓冲（当前与历史）"),
+        column_widths=[0.5, 0.5],
+    )
+    add_grouped_bars(fig, flow_labels, f_flow, w_flow, row=1, col=1, showlegend=True)
+    add_grouped_bars(fig, stock_labels, f_stock, w_stock, row=1, col=2, showlegend=False)
+
+    mx = max([v for v in f_flow + w_flow + f_stock + w_stock if valid(v)] + [0]) * 1.18
+    fig.update_xaxes(range=[0, mx], ticksuffix="%")
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(flow_labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(stock_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=420, margin=dict(l=104, r=26, t=64, b=72), showlegend=True)
+    fig.update_layout(
+        barmode="group",
+        bargap=0.4,
+        bargroupgap=0.1,
+        legend=dict(
+            orientation="h", x=0, xanchor="left", y=-0.2, yanchor="top",
+            font=dict(size=11), bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    fig.update_annotations(font=dict(size=12, color=INK2))
+    return fig_html(fig, 420)
 
 
 def chart_balance_buckets(pf: Profile, pw: Profile) -> str:

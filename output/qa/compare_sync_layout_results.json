@@ -3,70 +3,77 @@
   "slides": [
     {
       "slide": 1,
-      "title": "收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利",
+      "title": "收入总量持平，来源结构分化：WageGo 更靠工资，Fundo 更靠福利",
       "body": {
-        "height": 674,
-        "scroll": 674
+        "height": 639,
+        "scroll": 639
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
-          "w": 834,
-          "h": 438,
+          "w": 785,
+          "h": 598,
           "traces": 4,
-          "box": 493
+          "box": 637
         }
       ]
     },
     {
       "slide": 2,
-      "title": "WageGo 的借贷依赖、还款负担与拒付暴露都显著更高",
+      "title": "WageGo 的负债更重：月还款是 Fundo 的 2.6 倍，33% 工资+福利用于偿债",
       "body": {
-        "height": 674,
-        "scroll": 674
-      },
-      "crops": [],
-      "escaped": [],
-      "plots": []
-    },
-    {
-      "slide": 3,
-      "title": "支出规模接近，WageGo 固定账单负担更低、赌博与手续费更高",
-      "body": {
-        "height": 674,
-        "scroll": 674
+        "height": 639,
+        "scroll": 639
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
-          "w": 834,
-          "h": 438,
-          "traces": 2,
-          "box": 493
+          "w": 785,
+          "h": 598,
+          "traces": 4,
+          "box": 637
+        }
+      ]
+    },
+    {
+      "slide": 3,
+      "title": "支出规模与结构趋同，WageGo 的消费更多流向赌博与手续费",
+      "body": {
+        "height": 639,
+        "scroll": 639
+      },
+      "crops": [],
+      "escaped": [],
+      "plots": [
+        {
+          "w": 785,
+          "h": 598,
+          "traces": 4,
+          "box": 637
         }
       ]
     },
     {
       "slide": 4,
-      "title": "负盈余与薄缓冲是共同底盘，WageGo 的账户余额更薄",
+      "title": "两边都在入不敷出：Fundo 的缺口更深，WageGo 的账户更薄",
       "body": {
-        "height": 674,
-        "scroll": 674
+        "height": 639,
+        "scroll": 639
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
-          "w": 834,
-          "h": 454,
-          "traces": 2,
-          "box": 493
+          "w": 785,
+          "h": 598,
+          "traces": 4,
+          "box": 637
         }
       ]
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "b5ced21a526b02a2a494e0f1d3716713c7f64c8e5daf3945018734b4e681514c"
+  "sha256": "ac82b366e82d2fd3a54964e6db70d696aa2ff4814bea70a48e28edba2c41e00c"
 }

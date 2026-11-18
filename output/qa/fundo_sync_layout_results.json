@@ -13,15 +13,15 @@
       "plots": [
         {
           "w": 439,
-          "h": 490,
+          "h": 485,
           "traces": 2,
-          "box": 545
+          "box": 540
         },
         {
           "w": 381,
-          "h": 490,
+          "h": 485,
           "traces": 4,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -37,15 +37,15 @@
       "plots": [
         {
           "w": 410,
-          "h": 507,
+          "h": 502,
           "traces": 6,
-          "box": 545
+          "box": 540
         },
         {
           "w": 410,
-          "h": 507,
+          "h": 502,
           "traces": 2,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -61,9 +61,9 @@
       "plots": [
         {
           "w": 834,
-          "h": 506,
+          "h": 501,
           "traces": 1,
-          "box": 545
+          "box": 540
         }
       ]
     },
@@ -79,13 +79,13 @@
       "plots": [
         {
           "w": 834,
-          "h": 506,
+          "h": 501,
           "traces": 3,
-          "box": 545
+          "box": 540
         }
       ]
     }
   ],
   "report": "fundo_profile_report_slides.html",
-  "sha256": "f0f276531e14dc41591be69aa618a6e88e45fecd41f8147a81641818fd88ee3c"
+  "sha256": "87ca63be5b3609ab968c2e7ce56cca993fda0058d016b84bca1c03c9ad25c402"
 }
