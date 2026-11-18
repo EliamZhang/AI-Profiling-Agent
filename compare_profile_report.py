@@ -350,7 +350,7 @@ def chart_income_focus(pf: Profile, pw: Profile) -> str:
         rows=1,
         cols=2,
         horizontal_spacing=0.24,
-        subplot_titles=("有该类收入的用户占比", "收入金额占比"),
+        subplot_titles=("有该类收入的人群占比", "收入来源占比"),
     )
     add_grouped_bars(fig, labels, f_inc, w_inc, row=1, col=1, showlegend=True)
     add_grouped_bars(fig, labels, f_amt, w_amt, row=1, col=2, showlegend=False)
@@ -546,7 +546,7 @@ def chart_expense_structure(pf: Profile, pw: Profile) -> str:
 
 
 def chart_expense_focus(pf: Profile, pw: Profile) -> str:
-    struct_labels = ["必需品", "可选消费", "其他"]
+    struct_labels = ["必需品", "非必需消费", "其他"]
     f_struct = [pf.m["ess_share_cons"] * 100, pf.m["dis_share_cons"] * 100]
     w_struct = [pw.m["ess_share_cons"] * 100, pw.m["dis_share_cons"] * 100]
     f_struct.append(max(0.0, 100 - sum(f_struct)))
@@ -560,7 +560,7 @@ def chart_expense_focus(pf: Profile, pw: Profile) -> str:
         rows=1,
         cols=2,
         horizontal_spacing=0.24,
-        subplot_titles=("消费结构（占可识别消费）", "风险类交易发生率"),
+        subplot_titles=("消费结构", "风险类交易人群占比"),
         column_widths=[0.58, 0.42],
     )
     add_grouped_bars(fig, struct_labels, f_struct, w_struct, row=1, col=1, digits=1,
@@ -824,7 +824,7 @@ def chart_liability(pf: Profile, pw: Profile) -> str:
 
 
 def chart_liability_focus(pf: Profile, pw: Profile) -> str:
-    use_labels = ["有借贷放款", "现金贷使用", "≥5 家还款机构"]
+    use_labels = ["有借款", "用过现金贷", "5 家以上机构"]
     use_keys = ["any_disburse", "adv_use", "enrich:multi5"]
     dish_labels = ["有拒付记录", "未解决拒付"]
     dish_keys = ["dish_any", "dish_unres"]
@@ -908,33 +908,39 @@ def chart_cashflow(pf: Profile, pw: Profile) -> str:
 
 
 def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
-    flow_labels = ["负盈余", "偿债前收不抵支", "储蓄率为负"]
-    flow_keys = ["sur_neg", "pre_debt_neg", "savings_neg"]
-    stock_labels = ["余额 < $100", "缓冲 < 7 天", "历史曾有负余额"]
-    stock_keys = ["bal_lt100", "buffer_lt7", "enrich:ever_negative"]
-    f_flow = [metric_value(pf, k) * 100 for k in flow_keys]
-    w_flow = [metric_value(pw, k) * 100 for k in flow_keys]
-    f_stock = [metric_value(pf, k) * 100 for k in stock_keys]
-    w_stock = [metric_value(pw, k) * 100 for k in stock_keys]
+    surplus_labels = ["较差 25%", "中位", "较好 25%"]
+    surplus_keys = ["sur_nd_p25", "sur_nd_p50", "sur_nd_p75"]
+    balance_labels = ["余额 < $100", "缓冲不足 7 天", "曾经透支"]
+    balance_keys = ["bal_lt100", "buffer_lt7", "enrich:ever_negative"]
+    f_sur = [metric_value(pf, k) for k in surplus_keys]
+    w_sur = [metric_value(pw, k) for k in surplus_keys]
+    f_bal = [metric_value(pf, k) * 100 for k in balance_keys]
+    w_bal = [metric_value(pw, k) * 100 for k in balance_keys]
 
     fig = make_subplots(
         rows=1,
         cols=2,
         horizontal_spacing=0.26,
-        subplot_titles=("现金流压力（发生比例）", "账户缓冲（当前与历史）"),
+        subplot_titles=("每月可支配盈余（$/月）", "账户余额与缓冲（人群占比）"),
         column_widths=[0.5, 0.5],
     )
-    add_grouped_bars(fig, flow_labels, f_flow, w_flow, row=1, col=1, showlegend=True)
-    add_grouped_bars(fig, stock_labels, f_stock, w_stock, row=1, col=2, showlegend=False)
+    add_grouped_bars(fig, surplus_labels, f_sur, w_sur, row=1, col=1, kind="money", showlegend=True)
+    add_grouped_bars(fig, balance_labels, f_bal, w_bal, row=1, col=2, showlegend=False)
 
-    mx = max([v for v in f_flow + w_flow + f_stock + w_stock if valid(v)] + [0]) * 1.18
-    fig.update_xaxes(range=[0, mx], ticksuffix="%")
+    sur_vals = [v for v in f_sur + w_sur if valid(v)] + [0]
+    lo, hi = min(sur_vals), max(sur_vals)
+    pad = (hi - lo) or 1
+    lo = min(lo - pad * 0.32, -pad * 0.05)
+    hi = max(hi + pad * 0.08, 0)
+    fig.update_xaxes(range=[lo, hi], tickprefix="$", row=1, col=1)
+    bal_vals = [v for v in f_bal + w_bal if valid(v)] + [0]
+    fig.update_xaxes(range=[0, max(bal_vals) * 1.24], ticksuffix="%", row=1, col=2)
     fig.update_yaxes(
-        categoryorder="array", categoryarray=list(reversed(flow_labels)),
+        categoryorder="array", categoryarray=list(reversed(surplus_labels)),
         showgrid=False, row=1, col=1,
     )
     fig.update_yaxes(
-        categoryorder="array", categoryarray=list(reversed(stock_labels)),
+        categoryorder="array", categoryarray=list(reversed(balance_labels)),
         showgrid=False, row=1, col=2,
     )
     base_layout(fig, height=420, margin=dict(l=104, r=26, t=64, b=72), showlegend=True)

@@ -3,7 +3,7 @@
   "slides": [
     {
       "slide": 1,
-      "title": "收入总量持平，来源结构分化：WageGo 更靠工资，Fundo 更靠福利",
+      "title": "收入差不多，来源大不同：WageGo 更靠工资，Fundo 更靠福利",
       "body": {
         "height": 639,
         "scroll": 639
@@ -21,7 +21,7 @@
     },
     {
       "slide": 2,
-      "title": "WageGo 的负债更重：月还款是 Fundo 的 2.6 倍，33% 工资+福利用于偿债",
+      "title": "WageGo 的负债更重：月还款是 Fundo 的 2.6 倍，三分之一的工资与福利用于还债",
       "body": {
         "height": 639,
         "scroll": 639
@@ -39,7 +39,7 @@
     },
     {
       "slide": 3,
-      "title": "支出规模与结构趋同，WageGo 的消费更多流向赌博与手续费",
+      "title": "支出规模接近，WageGo 更多花在赌博和手续费上",
       "body": {
         "height": 639,
         "scroll": 639
@@ -57,7 +57,7 @@
     },
     {
       "slide": 4,
-      "title": "两边都在入不敷出：Fundo 的缺口更深，WageGo 的账户更薄",
+      "title": "两边每月都净流出：WageGo 缺口近 $2,000、账户余额不到 Fundo 一半",
       "body": {
         "height": 639,
         "scroll": 639
@@ -75,5 +75,5 @@
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "ac82b366e82d2fd3a54964e6db70d696aa2ff4814bea70a48e28edba2c41e00c"
+  "sha256": "2132da5d08f033ad531f41f66fcb68dc3b86d485a33d62fbddec3dfc3e8c6cc9"
 }

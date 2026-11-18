@@ -407,6 +407,9 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     d["inc_m"] = d["inc"] / MONTHS
     d["exp_m"] = d["exp"] / MONTHS
     d["sur_m"] = d["sur"] / MONTHS
+    d["sur_nd"] = d["sur"] - d["draw"]
+    d["sur_nd_m"] = d["sur_nd"] / MONTHS
+    d["sur_nd_rate"] = finite(safe_div(d["sur_nd"], d["inc"]))
     d["rep_m"] = d["rep"] / MONTHS
     d["draw_m"] = d["draw"] / MONTHS
     d["pre_debt_cf"] = d["inc"] - d["exp"]
@@ -709,6 +712,11 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["sur_p50"] = q(d["sur_m"], 0.5)
     m["sur_p75"] = q(d["sur_m"], 0.75)
     m["sur_neg"] = neg_share(d["sur"])
+    m["sur_nd_p25"] = q(d["sur_nd_m"], 0.25)
+    m["sur_nd_p50"] = q(d["sur_nd_m"], 0.5)
+    m["sur_nd_p75"] = q(d["sur_nd_m"], 0.75)
+    m["sur_nd_neg"] = neg_share(d["sur_nd"])
+    m["sur_nd_rate_p50"] = q(d["sur_nd_rate"], 0.5)
     m["sur_rate_p25"] = q(d["sur_rate_cap"], 0.25)
     m["sur_rate_p50"] = q(d["sur_rate_cap"], 0.5)
     m["sur_rate_p75"] = q(d["sur_rate_cap"], 0.75)
