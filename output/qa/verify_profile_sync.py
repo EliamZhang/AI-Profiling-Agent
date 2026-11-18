@@ -15,11 +15,7 @@ OUT=ROOT/'output/qa'
 REPORTS={
     'fundo':'fundo_profile_report_slides.html',
     'wagego':'wagego_profile_report_slides.html',
-    'swap_in':'existing_swap_in_profile_report_slides.html',
-    'swap_out':'existing_swap_out_profile_report_slides.html',
     'compare':'compare_profile_report_slides.html',
-    'compare_swap':'compare_swap_profile_report_slides.html',
-    'raw_swap':'swap_in_out_profile_report_slides.html',
 }
 SAMPLE_TITLES={
     '收入水平接近，差异在来源结构：WageGo 更靠工资，Fundo 更靠福利',

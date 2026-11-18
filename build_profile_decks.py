@@ -3,14 +3,12 @@
 """Build PPT-style slide decks for the individual profile reports.
 
 Usage:
-    python build_profile_decks.py                # all four datasets
-    python build_profile_decks.py --only fundo,swap_in
+    python build_profile_decks.py                # both datasets
+    python build_profile_decks.py --only fundo,wagego
 
 Outputs (in output/html/):
     fundo_profile_report_slides.html
     wagego_profile_report_slides.html
-    existing_swap_in_profile_report_slides.html
-    existing_swap_out_profile_report_slides.html
 """
 
 from __future__ import annotations
@@ -23,8 +21,6 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import existing_swap_in_profile_report as swap_in_mod
-import existing_swap_out_profile_report as swap_out_mod
 import fundo_profile_report as fundo_mod
 import wagego_profile_report as wagego_mod
 import deck_framework as ui
@@ -55,24 +51,6 @@ DATASETS = {
         "name": "WageGo",
         "brand": "WAGEGO <em>·</em> USER PROFILE",
         "tag": "USER PROFILE REPORT",
-    },
-    "swap_in": {
-        "module": swap_in_mod,
-        "csv": ROOT / "data" / "existing_swap_in_v1_2_with_feature_all.csv",
-        "filename": "existing_swap_in_profile_report_slides.html",
-        "source": "existing_swap_in_v1_2_with_feature_all.csv",
-        "name": "Existing Swap In",
-        "brand": "SWAP IN <em>·</em> USER PROFILE",
-        "tag": "EXISTING CUSTOMER PROFILE",
-    },
-    "swap_out": {
-        "module": swap_out_mod,
-        "csv": ROOT / "data" / "existing_swap_out_v1_2_with_feature_all.csv",
-        "filename": "existing_swap_out_profile_report_slides.html",
-        "source": "existing_swap_out_v1_2_with_feature_all.csv",
-        "name": "Existing Swap Out",
-        "brand": "SWAP OUT <em>·</em> USER PROFILE",
-        "tag": "EXISTING CUSTOMER PROFILE",
     },
 }
 
@@ -1126,7 +1104,7 @@ def write_profile_deck(key: str, generated_at: str, out_dir: Path, d, m, seg) ->
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成用户画像 PPT 式幻灯片 HTML")
-    parser.add_argument("--only", default="", help="逗号分隔：fundo,wagego,swap_in,swap_out")
+    parser.add_argument("--only", default="", help="逗号分隔：fundo,wagego")
     parser.add_argument("--out", default="", help="输出目录")
     args = parser.parse_args()
 

@@ -456,54 +456,6 @@ CSS = r""":root{
   .cmp-foot p{font-size:10.5px;line-height:1.55;color:#7A5A2A;margin-top:2px}
   .cmp-source{display:block;margin-top:2px;font-size:9.5px;color:#9A7A4A}
 
-  /* ===== Classification swap (appendix) ===== */
-  .swap-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;flex:none}
-  .swap-kpi{
-    display:flex;flex-direction:column;gap:5px;min-width:0;background:#fff;border:1px solid var(--line);
-    border-top:4px solid var(--line);border-radius:14px;padding:12px 16px 10px;
-  }
-  .swap-kpi.auc{border-top-color:#2C6CB0}
-  .swap-kpi.ks{border-top-color:#5B8FC4}
-  .swap-kpi.gini{border-top-color:#7A8FA6}
-  .swap-kpi.cap{border-top-color:#A9680F}
-  .swap-kpi-label{font-size:9px;line-height:1;font-weight:700;letter-spacing:.1em;color:var(--faint)}
-  .swap-kpi-pair{display:flex;align-items:flex-end;gap:7px;min-width:0}
-  .swap-kpi-pair > div{display:flex;flex-direction:column;gap:1px;min-width:0}
-  .swap-kpi-pair span{font-size:8.5px;line-height:1.1;color:var(--faint);white-space:nowrap}
-  .swap-kpi-pair b,.swap-kpi-pair strong{
-    font-size:22px;line-height:1.05;font-weight:700;letter-spacing:-.01em;color:var(--navy);
-    font-variant-numeric:tabular-nums;
-  }
-  .swap-kpi-pair strong{color:var(--navy-2)}
-  .swap-kpi-pair i{font-style:normal;font-size:13px;line-height:1;color:#A9B4C0;padding-bottom:3px}
-  .swap-kpi-delta{font-size:10.5px;line-height:1;font-weight:700;color:#A8554C;font-variant-numeric:tabular-nums}
-  .swap-table{display:flex;flex-direction:column;min-height:0;margin-top:2px}
-  .swap-tr{
-    display:grid;grid-template-columns:1.15fr .8fr .8fr .72fr;gap:6px;align-items:center;
-    padding:8px 0;border-top:1px solid var(--line-soft);font-size:10px;line-height:1.2;
-  }
-  .swap-tr:first-child{border-top:0;padding:0 0 5px}
-  .swap-th{font-size:8.5px;color:var(--faint);letter-spacing:.04em;font-weight:600}
-  .swap-tr > span:nth-child(2),.swap-tr > span:nth-child(3),.swap-tr > span:nth-child(4){
-    text-align:right;font-variant-numeric:tabular-nums;
-  }
-  .swap-tr b{font-size:10px;color:var(--navy);font-weight:700}
-  .swap-tr .neg{color:#A8554C;font-weight:700}
-  .swap-table-note{font-size:8.5px;line-height:1.35;color:var(--faint);margin-top:3px}
-  .swap-insight{
-    margin-top:9px;padding:8px 10px;background:#FFFBF3;border:1px solid #F1E2C9;
-    border-left:3px solid #C98A2E;border-radius:8px;font-size:9.5px;line-height:1.45;color:#7A5A2A;
-  }
-  .swap-insight b{display:block;color:#8A5A13;font-size:9.5px;margin-bottom:2px}
-  .swap-migrate{margin-top:auto;padding-top:10px;border-top:1px solid var(--line-soft)}
-  .swap-migrate-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px}
-  .swap-migrate-title{font-size:9px;font-weight:700;letter-spacing:.08em;color:var(--faint);text-transform:uppercase}
-  .swap-migrate-r{font-size:9px;color:var(--faint);font-variant-numeric:tabular-nums}
-  .swap-migrate-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-  .swap-migrate-grid > div{min-width:0;background:#fff;border:1px solid var(--line-soft);border-radius:8px;padding:7px 8px}
-  .swap-migrate-grid b{display:block;font-size:15px;line-height:1.1;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
-  .swap-migrate-grid span{display:block;font-size:8.5px;line-height:1.3;color:var(--faint);margin-top:3px}
-
   /* ===== Closing ===== */
   .closing{
     padding:66px 90px 46px;justify-content:space-between;
