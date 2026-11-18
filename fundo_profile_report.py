@@ -482,6 +482,11 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
 
     ess_cols = [f"bank_txn_category_{k}_debit_amt_182d" for k in ESSENTIAL_CATS]
     dis_cols = [f"bank_txn_category_{k}_debit_amt_182d" for k in DISCRETIONARY_CATS]
+    d["ess_exp"] = d[ess_cols].sum(axis=1, min_count=1).fillna(0)
+    d["ext_exp"] = d["bank_txn_category_external_transfers_debit_amt_182d"].fillna(0)
+    d["sur_nec"] = d["sur_nd"] + d["exp"] - d["ess_exp"] - d["ext_exp"]
+    d["sur_nec_m"] = d["sur_nec"] / MONTHS
+    d["sur_nec_rate"] = finite(safe_div(d["sur_nec"], d["inc"]))
     gamb = d["bank_txn_category_gambling_debit_amt_182d"]
     fees = d["bank_txn_category_fees_debit_amt_182d"]
 
@@ -717,6 +722,11 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["sur_nd_p75"] = q(d["sur_nd_m"], 0.75)
     m["sur_nd_neg"] = neg_share(d["sur_nd"])
     m["sur_nd_rate_p50"] = q(d["sur_nd_rate"], 0.5)
+    m["sur_nec_p25"] = q(d["sur_nec_m"], 0.25)
+    m["sur_nec_p50"] = q(d["sur_nec_m"], 0.5)
+    m["sur_nec_p75"] = q(d["sur_nec_m"], 0.75)
+    m["sur_nec_neg"] = neg_share(d["sur_nec"])
+    m["sur_nec_rate_p50"] = q(d["sur_nec_rate"], 0.5)
     m["sur_rate_p25"] = q(d["sur_rate_cap"], 0.25)
     m["sur_rate_p50"] = q(d["sur_rate_cap"], 0.5)
     m["sur_rate_p75"] = q(d["sur_rate_cap"], 0.75)

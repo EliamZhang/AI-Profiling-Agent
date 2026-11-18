@@ -909,7 +909,7 @@ def chart_cashflow(pf: Profile, pw: Profile) -> str:
 
 def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
     surplus_labels = ["较差 25%", "中位", "较好 25%"]
-    surplus_keys = ["sur_nd_p25", "sur_nd_p50", "sur_nd_p75"]
+    surplus_keys = ["sur_nec_p25", "sur_nec_p50", "sur_nec_p75"]
     balance_labels = ["余额 < $100", "缓冲不足 7 天", "曾经透支"]
     balance_keys = ["bal_lt100", "buffer_lt7", "enrich:ever_negative"]
     f_sur = [metric_value(pf, k) for k in surplus_keys]

@@ -291,26 +291,26 @@ def build_concise_pair_deck(
     # 04 可支配盈余与余额
     liquidity_body = analysis_body(
         figs["cashflow_focus"],
-        "可支配盈余是扣除还债后的每月结余；缓冲天数反映余额还能支撑多少天日常支出。",
+        "可支配盈余是扣除必要支出、外部转账和还债后的每月结余；缓冲天数反映余额还能支撑多少天日常支出。",
         [
             insight_card(
                 "01",
                 "可支配盈余",
-                "几乎所有人每月都在净流出，WageGo 的缺口更深",
-                fm(pf.m["sur_nd_p50"]),
-                fm(pw.m["sur_nd_p50"]),
-                f"净流出用户占比 {fp(pf.m['sur_nd_neg'])} vs {fp(pw.m['sur_nd_neg'])}；"
-                f"缺口占收入 {fp(abs(pf.m['sur_nd_rate_p50']))} vs "
-                f"{fp(abs(pw.m['sur_nd_rate_p50']))}。",
+                "两边每月都只剩几百元，Fundo 略高",
+                fm(pf.m["sur_nec_p50"]),
+                fm(pw.m["sur_nec_p50"]),
+                f"净流出用户占比 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
+                f"盈余占收入 {fp(pf.m['sur_nec_rate_p50'])} vs "
+                f"{fp(pw.m['sur_nec_rate_p50'])}。",
             ),
             insight_card(
                 "02",
                 "缺口深度",
-                "最差四分之一用户月缺口超过 $3,000，WageGo 接近 $3,900",
-                fm(pf.m["sur_nd_p25"]),
-                fm(pw.m["sur_nd_p25"]),
-                f"较好四分之一仍为 {fm(pf.m['sur_nd_p75'])} vs {fm(pw.m['sur_nd_p75'])}，"
-                "几乎没有人能转正。",
+                "最差四分之一仍在净流出，WageGo 缺口接近 $900",
+                fm(pf.m["sur_nec_p25"]),
+                fm(pw.m["sur_nec_p25"]),
+                f"较好四分之一为 {fm(pf.m['sur_nec_p75'])} vs {fm(pw.m['sur_nec_p75'])}，"
+                "WageGo 的下行缺口更深。",
             ),
             insight_card(
                 "03",
@@ -329,9 +329,10 @@ def build_concise_pair_deck(
             brand=brand,
             section="04 · 盈余与余额",
             kicker="Surplus & Balance · 04",
-            title="两边每月都净流出：WageGo 缺口近 $2,000、账户余额不到 Fundo 一半",
-            sub=f"每月可支配盈余中位 {fm(pf.m['sur_nd_p50'])} vs {fm(pw.m['sur_nd_p50'])}；"
-            f"账户余额中位 {fm(pf.m['bal_p50'])} vs {fm(pw.m['bal_p50'])}，缓冲均不足 1 天。",
+            title="两边每月只剩几百元：WageGo 净流出更多，账户余额不到 Fundo 一半",
+            sub=f"每月可支配盈余中位 {fm(pf.m['sur_nec_p50'])} vs {fm(pw.m['sur_nec_p50'])}，"
+            f"净流出 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
+            f"账户余额中位 {fm(pf.m['bal_p50'])} vs {fm(pw.m['bal_p50'])}。",
             body=liquidity_body,
         )
     )

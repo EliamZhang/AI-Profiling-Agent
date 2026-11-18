@@ -57,7 +57,7 @@
     },
     {
       "slide": 4,
-      "title": "两边每月都净流出：WageGo 缺口近 $2,000、账户余额不到 Fundo 一半",
+      "title": "两边每月只剩几百元：WageGo 净流出更多，账户余额不到 Fundo 一半",
       "body": {
         "height": 639,
         "scroll": 639
@@ -75,5 +75,5 @@
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "a93494a2a356fde5b9075b524e0488a35841fcd3ce0180c8df927942d64ca394"
+  "sha256": "f368e9ad2a31daca283f4e6b1f87beb31bc0445728a6fd623598db2f6e2c80b4"
 }
