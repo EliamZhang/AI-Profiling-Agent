@@ -168,7 +168,7 @@ CONCISE_CSS = """
   .slide .table-box .deck-table td .var{display:block;margin-top:2px;font-size:9.5px;color:var(--faint)}
 
   /* Analysis layout: one evidence chart + three insight cards */
-  .slide .analysis{display:grid;grid-template-columns:1.32fr 1fr;gap:18px;flex:1;min-height:0}
+  .slide .analysis{display:grid;grid-template-columns:1fr 1.32fr;gap:18px;flex:1;min-height:0}
   .slide .analysis .chart-col{display:flex;min-width:0;min-height:0}
   .slide .analysis .chart-col .chart-box{flex:1;justify-content:center}
   .slide .insight-col{display:flex;flex-direction:column;gap:11px;min-height:0}

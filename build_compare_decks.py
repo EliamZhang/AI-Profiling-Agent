@@ -138,10 +138,10 @@ def build_concise_pair_deck(
 
     def analysis_body(fig_html, caption, cards):
         return (
-            '<div class="analysis"><div class="chart-col reveal d1">'
-            + ui.chart_box(fig_html, caption)
-            + '</div><div class="insight-col reveal d2">'
+            '<div class="analysis"><div class="insight-col reveal d1">'
             + "".join(cards)
+            + '</div><div class="chart-col reveal d2">'
+            + ui.chart_box(fig_html, caption)
             + "</div></div>"
         )
 
