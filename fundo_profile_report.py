@@ -1071,7 +1071,7 @@ def fig_html(fig, height: int = 430) -> str:
 
 
 def chart_income(m: dict) -> str:
-    labels = ["工资", "福利", "其他入账"]
+    labels = ["工资", "政府福利", "其他收入"]
     inc_vals = [
         float(m["wage_incidence"]) * 100,
         float(m["cent_incidence"]) * 100,
@@ -1133,7 +1133,7 @@ def chart_income(m: dict) -> str:
         ticktext=["0", "25%", "50%", "75%", "100%"],
     )
     left.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
-    add_title(left, f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他入账")
+    add_title(left, f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他收入")
 
     pct = lambda x: float(x) * 100 if np.isfinite(x) else 0.0
     labor = pct(m["wage_share_agg"] + m["cent_share_agg"])
@@ -1146,14 +1146,14 @@ def chart_income(m: dict) -> str:
 
     right = go.Figure()
     seg_defs = [
-        ("工资+福利", ["入账构成"], [labor], SERIES[0], "#ffffff"),
-        ("外部转账", ["入账构成", "借记构成"], [ext_inc, ext_dbt], SERIES[1], "#ffffff"),
-        ("内部转账", ["入账构成", "借记构成"], [int_inc, int_dbt], SERIES[3], INK),
-        ("其他", ["入账构成", "借记构成"], [rest_inc, rest_dbt], NEUTRAL, "#ffffff"),
+        ("工资+福利", ["收入构成"], [labor], SERIES[0], "#ffffff"),
+        ("外部转账", ["收入构成", "支出构成"], [ext_inc, ext_dbt], SERIES[1], "#ffffff"),
+        ("内部转账", ["收入构成", "支出构成"], [int_inc, int_dbt], SERIES[3], INK),
+        ("其他", ["收入构成", "支出构成"], [rest_inc, rest_dbt], NEUTRAL, "#ffffff"),
     ]
     for name, ys, xs, color, text_color in seg_defs:
         shown = [
-            "其他借记" if name == "其他" and y == "借记构成" else name for y in ys
+            "其他支出" if name == "其他" and y == "支出构成" else name for y in ys
         ]
         right.add_trace(
             go.Bar(
@@ -1179,12 +1179,12 @@ def chart_income(m: dict) -> str:
     )
     right.update_yaxes(
         categoryorder="array",
-        categoryarray=["借记构成", "入账构成"],
+        categoryarray=["支出构成", "收入构成"],
         showgrid=False,
     )
     add_title(
         right,
-        f"转账主导：占入账 {fmt_pct(m['transfer_inc_share'], 0)}、占借记 {fmt_pct(m['ext_transfer_share_global'] + m['internal_transfer_share_global'], 0)}",
+        f"转账主导：占收入 {fmt_pct(m['transfer_inc_share'], 0)}、占支出 {fmt_pct(m['ext_transfer_share_global'] + m['internal_transfer_share_global'], 0)}",
     )
 
     return (
@@ -1334,20 +1334,20 @@ def chart_consumption(m: dict, top_n: int = 10) -> str:
             textfont=dict(color=INK2, size=11),
             cliponaxis=False,
             customdata=[[t] for t in totals],
-            hovertemplate="%{y}<br>占可识别消费 %{x:.1f}%<br>6 个月总额 %{customdata[0]}<extra></extra>",
+            hovertemplate="%{y}<br>占消费 %{x:.1f}%<br>6 个月总额 %{customdata[0]}<extra></extra>",
         )
     )
     base_layout(fig, height=430, margin=dict(l=124, r=34, t=64, b=48))
     fig.update_xaxes(
         range=[0, max(vals) * 1.22 if vals else 1],
         ticksuffix="%",
-        title="占可识别消费比例",
+        title="占消费比例",
     )
     fig.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
     top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
     add_title(
         fig,
-        f"消费结构：{top3}居前 · 可识别消费仅占总支出 {fmt_pct(m['cons_share_exp_agg'])}",
+        f"消费结构：{top3}居前 · 可识别消费覆盖总支出 {fmt_pct(m['cons_share_exp_agg'])}",
         y=1.12,
     )
     return fig_html(fig)
@@ -1560,7 +1560,7 @@ def chart_liability(m: dict) -> str:
             cliponaxis=False,
             customdata=[[t] for t in dish_text],
             hovertemplate=(
-                "%{y}<br>使用率 %{x:.1f}%<br>有拒付用户占比 %{customdata[0]}<extra></extra>"
+                "%{y}<br>使用率 %{x:.1f}%<br>有扣款失败用户占比 %{customdata[0]}<extra></extra>"
             ),
         )
     )
@@ -1596,7 +1596,7 @@ def chart_liability(m: dict) -> str:
     top = rows[-1] if rows else None
     add_title(
         left,
-        f"最大品类：{top[0]} {top[2]:.0f}%" if top else "借贷产品结构",
+        f"放款金额最大品类：{top[0]} {top[2]:.0f}%" if top else "借贷产品结构",
         xref="paper",
     )
 
@@ -1625,7 +1625,7 @@ def chart_liability(m: dict) -> str:
             insidetextanchor="middle",
             textfont=dict(color="#ffffff", size=11),
             customdata=[[f"{res_cnt:,.0f} 笔"], [fmt_money(res_amt, compact=True)]],
-            hovertemplate="%{y}<br>已解决 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
+            hovertemplate="%{y}<br>已解决扣款失败 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
         )
     )
     right.add_trace(
@@ -1640,7 +1640,7 @@ def chart_liability(m: dict) -> str:
             insidetextanchor="middle",
             textfont=dict(color="#ffffff", size=11),
             customdata=[[f"{unres_cnt:,.0f} 笔"], [fmt_money(unres_amt, compact=True)]],
-            hovertemplate="%{y}<br>未解决 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
+            hovertemplate="%{y}<br>未解决扣款失败 %{customdata[0]}（%{x:.1f}%）<extra></extra>",
         )
     )
     base_layout(right, height=430, margin=dict(l=72, r=28, t=78, b=64), showlegend=True)
@@ -1663,7 +1663,7 @@ def chart_liability(m: dict) -> str:
         ticktext=["0", "25%", "50%", "75%", "100%"],
     )
     right.update_yaxes(categoryorder="array", categoryarray=["金额", "笔数"], showgrid=False)
-    add_title(right, f"拒付处置：解决率 {fmt_pct(m['dish_resolution_rate'])}")
+    add_title(right, f"扣款失败处置：解决率 {fmt_pct(m['dish_resolution_rate'])}")
 
     return (
         f'<div class="chart-grid even"><div>{fig_html(left)}</div>'
@@ -1809,7 +1809,7 @@ def chart_fixed_burden(m: dict, seg: pd.DataFrame) -> str:
 
 
 def chart_health(d: pd.DataFrame, m: dict) -> str:
-    sur = d["sur_m"].dropna()
+    sur = d["sur_nec_m"].dropna()
     lo = q(sur, 0.01)
     hi = q(sur, 0.99)
     lo = float(np.floor(lo / 500) * 500) if np.isfinite(lo) else -4000.0
@@ -1831,9 +1831,9 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
         go.Histogram(
             x=neg,
             xbins=dict(start=lo, end=hi, size=bin_size),
-            name="负盈余",
+            name="负值",
             marker=dict(color=STATUS["critical"], line=dict(width=0.5, color=SURFACE)),
-            hovertemplate="月度盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
+            hovertemplate="每月可支配盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
         ),
         row=1,
         col=1,
@@ -1842,15 +1842,15 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
         go.Histogram(
             x=pos,
             xbins=dict(start=lo, end=hi, size=bin_size),
-            name="正盈余",
+            name="正值",
             marker=dict(color=SERIES[0], line=dict(width=0.5, color=SURFACE)),
-            hovertemplate="月度盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
+            hovertemplate="每月可支配盈余 %{x:$,.0f}<br>用户数 %{y}<extra></extra>",
         ),
         row=1,
         col=1,
     )
 
-    med = m["sur_p50"]
+    med = m["sur_nec_p50"]
     fig.add_vline(x=0, line_color=BASELINE, line_width=1, row=1, col=1)
     fig.add_vline(x=med, line_color=INK2, line_width=1.4, row=1, col=1)
     right_side = med >= (lo + hi) / 2
@@ -1870,7 +1870,7 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
         y=0.55,
         xref="x",
         yref="y domain",
-        text=f"{fmt_pct(m['sur_neg'])}<br>为负",
+        text=f"{fmt_pct(m['sur_nec_neg'])}<br>为负",
         showarrow=False,
         xanchor="left",
         yanchor="top",
@@ -1878,7 +1878,7 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
     )
 
     bal = d["bal"]
-    bucket_labels = ["透支 (<$0)", "$0–100", "$100–500", "$500–1k", "≥$1k"]
+    bucket_labels = ["负余额 (<$0)", "$0–100", "$100–500", "$500–1k", "≥$1k"]
     bucket_masks = [
         bal < 0,
         (bal >= 0) & (bal < 100),
@@ -1919,7 +1919,7 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
     fig.update_xaxes(
         range=[lo, hi],
         tickformat="$,.0f",
-        title="月度盈余（显示 P1–P99，剔除两端各 1%）",
+        title="每月可支配盈余（美元/月，显示 P1–P99）",
         row=1,
         col=1,
     )
@@ -1939,8 +1939,8 @@ def chart_health(d: pd.DataFrame, m: dict) -> str:
         row=1,
         col=2,
     )
-    add_title(fig, f"月度盈余分布：{fmt_pct(m['sur_neg'])} 为负", xref="x domain")
-    add_title(fig, f"账户余额分布：中位 {fmt_money(m['bal_p50'])}", xref="x2 domain")
+    add_title(fig, f"每月可支配盈余分布：{fmt_pct(m['sur_nec_neg'])} 为负", xref="x domain")
+    add_title(fig, f"账户余额分布（最近快照）：中位数 {fmt_money(m['bal_p50'])}", xref="x2 domain")
     return fig_html(fig)
 
 

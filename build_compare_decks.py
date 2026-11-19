@@ -150,37 +150,38 @@ def build_concise_pair_deck(
     # 01 收入
     income_body = analysis_body(
         figs["income_focus"],
-        "其他收入约占七成，是两组最大的收入来源。",
+        "工资和福利合计约占收入三成，其余主要是转账等其他来源；月收入中位数按加权口径计算（工资、福利全额，其他收入 80%，内部转账不计）。",
         [
             insight_card(
                 "01",
-                "工资入账",
-                f"WageGo {pw.m['wage_incidence'] * 100:.0f}% 有工资入账，"
-                f"Fundo 只有 {pf.m['wage_incidence'] * 100:.0f}%",
+                "工资收入",
+                f"WageGo {pw.m['wage_incidence'] * 100:.0f}% 的用户有工资收入，"
+                f"Fundo 为 {pf.m['wage_incidence'] * 100:.0f}%",
                 fp(pf.m["wage_incidence"]),
                 fp(pw.m["wage_incidence"]),
-                f"中位月收入 {fm(pf.m['inc_p50'])} vs {fm(pw.m['inc_p50'])}，总量几乎持平。",
+                f"月收入中位数（加权口径）{fm(pf.m['inc_p50'])} vs {fm(pw.m['inc_p50'])}，基本持平。",
             ),
             insight_card(
                 "02",
-                "收入结构",
-                f"Fundo 更依赖福利：福利占其收入 "
+                "福利收入",
+                f"在领取政府福利的用户中，Fundo 的福利占其收入 "
                 f"{pf.m['cent_share_rec_p50'] * 100:.0f}%，"
                 f"WageGo 为 {pw.m['cent_share_rec_p50'] * 100:.0f}%",
                 fp(pf.m["cent_share_rec_p50"]),
                 fp(pw.m["cent_share_rec_p50"]),
-                f"工资只占收入 {fp(pf.m['wage_share_agg'])} vs "
-                f"{fp(pw.m['wage_share_agg'])}，其余主要是其他收入。",
+                f"全体用户中，工资占收入 {fp(pf.m['wage_share_agg'])} vs "
+                f"{fp(pw.m['wage_share_agg'])}；其余主要是转账等其他来源。",
             ),
             insight_card(
                 "03",
                 "收入稳定性",
-                "收入都高度波动，Fundo 的工资回落更常见",
+                "两组收入波动都较大，Fundo 的工资下降更普遍",
                 fp(pf.m["wage_3m6m_decline"]),
                 fp(pw.m["wage_3m6m_decline"]),
-                f"收入波动幅度中位 {fmetric(pf.m['income_cv_p50'], 'num')} vs "
-                f"{fmetric(pw.m['income_cv_p50'], 'num')}（越高越不稳）；收入来源中位 "
-                f"{fmetric(pf.m['income_source_p50'], 'num0')} vs "
+                f"近 3 个月工资比近 6 个月低 10% 以上的用户占比；收入波动系数中位数 "
+                f"{fmetric(pf.m['income_cv_p50'], 'num')} vs "
+                f"{fmetric(pw.m['income_cv_p50'], 'num')}（数值越大越不稳定），"
+                f"收入来源数中位数 {fmetric(pf.m['income_source_p50'], 'num0')} vs "
                 f"{fmetric(pw.m['income_source_p50'], 'num0')} 个。",
             ),
         ],
@@ -190,8 +191,8 @@ def build_concise_pair_deck(
             brand=brand,
             section="01 · 收入",
             kicker="Income · 01",
-            title="收入差不多，来源大不同：WageGo 更靠工资，Fundo 更靠福利",
-            sub="中位月收入只差 2%，差距不在收入高低，而在钱从哪里来。",
+            title="收入水平接近，来源结构不同：WageGo 工资收入更普遍，Fundo 福利依赖更深",
+            sub="月收入中位数仅差 2%，差异主要在收入来源结构。",
             body=income_body,
         )
     )
@@ -200,33 +201,35 @@ def build_concise_pair_deck(
     rep_ratio = pw.m["rep_m_p50"] / pf.m["rep_m_p50"]
     liability_body = analysis_body(
         figs["liability_focus"],
-        "5 家以上机构指半年内有还款记录的机构数。",
+        "贷款机构数指过去 6 个月有还款记录的机构家数；现金贷指短期小额现金借款或工资预支（Payday Loan / Wage Advance）；扣款失败指自动扣款（Direct Debit）未成功，未解决指观察期末仍未补扣成功。",
         [
             insight_card(
                 "01",
-                "负债规模",
-                f"WageGo {pw.m['any_disburse'] * 100:.0f}% 有借款，"
-                f"中位月还款是 Fundo 的 {rep_ratio:.1f} 倍",
+                "借款与还款",
+                f"WageGo {pw.m['any_disburse'] * 100:.0f}% 的用户有借款记录，"
+                f"月还款中位数是 Fundo 的 {rep_ratio:.1f} 倍",
                 fp(pf.m["any_disburse"]),
                 fp(pw.m["any_disburse"]),
-                f"中位月还款 {fm(pf.m['rep_m_p50'])} vs {fm(pw.m['rep_m_p50'])}。",
+                f"月还款中位数 {fm(pf.m['rep_m_p50'])} vs {fm(pw.m['rep_m_p50'])}。",
             ),
             insight_card(
                 "02",
-                "负债结构",
-                "WageGo 更依赖现金贷，近半用户在 5 家以上机构有还款记录",
+                "借款结构",
+                "WageGo 更依赖现金贷：近七成用户用过，近半用户在 5 家以上贷款机构有还款记录",
                 fp(pf.m["adv_use"]),
                 fp(pw.m["adv_use"]),
-                f"5 家以上机构有还款 {fp(f_enrich['multi5'])} vs {fp(w_enrich['multi5'])}。",
+                f"在 5 家以上贷款机构有还款记录 {fp(f_enrich['multi5'])} vs "
+                f"{fp(w_enrich['multi5'])}。",
             ),
             insight_card(
                 "03",
-                "还款压力",
-                f"WageGo 把三分之一的工资与福利用于还债，"
-                "近六成有拒付记录",
+                "偿债压力",
+                "WageGo 将三分之一的工资和福利收入用于偿债，"
+                "近六成用户有扣款失败记录",
                 fp(f_enrich["recurring_p50"]),
                 fp(w_enrich["recurring_p50"]),
-                f"仍有未解决拒付 {fp(pf.m['dish_unres'])} vs {fp(pw.m['dish_unres'])}。",
+                f"仍有未解决扣款失败 {fp(pf.m['dish_unres'])} vs "
+                f"{fp(pw.m['dish_unres'])}。",
             ),
         ],
     )
@@ -235,9 +238,9 @@ def build_concise_pair_deck(
             brand=brand,
             section="02 · 负债",
             kicker="Liability · 02",
-            title=f"WageGo 的负债更重：月还款是 Fundo 的 {rep_ratio:.1f} 倍，"
-            "三分之一的工资与福利用于还债",
-            sub="从借钱、还钱到拒付，WageGo 的压力全面更高。",
+            title=f"WageGo 的债务负担更重：月还款是 Fundo 的 {rep_ratio:.1f} 倍，"
+            "三分之一的工资和福利收入用于偿债",
+            sub="从借款、还款到扣款失败，WageGo 的压力全面更高。",
             body=liability_body,
         )
     )
@@ -245,35 +248,37 @@ def build_concise_pair_deck(
     # 03 支出
     expense_body = analysis_body(
         figs["expense_focus"],
-        "其余消费类目合并为其他；赌博与手续费为有该类交易的人群占比。",
+        "消费结构仅统计消费类支出（不含转账）；必需品包括超市、公用事业、房租、交通和医疗，其余消费合并为其他。固定账单指周期性固定扣款；赌博与手续费为有该类交易的人群占比。",
         [
             insight_card(
                 "01",
                 "支出结构",
-                "两组的消费结构几乎重合：必需品约四成，非必需消费约四分之一",
+                "两组的消费结构接近：必需品约四成，非必需消费约四分之一",
                 fp(pf.m["ess_share_cons"]),
                 fp(pw.m["ess_share_cons"]),
-                f"中位月支出 {fm(pf.m['exp_p50'])} vs {fm(pw.m['exp_p50'])}；"
-                f"非必需消费 {fp(pf.m['dis_share_cons'])} vs {fp(pw.m['dis_share_cons'])}。",
+                f"月总支出中位数 {fm(pf.m['exp_p50'])} vs {fm(pw.m['exp_p50'])}（含转账）；"
+                f"非必需消费占比 {fp(pf.m['dis_share_cons'])} vs {fp(pw.m['dis_share_cons'])}。",
             ),
             insight_card(
                 "02",
-                "消费特征",
-                "WageGo 的赌博与手续费负担明显更重",
+                "高风险消费",
+                "WageGo 的赌博支出占比更高，手续费也更普遍",
                 fp(pf.m["gamb_share_cons"]),
                 fp(pw.m["gamb_share_cons"]),
-                f"有赌博交易 {fp(pf.m['gamb_incidence'])} vs {fp(pw.m['gamb_incidence'])}；"
-                f"有手续费 {fp(pf.m['fees_incidence'])} vs {fp(pw.m['fees_incidence'])}。",
+                f"赌博支出占消费 {fp(pf.m['gamb_share_cons'])} vs {fp(pw.m['gamb_share_cons'])}；"
+                f"有赌博交易 {fp(pf.m['gamb_incidence'])} vs {fp(pw.m['gamb_incidence'])}，"
+                f"有手续费交易 {fp(pf.m['fees_incidence'])} vs {fp(pw.m['fees_incidence'])}。",
             ),
             insight_card(
                 "03",
-                "固定账单压力",
-                f"Fundo 的固定账单压力更集中：负担最重的 10% 人群要拿出 "
-                f"{pf.m['fixed_wage_p90'] * 100:.0f}% 的工资",
+                "固定账单",
+                f"Fundo 的固定账单压力更集中：占比最高的 10% 用户，"
+                f"固定账单相当于工资的 {pf.m['fixed_wage_p90'] * 100:.0f}%",
                 fp(pf.m["fixed_wage_p90"]),
                 fp(pw.m["fixed_wage_p90"]),
-                f"固定账单占工资中位 {fp(pf.m['fixed_wage_p50'])} vs "
-                f"{fp(pw.m['fixed_wage_p50'])}，压力集中在负担最重的人群。",
+                f"固定账单占工资比例中位数 {fp(pf.m['fixed_wage_p50'])} vs "
+                f"{fp(pw.m['fixed_wage_p50'])}；占比最高的 10% 用户为 "
+                f"{fp(pf.m['fixed_wage_p90'])} vs {fp(pw.m['fixed_wage_p90'])}。",
             ),
         ],
     )
@@ -282,8 +287,8 @@ def build_concise_pair_deck(
             brand=brand,
             section="03 · 支出",
             kicker="Spending · 03",
-            title="支出规模接近，WageGo 更多花在赌博和手续费上",
-            sub="中位支出只差 2%，消费结构几乎一致，差距集中在少数风险类目。",
+            title="支出规模接近，WageGo 的赌博占比更高、手续费更普遍",
+            sub="月总支出仅差 2%，消费结构接近，差异集中在高风险消费。",
             body=expense_body,
         )
     )
@@ -291,35 +296,34 @@ def build_concise_pair_deck(
     # 04 可支配盈余与余额
     liquidity_body = analysis_body(
         figs["cashflow_focus"],
-        "可支配盈余是扣除必要支出、外部转账和还债后的每月结余；缓冲天数反映余额还能支撑多少天日常支出。",
+        "可支配盈余 = 加权收入（不含新增借款）− 必要支出 − 外部转账 − 偿债；其中工资和福利全额计入收入，其他收入按 80% 计入（本人账户之间的内部转账不计）。必要支出包括超市、公用事业、房租、交通和医疗；外部转账指转给他人或外部账户；偿债包括还款和扣款失败费用。余额可支撑天数 = 账户余额 ÷ 日均总支出（月总支出 ÷ 30）。",
         [
             insight_card(
                 "01",
                 "可支配盈余",
-                "两边每月都只剩几百元，Fundo 略高",
+                "每月结余仅数百元，Fundo 略高",
                 fm(pf.m["sur_nec_p50"]),
                 fm(pw.m["sur_nec_p50"]),
-                f"净流出用户占比 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
-                f"盈余占收入 {fp(pf.m['sur_nec_rate_p50'])} vs "
+                f"入不敷出用户占比 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
+                f"结余占收入比例中位数 {fp(pf.m['sur_nec_rate_p50'])} vs "
                 f"{fp(pw.m['sur_nec_rate_p50'])}。",
             ),
             insight_card(
                 "02",
-                "缺口深度",
-                "最差四分之一仍在净流出，WageGo 缺口接近 $900",
+                "资金缺口",
+                "压力最大的 25% 用户仍入不敷出，WageGo 缺口接近 $900",
                 fm(pf.m["sur_nec_p25"]),
                 fm(pw.m["sur_nec_p25"]),
-                f"较好四分之一为 {fm(pf.m['sur_nec_p75'])} vs {fm(pw.m['sur_nec_p75'])}，"
-                "WageGo 的下行缺口更深。",
+                "WageGo 的结余中位数低 21%，压力最大的 25% 用户，其缺口是 Fundo 的 2.6 倍。",
             ),
             insight_card(
                 "03",
                 "账户余额",
-                "WageGo 的账户更薄：中位余额约为 Fundo 的四成",
+                "WageGo 账户余额更低：中位数仅为 Fundo 的四成",
                 fm(pf.m["bal_p50"]),
                 fm(pw.m["bal_p50"]),
-                f"中位缓冲 {fmetric(pf.m['buffer_p50'], 'num1')} vs "
-                f"{fmetric(pw.m['buffer_p50'], 'num1')} 天；曾经透支 "
+                f"余额仅可支撑 {fmetric(pf.m['buffer_p50'], 'num1')} vs "
+                f"{fmetric(pw.m['buffer_p50'], 'num1')} 天支出；曾出现负余额 "
                 f"{fp(f_enrich['ever_negative'])} vs {fp(w_enrich['ever_negative'])}。",
             ),
         ],
@@ -329,10 +333,10 @@ def build_concise_pair_deck(
             brand=brand,
             section="04 · 盈余与余额",
             kicker="Surplus & Balance · 04",
-            title="两边每月只剩几百元：WageGo 净流出更多，账户余额不到 Fundo 一半",
-            sub=f"每月可支配盈余中位 {fm(pf.m['sur_nec_p50'])} vs {fm(pw.m['sur_nec_p50'])}，"
-            f"净流出 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
-            f"账户余额中位 {fm(pf.m['bal_p50'])} vs {fm(pw.m['bal_p50'])}。",
+            title="每月结余仅数百元：WageGo 入不敷出更普遍，账户余额不足 Fundo 一半",
+            sub=f"每月可支配盈余中位数 {fm(pf.m['sur_nec_p50'])} vs {fm(pw.m['sur_nec_p50'])}，"
+            f"入不敷出用户占比 {fp(pf.m['sur_nec_neg'])} vs {fp(pw.m['sur_nec_neg'])}；"
+            f"账户余额中位数 {fm(pf.m['bal_p50'])} vs {fm(pw.m['bal_p50'])}。",
             body=liquidity_body,
         )
     )

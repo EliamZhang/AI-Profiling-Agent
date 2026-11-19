@@ -339,26 +339,42 @@ def chart_income_mix(pf: Profile, pw: Profile) -> str:
 
 
 def chart_income_focus(pf: Profile, pw: Profile) -> str:
-    labels = ["工资", "福利"]
+    pay_labels = ["工资", "政府福利"]
+    amount_labels = ["工资", "政府福利", "其他收入"]
     fm, wm = pf.m, pw.m
     f_inc = [fm["wage_incidence"] * 100, fm["cent_incidence"] * 100]
     w_inc = [wm["wage_incidence"] * 100, wm["cent_incidence"] * 100]
-    f_amt = [fm["wage_share_agg"] * 100, fm["cent_share_agg"] * 100]
-    w_amt = [wm["wage_share_agg"] * 100, wm["cent_share_agg"] * 100]
+    f_amt = [
+        fm["wage_share_agg"] * 100,
+        fm["cent_share_agg"] * 100,
+        fm["other_share_agg"] * 100,
+    ]
+    w_amt = [
+        wm["wage_share_agg"] * 100,
+        wm["cent_share_agg"] * 100,
+        wm["other_share_agg"] * 100,
+    ]
 
     fig = make_subplots(
         rows=1,
         cols=2,
         horizontal_spacing=0.24,
-        subplot_titles=("有该类收入的人群占比", "收入来源占比"),
+        subplot_titles=("有工资或政府福利收入的人群占比", "各来源占收入金额比例"),
     )
-    add_grouped_bars(fig, labels, f_inc, w_inc, row=1, col=1, showlegend=True)
-    add_grouped_bars(fig, labels, f_amt, w_amt, row=1, col=2, showlegend=False)
+    add_grouped_bars(fig, pay_labels, f_inc, w_inc, row=1, col=1, showlegend=True)
+    add_grouped_bars(fig, amount_labels, f_amt, w_amt, row=1, col=2, showlegend=False)
 
     mx = max([v for v in f_inc + w_inc + f_amt + w_amt if valid(v)] + [0]) * 1.2
     fig.update_xaxes(range=[0, mx], ticksuffix="%")
-    fig.update_yaxes(categoryorder="array", categoryarray=list(reversed(labels)), showgrid=False)
-    base_layout(fig, height=420, margin=dict(l=64, r=28, t=64, b=70), showlegend=True)
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(pay_labels)),
+        showgrid=False, row=1, col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array", categoryarray=list(reversed(amount_labels)),
+        showgrid=False, row=1, col=2,
+    )
+    base_layout(fig, height=420, margin=dict(l=112, r=28, t=64, b=70), showlegend=True)
     fig.update_layout(
         barmode="group",
         bargap=0.42,
@@ -546,7 +562,7 @@ def chart_expense_structure(pf: Profile, pw: Profile) -> str:
 
 
 def chart_expense_focus(pf: Profile, pw: Profile) -> str:
-    struct_labels = ["必需品", "非必需消费", "其他"]
+    struct_labels = ["必需品", "非必需消费", "其他消费"]
     f_struct = [pf.m["ess_share_cons"] * 100, pf.m["dis_share_cons"] * 100]
     w_struct = [pw.m["ess_share_cons"] * 100, pw.m["dis_share_cons"] * 100]
     f_struct.append(max(0.0, 100 - sum(f_struct)))
@@ -560,7 +576,7 @@ def chart_expense_focus(pf: Profile, pw: Profile) -> str:
         rows=1,
         cols=2,
         horizontal_spacing=0.24,
-        subplot_titles=("消费结构", "风险类交易人群占比"),
+        subplot_titles=("消费结构", "有高风险消费的人群占比"),
         column_widths=[0.58, 0.42],
     )
     add_grouped_bars(fig, struct_labels, f_struct, w_struct, row=1, col=1, digits=1,
@@ -578,7 +594,7 @@ def chart_expense_focus(pf: Profile, pw: Profile) -> str:
         categoryorder="array", categoryarray=list(reversed(risk_labels)),
         showgrid=False, row=1, col=2,
     )
-    base_layout(fig, height=420, margin=dict(l=76, r=26, t=64, b=72), showlegend=True)
+    base_layout(fig, height=420, margin=dict(l=92, r=26, t=64, b=72), showlegend=True)
     fig.update_layout(
         barmode="group",
         bargap=0.4,
@@ -824,9 +840,9 @@ def chart_liability(pf: Profile, pw: Profile) -> str:
 
 
 def chart_liability_focus(pf: Profile, pw: Profile) -> str:
-    use_labels = ["有借款", "用过现金贷", "5 家以上机构"]
+    use_labels = ["有借款记录", "用过现金贷", "5 家以上机构有还款"]
     use_keys = ["any_disburse", "adv_use", "enrich:multi5"]
-    dish_labels = ["有拒付记录", "未解决拒付"]
+    dish_labels = ["有扣款失败记录", "未解决扣款失败"]
     dish_keys = ["dish_any", "dish_unres"]
     f_use = [metric_value(pf, k) * 100 for k in use_keys]
     w_use = [metric_value(pw, k) * 100 for k in use_keys]
@@ -837,7 +853,7 @@ def chart_liability_focus(pf: Profile, pw: Profile) -> str:
         rows=1,
         cols=2,
         horizontal_spacing=0.26,
-        subplot_titles=("借贷规模与结构", "履约压力"),
+        subplot_titles=("借款使用与结构", "扣款失败情况"),
         column_widths=[0.58, 0.42],
     )
     add_grouped_bars(fig, use_labels, f_use, w_use, row=1, col=1, showlegend=True)
@@ -853,7 +869,7 @@ def chart_liability_focus(pf: Profile, pw: Profile) -> str:
         categoryorder="array", categoryarray=list(reversed(dish_labels)),
         showgrid=False, row=1, col=2,
     )
-    base_layout(fig, height=420, margin=dict(l=112, r=24, t=64, b=72), showlegend=True)
+    base_layout(fig, height=420, margin=dict(l=132, r=24, t=64, b=72), showlegend=True)
     fig.update_layout(
         barmode="group",
         bargap=0.4,
@@ -908,9 +924,9 @@ def chart_cashflow(pf: Profile, pw: Profile) -> str:
 
 
 def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
-    surplus_labels = ["较差 25%", "中位", "较好 25%"]
+    surplus_labels = ["最低 25%", "中位数", "最高 25%"]
     surplus_keys = ["sur_nec_p25", "sur_nec_p50", "sur_nec_p75"]
-    balance_labels = ["余额 < $100", "缓冲不足 7 天", "曾经透支"]
+    balance_labels = ["余额 < $100", "可支撑 < 7 天", "曾出现负余额"]
     balance_keys = ["bal_lt100", "buffer_lt7", "enrich:ever_negative"]
     f_sur = [metric_value(pf, k) for k in surplus_keys]
     w_sur = [metric_value(pw, k) for k in surplus_keys]
@@ -921,7 +937,7 @@ def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
         rows=1,
         cols=2,
         horizontal_spacing=0.26,
-        subplot_titles=("每月可支配盈余（$/月）", "账户余额与缓冲（人群占比）"),
+        subplot_titles=("每月可支配盈余（美元/月）", "账户余额与可支撑天数（人群占比）"),
         column_widths=[0.5, 0.5],
     )
     add_grouped_bars(fig, surplus_labels, f_sur, w_sur, row=1, col=1, kind="money", showlegend=True)
@@ -943,7 +959,7 @@ def chart_cashflow_focus(pf: Profile, pw: Profile) -> str:
         categoryorder="array", categoryarray=list(reversed(balance_labels)),
         showgrid=False, row=1, col=2,
     )
-    base_layout(fig, height=420, margin=dict(l=104, r=26, t=64, b=72), showlegend=True)
+    base_layout(fig, height=420, margin=dict(l=128, r=26, t=64, b=72), showlegend=True)
     fig.update_layout(
         barmode="group",
         bargap=0.4,

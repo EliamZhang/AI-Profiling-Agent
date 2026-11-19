@@ -3,7 +3,7 @@
   "slides": [
     {
       "slide": 1,
-      "title": "收入差不多，来源大不同：WageGo 更靠工资，Fundo 更靠福利",
+      "title": "收入水平接近，来源结构不同：WageGo 工资收入更普遍，Fundo 福利依赖更深",
       "body": {
         "height": 639,
         "scroll": 639
@@ -21,25 +21,25 @@
     },
     {
       "slide": 2,
-      "title": "WageGo 的负债更重：月还款是 Fundo 的 2.6 倍，三分之一的工资与福利用于还债",
+      "title": "WageGo 的债务负担更重：月还款是 Fundo 的 2.6 倍，三分之一的工资和福利收入用于偿债",
       "body": {
-        "height": 639,
-        "scroll": 639
+        "height": 594,
+        "scroll": 594
       },
       "crops": [],
       "escaped": [],
       "plots": [
         {
           "w": 785,
-          "h": 598,
+          "h": 537,
           "traces": 4,
-          "box": 637
+          "box": 592
         }
       ]
     },
     {
       "slide": 3,
-      "title": "支出规模接近，WageGo 更多花在赌博和手续费上",
+      "title": "支出规模接近，WageGo 的赌博占比更高、手续费更普遍",
       "body": {
         "height": 639,
         "scroll": 639
@@ -49,7 +49,7 @@
       "plots": [
         {
           "w": 785,
-          "h": 598,
+          "h": 582,
           "traces": 4,
           "box": 637
         }
@@ -57,7 +57,7 @@
     },
     {
       "slide": 4,
-      "title": "两边每月只剩几百元：WageGo 净流出更多，账户余额不到 Fundo 一半",
+      "title": "每月结余仅数百元：WageGo 入不敷出更普遍，账户余额不足 Fundo 一半",
       "body": {
         "height": 639,
         "scroll": 639
@@ -67,7 +67,7 @@
       "plots": [
         {
           "w": 785,
-          "h": 598,
+          "h": 565,
           "traces": 4,
           "box": 637
         }
@@ -75,5 +75,5 @@
     }
   ],
   "report": "compare_profile_report_slides.html",
-  "sha256": "f368e9ad2a31daca283f4e6b1f87beb31bc0445728a6fd623598db2f6e2c80b4"
+  "sha256": "a0b6f8a8b1a40438eb46678af57bd76dd4334599adc100f9bf4acd787c67e029"
 }

@@ -153,10 +153,10 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
 
     def kpi_row(cards):
         inner = ""
-        for label, value, note, var in cards:
+        for label, value, note, _ in cards:
             inner += (
                 '<div class="cmp-kpi solo">'
-                f'<div class="label"><span>{label}</span><code class="var">{var}</code></div>'
+                f'<div class="label">{label}</div>'
                 f'<div class="pair"><span class="val">{value}</span></div>'
                 f'<div class="delta">{note}</div>'
                 "</div>"
@@ -165,33 +165,43 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
 
     def solo_cards(cards):
         inner = ""
-        for label, value, note, var in cards:
+        for label, value, note, _ in cards:
             inner += (
                 '<div class="side-card cmp solo">'
-                f'<div class="k"><span>{label}</span><code class="var">{var}</code></div>'
+                f'<div class="k">{label}</div>'
                 f'<div class="prow"><b>{value}</b></div>'
                 f"<p>{note}</p></div>"
             )
         return f'<div class="side-stack reveal d2">{inner}</div>'
 
-    def seg_share(label):
-        try:
-            return float(seg.loc[label, "share"])
-        except Exception:
-            return float("nan")
-
     n_valid = int(m["n_valid"])
+    enrich = m.get("profile_enrichment", {})
     slides: list[str] = []
 
     # 01 收入
     income_body = (
         kpi_row(
             [
-                ("中位月收入", fm(m["inc_p50"]), f"均值 {fm(m['inc_mean'])}", "inc_p50"),
-                ("工资覆盖率", fp(m["wage_incidence"]), f"工资中位 {fm(m['wage_median_m'])}", "wage_incidence"),
-                ("福利 / 入账中位", fp(m["cent_share_agg"]), f"福利覆盖 {fp(m['cent_incidence'])}", "cent_share_agg"),
                 (
-                    "可识别雇主",
+                    "月收入中位数",
+                    fm(m["inc_p50"]),
+                    f"加权口径；均值 {fm(m['inc_mean'])}",
+                    "inc_p50",
+                ),
+                (
+                    "有工资收入",
+                    fp(m["wage_incidence"]),
+                    f"工资中位数 {fm(m['wage_median_m'])}/月",
+                    "wage_incidence",
+                ),
+                (
+                    "福利占领取者收入",
+                    fp(m["cent_share_rec_p50"]),
+                    f"全部收入中占 {fp(m['cent_share_agg'])}",
+                    "cent_share_rec_p50",
+                ),
+                (
+                    "有可识别雇主",
                     fp(m["employer_n"] / m["n_valid"]),
                     f"{int(m['employer_n']):,} / {n_valid:,} 人",
                     "employer_n / n_valid",
@@ -201,34 +211,35 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
         + '<div class="duo">'
         + ui.chart_box(
             figs["income"],
-            f"n = {n_valid:,}；发生率以有效用户为分母，金额占比以分项收入加总为分母。"
-            "变量：wage_incidence / cent_incidence / other_incidence / "
-            "wage_share_agg / cent_share_agg / other_share_agg。",
+            f"n = {n_valid:,}；发生率以有效用户为分母，金额占比按工资、政府福利和其他收入加总计算。"
+            "收入中位数按加权口径：工资和政府福利全额计入，其他收入按 80% 计入，本人账户之间的内部转账不计。"
+            "政府福利指 Centrelink 等政府发放的福利，领取者指观察期内收到政府福利的用户；"
+            "可识别雇主指交易记录中能识别出雇主名称的用户。",
         )
         + solo_cards(
             [
                 (
-                    "工资占入账",
+                    "工资占收入",
                     fp(m["wage_share_agg"]),
-                    f"其他入账 {fp(m['other_share_agg'])}，福利 {fp(m['cent_share_agg'])}",
+                    f"其他收入 {fp(m['other_share_agg'])}，政府福利 {fp(m['cent_share_agg'])}",
                     "wage_share_agg",
                 ),
                 (
-                    "收入波动 CV 中位",
+                    "收入波动系数中位数",
                     fnum(m["income_cv_p50"], 2),
-                    f"收入来源中位 {fnum(m['income_source_p50'])} 个",
+                    f"数值越大越不稳定；收入来源中位数 {fnum(m['income_source_p50'])} 个",
                     "income_cv_p50",
                 ),
                 (
-                    "近 3 月工资下降 >10%",
+                    "近 3 月工资下降超 10%",
                     fp(m["wage_3m6m_decline"]),
-                    f"工资中位 {fm(m['wage_median_m'])}",
+                    "近 3 个月均值比近 6 个月低 10% 以上",
                     "wage_3m6m_decline",
                 ),
                 (
-                    "福利中位（有福利）",
+                    "政府福利中位数（领取者）",
                     fm(m["cent_median_m"]),
-                    f"福利覆盖率 {fp(m['cent_incidence'])}",
+                    f"领取者占比 {fp(m['cent_incidence'])}",
                     "cent_median_m",
                 ),
             ]
@@ -240,7 +251,10 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
             brand=brand,
             section="01 · 收入",
             kicker="Income · 01",
-            title=f"收入来源分散：工资覆盖 {fp(m['wage_incidence'])}，工资仅占入账 {fp(m['wage_share_agg'])}",
+            title=(
+                f"收入来源分散：{fp(m['wage_incidence'])} 的用户有工资收入，"
+                f"但工资只占收入 {fp(m['wage_share_agg'])}"
+            ),
             body=income_body,
         )
     )
@@ -250,42 +264,55 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
     liability_body = (
         kpi_row(
             [
-                ("有借贷放款", fp(m["any_disburse"]), f"现金贷 {fp(m['adv_use'])}", "any_disburse"),
-                ("中位月还款", fm(m["rep_m_p50"]), f"占收入 {fp(m['rep_rate_p50'])}", "rep_m_p50"),
-                ("有拒付记录", fp(m["dish_any"]), f"未解决 {fp(m['dish_unres'])}", "dish_any"),
-                ("未解决拒付", fp(m["dish_unres"]), f"解决率 {fp(m['dish_resolution_rate'])}", "dish_unres"),
+                ("有借款记录", fp(m["any_disburse"]), f"现金贷 {fp(m['adv_use'])}", "any_disburse"),
+                (
+                    "月还款中位数",
+                    fm(m["rep_m_p50"]),
+                    f"占工资和福利收入 {fp(enrich.get('recurring_p50'))}（中位数）",
+                    "rep_m_p50",
+                ),
+                ("有扣款失败记录", fp(m["dish_any"]), f"未解决 {fp(m['dish_unres'])}", "dish_any"),
+                (
+                    "偿债占工资和福利收入",
+                    fp(enrich.get("recurring_p50")),
+                    "中位数；分母为工资 + 政府福利",
+                    "recurring_p50",
+                ),
             ]
         )
         + '<div class="duo">'
         + ui.chart_box(
             figs["liability"],
-            f"n = {n_valid:,}；使用率与拒付占比以有效用户为分母，金额占比以全部放款金额为分母。"
-            "变量：adv_use / loan_use / bnpl_use / bank_use / dish_resolution_rate。",
+            f"n = {n_valid:,}；借款、现金贷、扣款失败和机构数占比以有效用户为分母，金额占比以全部放款金额为分母。"
+            "还款机构数指过去 6 个月有还款记录的机构家数；"
+            "现金贷指短期小额现金借款或工资预支（Payday Loan / Wage Advance）；"
+            "扣款失败指自动扣款（Direct Debit）未成功，未解决指观察期末仍未补扣成功。"
+            "偿债占工资和福利收入 = 月还款 ÷（工资 + 政府福利），仅限两项收入均可观测的用户。",
         )
         + solo_cards(
             [
                 (
                     "现金贷使用率",
                     fp(m["adv_use"]),
-                    f"分期贷 {fp(m['loan_use'])}；BNPL {fp(m['bnpl_use'])}",
+                    f"个人贷款 / 分期贷 {fp(m['loan_use'])}；BNPL {fp(m['bnpl_use'])}",
                     "adv_use",
                 ),
                 (
-                    "还款机构数中位",
-                    fnum(m["lender_cnt_p50"]),
-                    f"有还款记录 {fp(m['any_repay'])}",
-                    "lender_cnt_p50",
+                    "5 家以上机构有还款",
+                    fp(enrich.get("multi5")),
+                    "占全部有效用户",
+                    "multi5",
                 ),
                 (
-                    "中位偿债 / 收入",
-                    fp(m["rep_rate_p50"]),
-                    f"P90 {fp(m['rep_rate_p90'])}",
-                    "rep_rate_p50",
+                    "有还款记录",
+                    fp(m["any_repay"]),
+                    f"还款机构数中位数 {fnum(m['lender_cnt_p50'])} 家",
+                    "any_repay",
                 ),
                 (
-                    "中位月新增借款",
+                    "月新增借款中位数",
                     fm(m["draw_m_p50"]),
-                    f"新增 / 还款 {fnum(draw_ratio, 2)}×；新增借款计入盈余",
+                    f"新增 / 还款 {fnum(draw_ratio, 2)}×；新增借款不计入可支配盈余",
                     "draw_m_p50",
                 ),
             ]
@@ -297,7 +324,10 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
             brand=brand,
             section="02 · 负债",
             kicker="Liability · 02",
-            title=f"负债与履约压力并存：借贷使用 {fp(m['any_disburse'])}，未解决拒付 {fp(m['dish_unres'])}",
+            title=(
+                f"债务与扣款失败压力并存：偿债占工资和福利收入 {fp(enrich.get('recurring_p50'))}，"
+                f"{fp(m['dish_unres'])} 未解决扣款失败"
+            ),
             body=liability_body,
         )
     )
@@ -306,18 +336,18 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
     expense_body = (
         kpi_row(
             [
-                ("中位月支出", fm(m["exp_p50"]), f"消费中位 {fm(m['cons_p50'])}", "exp_p50"),
+                ("月总支出中位数", fm(m["exp_p50"]), f"其中可识别消费中位数 {fm(m['cons_p50'])}", "exp_p50"),
                 (
-                    "可识别消费 / 总支出",
+                    "可识别消费占总支出",
                     fp(m["cons_share_exp_p50"]),
-                    f"聚合覆盖 {fp(m['cons_share_exp_agg'])}",
+                    f"中位数；整体占比 {fp(m['cons_share_exp_agg'])}",
                     "cons_share_exp_p50",
                 ),
-                ("必需品 / 消费", fp(m["ess_share_cons"]), f"可选消费 {fp(m['dis_share_cons'])}", "ess_share_cons"),
+                ("必需品占消费", fp(m["ess_share_cons"]), f"非必需消费 {fp(m['dis_share_cons'])}", "ess_share_cons"),
                 (
-                    "赌博占可识别消费",
+                    "赌博占消费",
                     fp(m["gamb_share_cons"]),
-                    f"赌博发生率 {fp(m['gamb_incidence'])}",
+                    f"有赌博交易 {fp(m['gamb_incidence'])}",
                     "gamb_share_cons",
                 ),
             ]
@@ -325,34 +355,36 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
         + '<div class="duo">'
         + ui.chart_box(
             figs["consumption"],
-            f"n = {n_valid:,}；分类占比以可识别消费为分母，可识别消费覆盖总支出 {fp(m['cons_share_exp_agg'])}。"
-            "变量：cat_shares / cat_totals。",
+            f"n = {n_valid:,}；消费结构仅统计消费类支出（不含转账和还款），分类占比以可识别消费为分母，"
+            f"可识别消费覆盖总支出 {fp(m['cons_share_exp_agg'])}。"
+            "必需品包括超市、公用事业、房租、交通和医疗；非必需消费为其余可识别消费；"
+            "赌博与手续费为有该类交易的人群占比；固定账单指周期性固定扣款。",
         )
         + solo_cards(
             [
                 (
-                    "外部转账 / 总支出",
+                    "外部转账占总支出",
                     fp(m["ext_share_agg"]),
                     f"内部转账 {fp(m['internal_transfer_share_global'])}",
                     "ext_share_agg",
                 ),
                 (
-                    "手续费发生率",
+                    "有手续费交易",
                     fp(m["fees_incidence"]),
-                    f"手续费 / 透支 {fp(m['fees_ticket_incidence'])}",
+                    f"6 个月手续费中位数 {fm(m['fees_median_pos'])}（有交易）",
                     "fees_incidence",
                 ),
                 (
-                    "赌博中位金额（有赌博）",
+                    "赌博金额中位数（有交易）",
                     fm(m["gamb_median_pos"]),
-                    f"P90 {fm(m['gamb_p90'])}；发生率 {fp(m['gamb_incidence'])}",
+                    f"P90 {fm(m['gamb_p90'])}；有赌博交易 {fp(m['gamb_incidence'])}",
                     "gamb_median_pos",
                 ),
                 (
-                    "债务相关支出中位",
-                    fp(m["debt_share_p50"]),
-                    f"高承诺支出 / 收入 {fp(m['high_commit_share_p50'])}",
-                    "debt_share_p50",
+                    "固定账单占工资中位数",
+                    fp(m["fixed_wage_p50"]),
+                    f"占比最高的 10% 用户 {fp(m['fixed_wage_p90'])}",
+                    "fixed_wage_p50",
                 ),
             ]
         )
@@ -363,7 +395,10 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
             brand=brand,
             section="03 · 支出",
             kicker="Spending · 03",
-            title=f"支出结构偏刚性：必需品占消费 {fp(m['ess_share_cons'])}，赌博渗透 {fp(m['gamb_incidence'])}",
+            title=(
+                f"必需品约占消费四成（{fp(m['ess_share_cons'])}），"
+                f"{fp(m['gamb_incidence'])} 有赌博交易"
+            ),
             body=expense_body,
         )
     )
@@ -372,43 +407,56 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
     liquidity_body = (
         kpi_row(
             [
-                ("负盈余占比", fp(m["sur_neg"]), f"偿债前 {fp(m['pre_debt_neg'])}", "sur_neg"),
-                ("缓冲 < 7 天", fp(m["buffer_lt7"]), f"缓冲 < 30 天 {fp(m['buffer_lt30'])}", "buffer_lt7"),
-                ("中位账户余额", fm(m["bal_p50"]), f"中位缓冲 {fnum(m['buffer_p50'], 1)} 天", "bal_p50"),
-                ("偿债前收不抵支", fp(m["pre_debt_neg"]), f"偿债后负盈余 {fp(m['sur_neg'])}", "pre_debt_neg"),
+                (
+                    "可支配盈余中位数",
+                    fm(m["sur_nec_p50"]),
+                    f"占收入 {fp(m['sur_nec_rate_p50'])}（中位数）",
+                    "sur_nec_p50",
+                ),
+                ("入不敷出占比", fp(m["sur_nec_neg"]), "可支配盈余为负", "sur_nec_neg"),
+                (
+                    "账户余额中位数",
+                    fm(m["bal_p50"]),
+                    f"可支撑 {fnum(m['buffer_p50'], 1)} 天",
+                    "bal_p50",
+                ),
+                ("余额可支撑 < 7 天", fp(m["buffer_lt7"]), f"可支撑 < 30 天 {fp(m['buffer_lt30'])}", "buffer_lt7"),
             ]
         )
         + '<div class="duo">'
         + ui.chart_box(
             figs["health"],
-            f"n = {n_valid:,}；盈余按 P1–P99 展示，余额取最近快照。"
-            "变量：sur_neg / sur_p50 / bal_p50。",
+            f"n = {n_valid:,}；可支配盈余按 P1–P99 展示，余额取最近快照。"
+            "可支配盈余 = 加权收入（不含新增借款）− 必要支出 − 外部转账 − 偿债；"
+            "其中工资和政府福利全额计入收入，其他收入按 80% 计入（本人账户之间的内部转账不计）。"
+            "必要支出包括超市、公用事业、房租、交通和医疗；外部转账指转给他人或外部账户；"
+            "偿债包括还款和扣款失败费用。余额可支撑天数 = 账户余额 ÷ 日均总支出（月总支出 ÷ 30）。",
         )
         + solo_cards(
             [
                 (
-                    "中位月盈余",
-                    fm(m["sur_p50"]),
-                    f"储蓄率中位 {fp(m['savings_p50'])}",
-                    "sur_p50",
+                    "可支配盈余 25 分位",
+                    fm(m["sur_nec_p25"]),
+                    f"75 分位 {fm(m['sur_nec_p75'])}",
+                    "sur_nec_p25",
                 ),
                 (
-                    "中位缓冲天数",
-                    f"{fnum(m['buffer_p50'], 1)} 天",
-                    "缓冲 = 余额 /（月支出 / 30）",
-                    "buffer_p50",
+                    "账户余额 < $100",
+                    fp(m["bal_lt100"]),
+                    f"余额中位数 {fm(m['bal_p50'])}",
+                    "bal_lt100",
                 ),
                 (
-                    "重压型占比",
-                    fp(seg_share("重压型")),
-                    f"盈余型 {fp(seg_share('盈余型'))}；分层含新增借款净流量",
-                    "seg[重压型].share",
+                    "曾出现负余额",
+                    fp(enrich.get("ever_negative")),
+                    f"最近快照为负 {fp(m['bal_neg'])}",
+                    "ever_negative",
                 ),
                 (
-                    "余额正负切换中位",
-                    f"{fnum(m['sign_change_p50'])} 次",
-                    f"6 个月观察窗口；双周盈余为负 {fp(m['fortnight_neg'])}",
-                    "sign_change_p50",
+                    "结余占收入中位数",
+                    fp(m["sur_nec_rate_p50"]),
+                    "计算基数为加权收入",
+                    "sur_nec_rate_p50",
                 ),
             ]
         )
@@ -419,7 +467,10 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
             brand=brand,
             section="04 · 流动性",
             kicker="Liquidity · 04",
-            title=f"流动性极薄：负盈余 {fp(m['sur_neg'])}，缓冲不足 7 天 {fp(m['buffer_lt7'])}",
+            title=(
+                f"每月结余仅数百元：中位数 {fm(m['sur_nec_p50'])}/月，"
+                f"{fp(m['sur_nec_neg'])} 入不敷出"
+            ),
             body=liquidity_body,
         )
     )
