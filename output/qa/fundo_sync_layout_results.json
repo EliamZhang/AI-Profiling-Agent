@@ -3,6 +3,14 @@
   "slides": [
     {
       "slide": 1,
+      "title": "封面",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 2,
       "title": "收入来源分散：74.0% 的用户有工资收入，但工资只占收入 23.5%",
       "body": {
         "height": 674,
@@ -26,7 +34,7 @@
       ]
     },
     {
-      "slide": 2,
+      "slide": 3,
       "title": "债务与扣款失败压力并存：偿债占工资和福利收入 16.9%，32.7% 未解决扣款失败",
       "body": {
         "height": 674,
@@ -50,7 +58,7 @@
       ]
     },
     {
-      "slide": 3,
+      "slide": 4,
       "title": "必需品约占消费四成（39.8%），51.1% 有赌博交易",
       "body": {
         "height": 674,
@@ -68,7 +76,7 @@
       ]
     },
     {
-      "slide": 4,
+      "slide": 5,
       "title": "每月结余仅数百元：中位数 $693/月，32.2% 入不敷出",
       "body": {
         "height": 674,
@@ -87,5 +95,5 @@
     }
   ],
   "report": "fundo_profile_report_slides.html",
-  "sha256": "40e3c2668e8e42851033776cc9a829311f2302354722f157e3eaaaf78b76205f"
+  "sha256": "2d35679bbac9369a8bbde4587e2420bf5eb1403969c678b8dea3aba3b37c29b6"
 }

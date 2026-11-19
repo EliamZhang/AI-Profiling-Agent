@@ -147,6 +147,33 @@ def build_concise_pair_deck(
 
     slides: list[str] = []
 
+    # 封面
+    slides.append(
+        ui.slide_cover(
+            brand=brand,
+            tag=pair["tag"],
+            eyebrow=f"人群画像对比 · {generated_at}",
+            title=pair["title"],
+            desc=(
+                f"使用同一套特征口径对比 {left_name} 与 {right_name} 两组样本，"
+                "覆盖收入、负债、支出、可支配盈余与账户余额四个维度；"
+                "所有指标在两组使用相同公式与阈值。"
+                f"样本月份：{html.escape(str(pf.m['sample_month']))} 与 "
+                f"{html.escape(str(pw.m['sample_month']))}。"
+            ),
+            statuses=[
+                (pair["status_levels"][0], f"{left_name} 有效 {pf.m['n_valid']:,}"),
+                (pair["status_levels"][1], f"{right_name} 有效 {pw.m['n_valid']:,}"),
+            ],
+            metrics=[
+                (left_name, f"{pf.m['n_valid']:,}", f"有效用户 · 覆盖 {fp(pf.m['coverage'])}"),
+                (right_name, f"{pw.m['n_valid']:,}", f"有效用户 · 覆盖 {fp(pw.m['coverage'])}"),
+                ("Window", "182 天", "观察窗口"),
+                ("Sample", html.escape(str(pf.m["sample_month"])), "Fundo 样本月份"),
+            ],
+        )
+    )
+
     # 01 收入
     income_body = analysis_body(
         figs["income_focus"],
@@ -238,8 +265,8 @@ def build_concise_pair_deck(
             brand=brand,
             section="02 · 负债",
             kicker="Liability · 02",
-            title=f"WageGo 的债务负担更重：月还款是 Fundo 的 {rep_ratio:.1f} 倍，"
-            "三分之一的工资和福利收入用于偿债",
+            title=f"WageGo 债务负担更重：月还款为 Fundo 的 {rep_ratio:.1f} 倍，"
+            "占工资和政府福利收入三分之一",
             sub="从借款、还款到扣款失败，WageGo 的压力全面更高。",
             body=liability_body,
         )
@@ -409,7 +436,7 @@ def build_pair_deck(
                 (left_name, f"{pf.m['n_valid']:,}", f"有效用户 · 覆盖 {fp(pf.m['coverage'])}"),
                 (right_name, f"{pw.m['n_valid']:,}", f"有效用户 · 覆盖 {fp(pw.m['coverage'])}"),
                 ("Window", "182 天", "观察窗口"),
-                ("Sample", html.escape(str(pf.m["sample_month"])), "对比基准月份"),
+                ("Sample", html.escape(str(pf.m["sample_month"])), "Fundo 样本月份"),
             ],
         )
     )

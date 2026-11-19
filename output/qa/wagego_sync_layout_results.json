@@ -3,6 +3,14 @@
   "slides": [
     {
       "slide": 1,
+      "title": "封面",
+      "body": null,
+      "crops": [],
+      "escaped": [],
+      "plots": []
+    },
+    {
+      "slide": 2,
       "title": "收入来源分散：86.4% 的用户有工资收入，但工资只占收入 26.4%",
       "body": {
         "height": 674,
@@ -26,7 +34,7 @@
       ]
     },
     {
-      "slide": 2,
+      "slide": 3,
       "title": "债务与扣款失败压力并存：偿债占工资和福利收入 33.3%，57.7% 未解决扣款失败",
       "body": {
         "height": 674,
@@ -50,7 +58,7 @@
       ]
     },
     {
-      "slide": 3,
+      "slide": 4,
       "title": "必需品约占消费四成（39.1%），60.9% 有赌博交易",
       "body": {
         "height": 674,
@@ -68,7 +76,7 @@
       ]
     },
     {
-      "slide": 4,
+      "slide": 5,
       "title": "每月结余仅数百元：中位数 $549/月，38.2% 入不敷出",
       "body": {
         "height": 674,
@@ -87,5 +95,5 @@
     }
   ],
   "report": "wagego_profile_report_slides.html",
-  "sha256": "79133899db19237ecad6a3aec0c2dacf00f30f332927716210f9df1687be2e70"
+  "sha256": "1cd820cd20fecd7f708c9ea8a7c593975bc0e383d5b536e314c49fcdd5fb76c6"
 }

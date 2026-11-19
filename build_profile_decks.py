@@ -178,6 +178,30 @@ def build_concise_deck(mod, ds: dict, m: dict, seg, d, figs: dict[str, str], gen
     enrich = m.get("profile_enrichment", {})
     slides: list[str] = []
 
+    # 封面
+    slides.append(
+        ui.slide_cover(
+            brand=brand,
+            tag=ds["tag"],
+            eyebrow=f"用户画像报告 · {generated_at}",
+            title=f"{html.escape(name)}<br>银行流水用户画像",
+            desc=(
+                f"基于 {html.escape(ds['source'])} 的银行流水特征，观察窗口 {mod.WINDOW_DAYS} 天，"
+                "从收入、负债、支出、可支配盈余与账户余额四个维度呈现人群画像。"
+            ),
+            statuses=[
+                ("green", f"有效流水用户 {m['n_valid']:,}"),
+                ("blue", f"覆盖率 {fp(m['coverage'])}"),
+            ],
+            metrics=[
+                ("Applications", f"{m['n_apps']:,}", "申请数"),
+                ("Users", f"{m['n_users']:,}", "去重用户"),
+                ("Valid", f"{m['n_valid']:,}", "有效流水"),
+                ("Sample", html.escape(str(m["sample_month"])), str(m["user_type_label"]) + "样本"),
+            ],
+        )
+    )
+
     # 01 收入
     income_body = (
         kpi_row(
