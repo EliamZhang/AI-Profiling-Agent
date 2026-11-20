@@ -39,7 +39,6 @@
 - [fundo_enrichment_metrics.json](data/fundo_enrichment_metrics.json)：所有新增指标、样本数与恒等式核验结果。
 - [fundo_cross_analysis.csv](data/fundo_cross_analysis.csv)：机构数、偿债负担、历史余额、行为分层、互斥窗口和核验结果的聚合统计。
 - [fundo_segment_summary.csv](data/fundo_segment_summary.csv)：本次 Fundo 样本的分层金额中位数，替代原文中指向不明确的通用分层文件。
-- [fundo_layout_results.json](qa/fundo_layout_results.json)：逐页排版与图表渲染检测。
 
 运行 `python build_profile_decks.py --only fundo` 从原始 CSV 重建 HTML 和新增审计数据。运行 `python review_fundo_variables.py` 可重新生成候选变量统计。业务计算现集中在 `profile_enrichment.py`，`fundo_profile_enrichment.py` 保留兼容入口；WageGo 与两品牌对比已复用相同公式、阈值和时间窗口。
 

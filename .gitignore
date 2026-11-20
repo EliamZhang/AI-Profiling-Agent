@@ -1,7 +1,2 @@
 __pycache__/
 *.pyc
-output/qa/*.png
-output/qa/*.jpg
-output/qa/*.log
-output/qa/*.html
-output/qa/chrome-*/

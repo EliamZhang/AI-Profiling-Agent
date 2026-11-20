@@ -51,6 +51,6 @@ python build_compare_decks.py --pair fundo_wagego --sync-profiles
 
 该命令从原始 CSV 各加载一次，使用同一批数据和同一次生成时间，写出两份单独画像、对比报告及聚合审计数据。仍可单独运行 `python build_profile_decks.py --only wagego` 或 `python build_compare_decks.py --pair fundo_wagego`。
 
-验证包括 9 项测试，覆盖分母缺失/非正值、净额、互斥窗口、共同月份限制、品牌共享计算、额外字段读取及导出命名隔离；另检查三份报告全部页面的渲染、溢出、脚本错误与图表尺寸。逐页结果在 `output/qa/*_sync_layout_results.json`，带 HTML 的 SHA-256 以核对检查对象。
+验证包括 9 项测试，覆盖分母缺失/非正值、净额、互斥窗口、共同月份限制、品牌共享计算、额外字段读取及导出命名隔离；另检查三份报告全部页面的渲染、溢出、脚本错误与图表尺寸。
 
 新增 CSV/JSON 审计文件仅含聚合统计，不输出用户键或逐户财务数据；描述性差异不直接作为审批规则或因果结论。
