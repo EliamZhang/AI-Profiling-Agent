@@ -17,10 +17,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import fundo_profile_report as fpr
-import profile_enrichment as profile_extra
-import compare_profile_enrichment as compare_extra
-from fundo_profile_report import (
+from . import fundo_profile_report as fpr
+from . import profile_enrichment as profile_extra
+from . import compare_profile_enrichment as compare_extra
+from .fundo_profile_report import (
     BASELINE,
     INK,
     INK2,
@@ -77,7 +77,7 @@ def load_profile(name: str, module, path: Path) -> Profile:
     import csv
     with path.open(encoding="utf-8-sig", newline="") as source:
         header = next(csv.reader(source))
-    profile_extra.export_evidence(Path(__file__).resolve().parent, header, module.ALL_COLUMNS, d, m)
+    profile_extra.export_evidence(Path(__file__).resolve().parent.parent, header, module.ALL_COLUMNS, d, m)
 
     for key, col in (
         ("inc_mean", "inc_m"),

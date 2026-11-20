@@ -21,10 +21,10 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-import fundo_profile_report as fundo_mod
-import wagego_profile_report as wagego_mod
-import deck_framework as ui
-import profile_enrichment as profile_extra
+from scripts import fundo_profile_report as fundo_mod
+from scripts import wagego_profile_report as wagego_mod
+from scripts import deck_framework as ui
+from scripts import profile_enrichment as profile_extra
 from plotly.offline import get_plotlyjs
 
 if hasattr(sys.stdout, "reconfigure"):

@@ -7,13 +7,12 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 
-import compare_profile_enrichment as pair
-import compare_profile_report as comparison
-import fundo_profile_enrichment as compatibility
-import fundo_profile_report as fundo
-import profile_enrichment as shared
-import wagego_profile_report as wagego
-import test_fundo_profile_enrichment as fixtures
+from scripts import compare_profile_enrichment as pair
+from scripts import compare_profile_report as comparison
+from scripts import fundo_profile_report as fundo
+from scripts import profile_enrichment as shared
+from scripts import wagego_profile_report as wagego
+from tests import test_fundo_profile_enrichment as fixtures
 
 
 def frame(months,ids,burdens,outcomes):
@@ -62,7 +61,6 @@ class ProfileComparisonTests(unittest.TestCase):
         self.assertAlmostEqual(c['burden'],.3)
 
     def test_wagego_uses_shared_formulas_without_becoming_fundo(self):
-        self.assertIs(compatibility.analyze,shared.analyze)
         d=fixtures.FundoEnrichmentTests().sample(); m={}
         e=shared.analyze(d,m,dataset_key='wagego',dataset_name='WageGo')
         self.assertEqual(e['dataset_key'],'wagego')

@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-import fundo_profile_enrichment as extra
+from scripts import profile_enrichment as extra
 
 
 class FundoEnrichmentTests(unittest.TestCase):

@@ -14,7 +14,7 @@
 | 分层拒付占比 | 实际计算有拒付记录的用户占比，注释却写成按笔数计算 | 表头及注释明确用户占比，与代码中的分层聚合一致 |
 | 用户分层解释 | 含新增借款的盈余分层被用来判断信用质量“略好” | 明确融资流入影响净流量分层，不直接当作信用等级 |
 | 可比性 | 两组月份构成不同，旧文字还预设“独立样本” | 增加共同月份检查及用户键重合检查；不预设统计独立性 |
-| 维护方式 | 各报告容易分别修改、口径逐渐分叉 | 提取 `profile_enrichment.py`；对比模块加载同样字段，并支持一次加载同步生成三份报告 |
+| 维护方式 | 各报告容易分别修改、口径逐渐分叉 | 提取 `scripts/profile_enrichment.py`；对比模块加载同样字段，并支持一次加载同步生成三份报告 |
 
 WageGo 文件有 13,422 个字段，原报告加载 171 个，本次加载 187 个；Fundo 有 13,363 个字段，加载 188 个。两者加载数相差 1，是样本月份元数据来源不同；新增 16 个业务字段及其公式、阈值完全对齐。未附独立变量释义字典，沿用字段名解释并补充数值核验。
 
@@ -41,7 +41,7 @@ Fundo 全部样本均在 2026-09，因此其共同月份结果与全期相同。
 - WageGo 从 17 页扩展为 24 页，对比报告从 21 页扩展为 27 页；Fundo 保持 24 页。三份报告共 75 页、46 张图表。
 - [WageGo 完整变量审查表](data/wagego_variable_audit.csv)、[WageGo 扩展指标](data/wagego_enrichment_metrics.json)、[WageGo 交叉分析](data/wagego_cross_analysis.csv)。审查表记录完整字段清单；只给实际加载字段提供统计值。
 - [全期与共同月份统计](data/fundo_wagego_cohort_comparison.csv)、[月份和用户键检查](data/fundo_wagego_comparison_checks.json)。每项指标都保留自己的有效人数，不能用总体人数替代工资福利比等条件指标的分母。
-- `compare_profile_report.py` 负责加载和图表；`compare_profile_enrichment.py` 负责共同月份、用户键检查和新增比较；`profile_enrichment.py` 是两个品牌共用的业务计算；`wagego_profile_report.py` 保留原始基础指标计算，并支持额外字段加载。
+- `scripts/compare_profile_report.py` 负责加载和图表；`scripts/compare_profile_enrichment.py` 负责共同月份、用户键检查和新增比较；`scripts/profile_enrichment.py` 是两个品牌共用的业务计算；`scripts/profile_report_base.py` 是两个品牌共用的画像加载与图表基建，两个品牌模块只保留列选择和样本月份口径差异。
 
 推荐重建命令：
 

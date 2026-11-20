@@ -8,9 +8,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-import deck_framework as ui
-import profile_enrichment as ext
-import fundo_profile_report as style
+from . import deck_framework as ui
+from . import profile_enrichment as ext
+from . import fundo_profile_report as style
 
 COLORS={"Fundo":"#0E7558","WageGo":"#6B4FA8"}
 EXTRA_CSS="""

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import html
 
-from deck_assets import CSS as BASE_CSS, NAV_JS
+from .deck_assets import CSS as BASE_CSS, NAV_JS
 
 
 EXTRA_CSS = """

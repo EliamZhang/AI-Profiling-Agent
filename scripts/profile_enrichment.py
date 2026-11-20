@@ -14,7 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-import deck_framework as ui
+from . import deck_framework as ui
 
 S = "bank_txn_surplus_"
 W = "bank_txn_worthiness_"

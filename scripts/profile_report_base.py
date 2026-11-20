@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-WageGo 用户画像数据与图表模块。
+Shared bank-transaction profile calculations and charts.
 
-供 build_profile_decks.py / build_compare_decks.py 生成幻灯片。
+Dataset-specific modules supply column selection and sample-month handling.
 """
 
 from __future__ import annotations
@@ -270,21 +270,25 @@ DEPTH_COLS = [
 ] + list(BENEFIT_COLS.values()) + list(COMPETITOR_COLS.values()) + [
     f"bank_txn_category_{k}_debit_cnt_182d" for k in CONSUMPTION_CATS
 ]
-ALL_COLUMNS = list(
-    dict.fromkeys(
-        META_COLS
-        + INCOME_COLS
-        + EXPENSE_COLS
-        + SURPLUS_COLS
-        + BALANCE_COLS
-        + LENDER_COLS
-        + DISHONOUR_COLS
-        + INDUSTRY_COLS
-        + CATEGORY_COLS
-        + WORTHINESS_COLS
-        + DEPTH_COLS
+def all_columns(meta_cols):
+    return list(
+        dict.fromkeys(
+            meta_cols
+            + INCOME_COLS
+            + EXPENSE_COLS
+            + SURPLUS_COLS
+            + BALANCE_COLS
+            + LENDER_COLS
+            + DISHONOUR_COLS
+            + INDUSTRY_COLS
+            + CATEGORY_COLS
+            + WORTHINESS_COLS
+            + DEPTH_COLS
+        )
     )
-)
+
+
+ALL_COLUMNS = all_columns(META_COLS)
 TEXT_COLS = {"user_id", "application_id", "sample_datetime", "user_type", "feature_error"}
 COUNT_COLS = {"txn_raw_input_cnt", "txn_balance_input_cnt"}
 
@@ -345,12 +349,14 @@ def cond_share(cond: pd.Series, s: pd.Series | None = None) -> float:
 # ---------------------------------------------------------------------------
 # 数据读取与清洗
 # ---------------------------------------------------------------------------
-def load_data(path: Path, log=print, *, extra_columns=()) -> tuple[pd.DataFrame, list[str], int]:
+def load_data(
+    path: Path, log=print, *, extra_columns=(), columns=None
+) -> tuple[pd.DataFrame, list[str], int]:
     if not path.exists():
         raise SystemExit(f"数据文件不存在: {path}")
     t0 = time.time()
     header = pd.read_csv(path, nrows=0).columns.tolist()
-    requested = list(dict.fromkeys(ALL_COLUMNS + list(extra_columns)))
+    requested = list(dict.fromkeys((ALL_COLUMNS if columns is None else columns) + list(extra_columns)))
     usecols = [c for c in requested if c in header]
     missing = [c for c in requested if c not in header]
     log(f"读取数据: {path.name} | 总字段 {len(header):,} | 本次加载 {len(usecols)} 个字段 ...")
@@ -359,10 +365,11 @@ def load_data(path: Path, log=print, *, extra_columns=()) -> tuple[pd.DataFrame,
     return df, missing, len(header)
 
 
-def clean_frame(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+def clean_frame(df: pd.DataFrame, *, text_cols=None) -> tuple[pd.DataFrame, int]:
+    text_cols = TEXT_COLS if text_cols is None else text_cols
     n_apps = len(df)
     for c in df.columns:
-        if c in TEXT_COLS:
+        if c in text_cols:
             continue
         s = pd.to_numeric(df[c], errors="coerce")
         if c in COUNT_COLS:
@@ -387,7 +394,9 @@ def dedupe_users(df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # 指标计算
 # ---------------------------------------------------------------------------
-def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd.DataFrame]:
+def build_metrics(
+    df: pd.DataFrame, n_apps: int, *, sample_month_col: str | None = None
+) -> tuple[pd.DataFrame, dict, pd.DataFrame]:
     d = df[df["txn_raw_input_cnt"] > 0].copy()
     core = [
         "bank_txn_surplus_income_sum_182d",
@@ -498,7 +507,9 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
     m["n_valid"] = len(d)
     m["coverage"] = len(d) / len(df)
     m["n_no_data"] = len(df) - len(d)
-    if "sample_datetime" in df.columns:
+    if sample_month_col and sample_month_col in df.columns:
+        months = sorted(df[sample_month_col].dropna().astype(str).unique().tolist())
+    elif "sample_datetime" in df.columns:
         months = sorted(
             pd.to_datetime(df["sample_datetime"], errors="coerce", format="mixed")
             .dt.strftime("%Y-%m")
@@ -967,7 +978,6 @@ def build_metrics(df: pd.DataFrame, n_apps: int) -> tuple[pd.DataFrame, dict, pd
 
     m["cat_pen"] = cat_pen
     m["cat_ticket"] = cat_ticket
-
     m["cat_shares"] = cat_shares
     m["cat_totals"] = cat_totals
     m["cons_total"] = cons_total
@@ -1076,6 +1086,129 @@ def fig_html(fig, height: int = 430) -> str:
         include_plotlyjs=False,
         config=PLOTLY_CONFIG,
         default_height=f"{height}px",
+    )
+
+
+def chart_income(m: dict) -> str:
+    labels = ["工资", "政府福利", "其他收入"]
+    inc_vals = [
+        float(m["wage_incidence"]) * 100,
+        float(m["cent_incidence"]) * 100,
+        float(m["other_incidence"]) * 100,
+    ]
+    amt_vals = [
+        float(m["wage_share_agg"]) * 100,
+        float(m["cent_share_agg"]) * 100,
+        float(m["other_share_agg"]) * 100,
+    ]
+
+    left = go.Figure()
+    left.add_trace(
+        go.Bar(
+            y=labels,
+            x=inc_vals,
+            orientation="h",
+            name="有该类收入的用户占比",
+            marker=dict(color=SERIES[0]),
+            text=[f"{v:.0f}%" for v in inc_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="有该类收入的用户占比 %{x:.1f}%<br>%{y}<extra></extra>",
+        )
+    )
+    left.add_trace(
+        go.Bar(
+            y=labels,
+            x=amt_vals,
+            orientation="h",
+            name="收入金额占比",
+            marker=dict(color=SERIES[1]),
+            text=[f"{v:.0f}%" for v in amt_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="收入金额占比 %{x:.1f}%<br>%{y}<extra></extra>",
+        )
+    )
+    base_layout(left, height=430, margin=dict(l=82, r=18, t=78, b=76), showlegend=True)
+    left.update_layout(
+        barmode="group",
+        bargap=0.32,
+        bargroupgap=0.08,
+        legend=dict(
+            orientation="h",
+            x=0,
+            xanchor="left",
+            y=-0.18,
+            yanchor="top",
+            font=dict(size=11),
+            bgcolor="rgba(0,0,0,0)",
+        ),
+    )
+    left.update_xaxes(
+        range=[0, 112],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
+    )
+    left.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
+    add_title(left, f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他收入")
+
+    pct = lambda x: float(x) * 100 if np.isfinite(x) else 0.0
+    labor = pct(m["wage_share_agg"] + m["cent_share_agg"])
+    ext_inc = pct(m["other_ext_share"] * m["other_share_agg"])
+    int_inc = pct(m["other_internal_share"] * m["other_share_agg"])
+    rest_inc = max(0.0, pct(m["other_share_agg"]) - ext_inc - int_inc)
+    ext_dbt = pct(m["ext_transfer_share_global"])
+    int_dbt = pct(m["internal_transfer_share_global"])
+    rest_dbt = max(0.0, 100.0 - ext_dbt - int_dbt)
+
+    right = go.Figure()
+    seg_defs = [
+        ("工资+福利", ["收入构成"], [labor], SERIES[0], "#ffffff"),
+        ("外部转账", ["收入构成", "支出构成"], [ext_inc, ext_dbt], SERIES[1], "#ffffff"),
+        ("内部转账", ["收入构成", "支出构成"], [int_inc, int_dbt], SERIES[3], INK),
+        ("其他", ["收入构成", "支出构成"], [rest_inc, rest_dbt], NEUTRAL, "#ffffff"),
+    ]
+    for name, ys, xs, color, text_color in seg_defs:
+        shown = [
+            "其他支出" if name == "其他" and y == "支出构成" else name for y in ys
+        ]
+        right.add_trace(
+            go.Bar(
+                y=ys,
+                x=xs,
+                orientation="h",
+                name=name,
+                marker=dict(color=color, line=dict(color=SURFACE, width=1.5)),
+                text=[f"{lab}<br>{v:.0f}%" for lab, v in zip(shown, xs)],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(color=text_color, size=11),
+                customdata=[[lab, v] for lab, v in zip(shown, xs)],
+                hovertemplate="%{y}<br>%{customdata[0]}：%{customdata[1]:.1f}%<extra></extra>",
+            )
+        )
+    base_layout(right, height=430, margin=dict(l=84, r=18, t=78, b=76))
+    right.update_layout(barmode="stack", bargap=0.45)
+    right.update_xaxes(
+        range=[0, 100],
+        tickvals=[0, 25, 50, 75, 100],
+        ticktext=["0", "25%", "50%", "75%", "100%"],
+    )
+    right.update_yaxes(
+        categoryorder="array",
+        categoryarray=["支出构成", "收入构成"],
+        showgrid=False,
+    )
+    add_title(
+        right,
+        f"转账主导：占收入 {fmt_pct(m['transfer_inc_share'], 0)}、占支出 {fmt_pct(m['ext_transfer_share_global'] + m['internal_transfer_share_global'], 0)}",
+    )
+
+    return (
+        f'<div class="chart-grid"><div>{fig_html(left)}</div>'
+        f"<div>{fig_html(right)}</div></div>"
     )
 
 
@@ -1196,6 +1329,45 @@ def chart_income_resilience(m: dict, seg: pd.DataFrame) -> str:
         f"福利类型覆盖：养老金 {pension:.0f}%、家庭福利 {family:.0f}%",
         "x2 domain",
         "y2 domain",
+    )
+    return fig_html(fig)
+
+
+def chart_consumption(m: dict, top_n: int = 10) -> str:
+    items = sorted(m["cat_shares"].items(), key=lambda kv: kv[1])[-top_n:]
+    labels = [
+        CONSUMPTION_CATS[k] + ("（风险类）" if k == "gambling" else "") for k, _ in items
+    ]
+    vals = [float(v) * 100 for _, v in items]
+    colors = [STATUS["critical"] if k == "gambling" else SERIES[0] for k, _ in items]
+    totals = [fmt_money(m["cat_totals"][k], compact=True) for k, _ in items]
+
+    fig = go.Figure(
+        go.Bar(
+            y=labels,
+            x=vals,
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v:.1f}%" for v in vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            customdata=[[t] for t in totals],
+            hovertemplate="%{y}<br>占消费 %{x:.1f}%<br>6 个月总额 %{customdata[0]}<extra></extra>",
+        )
+    )
+    base_layout(fig, height=430, margin=dict(l=124, r=34, t=64, b=48))
+    fig.update_xaxes(
+        range=[0, max(vals) * 1.22 if vals else 1],
+        ticksuffix="%",
+        title="占消费比例",
+    )
+    fig.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
+    top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
+    add_title(
+        fig,
+        f"消费结构：{top3}居前 · 可识别消费覆盖总支出 {fmt_pct(m['cons_share_exp_agg'])}",
+        y=1.12,
     )
     return fig_html(fig)
 
@@ -1364,305 +1536,6 @@ def chart_consumption_depth(m: dict, seg: pd.DataFrame) -> str:
     return fig_html(fig)
 
 
-def chart_fixed_burden(m: dict, seg: pd.DataFrame) -> str:
-    labels = ["盈余型", "平衡型", "赤字型", "重压型"]
-    order = labels[::-1]
-    colors_by_seg = {
-        "盈余型": STATUS["good"],
-        "平衡型": STATUS["warning"],
-        "赤字型": STATUS["serious"],
-        "重压型": STATUS["critical"],
-    }
-
-    fixed_vals = [
-        float(seg.loc[s, "fixed_wage"]) * 100 if s in seg.index else np.nan
-        for s in order
-    ]
-    fixed_plot = [v if np.isfinite(v) else 0.0 for v in fixed_vals]
-    fig = make_subplots(
-        rows=1,
-        cols=2,
-        column_widths=[1.0, 1.0],
-        horizontal_spacing=0.16,
-    )
-    fig.add_trace(
-        go.Bar(
-            y=order,
-            x=fixed_plot,
-            orientation="h",
-            marker=dict(color=[colors_by_seg[s] for s in order]),
-            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in fixed_vals],
-            textposition="outside",
-            textfont=dict(color=INK2, size=11),
-            cliponaxis=False,
-            hovertemplate="%{y}<br>固定账单 / 工资中位 %{x:.1f}%<extra></extra>",
-        ),
-        row=1,
-        col=1,
-    )
-    med = float(m["fixed_wage_p50"]) * 100 if np.isfinite(m["fixed_wage_p50"]) else np.nan
-    if np.isfinite(med):
-        fig.add_vline(
-            x=med,
-            line=dict(color=BASELINE, width=1, dash="dot"),
-            row=1,
-            col=1,
-        )
-        fig.add_annotation(
-            x=med,
-            y=1,
-            xref="x",
-            yref="y domain",
-            text=f"全体中位 {med:.1f}%",
-            showarrow=False,
-            xanchor="left",
-            yanchor="bottom",
-            font=dict(color=MUTED, size=10.5),
-        )
-    low = float(seg.loc["盈余型", "fixed_wage"]) if "盈余型" in seg.index else np.nan
-    high = float(seg.loc["重压型", "fixed_wage"]) if "重压型" in seg.index else np.nan
-    ratio = high / low if np.isfinite(high) and np.isfinite(low) and low > 0 else np.nan
-    add_panel_title(
-        fig,
-        f"固定账单负担：重压型是盈余型的 {ratio:.1f} 倍" if np.isfinite(ratio) else "固定账单负担",
-        "x domain",
-    )
-
-    rent_vals = [
-        float(seg.loc[s, "rent_inc"]) * 100 if s in seg.index else np.nan
-        for s in order
-    ]
-    rent_plot = [v if np.isfinite(v) else 0.0 for v in rent_vals]
-    fig.add_trace(
-        go.Bar(
-            y=order,
-            x=rent_plot,
-            orientation="h",
-            marker=dict(color=SERIES[0]),
-            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in rent_vals],
-            textposition="outside",
-            textfont=dict(color=INK2, size=11),
-            cliponaxis=False,
-            hovertemplate="%{y}<br>房租覆盖率 %{x:.1f}%<extra></extra>",
-        ),
-        row=1,
-        col=2,
-    )
-    overall = float(m["rent_incidence"]) * 100 if np.isfinite(m["rent_incidence"]) else np.nan
-    if np.isfinite(overall):
-        fig.add_vline(
-            x=overall,
-            line=dict(color=BASELINE, width=1, dash="dot"),
-            row=1,
-            col=2,
-        )
-        fig.add_annotation(
-            x=overall,
-            y=1,
-            xref="x2",
-            yref="y2 domain",
-            text=f"全体 {overall:.1f}%",
-            showarrow=False,
-            xanchor="left",
-            yanchor="bottom",
-            font=dict(color=MUTED, size=10.5),
-        )
-    add_panel_title(fig, "房租覆盖率：赤字型与重压型接近一半", "x2 domain", "y2 domain")
-
-    base_layout(fig, height=430, margin=dict(l=72, r=24, t=78, b=64))
-    fig.update_xaxes(
-        range=[0, max(fixed_plot) * 1.30 if any(fixed_plot) else 1],
-        ticksuffix="%",
-        title="固定账单 / 工资（有工资用户，中位）",
-        row=1,
-        col=1,
-    )
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=order,
-        showgrid=False,
-        row=1,
-        col=1,
-    )
-    fig.update_xaxes(
-        range=[0, max(rent_plot) * 1.30 if any(rent_plot) else 1],
-        ticksuffix="%",
-        title="房租覆盖率（有房租交易用户占比）",
-        row=1,
-        col=2,
-    )
-    fig.update_yaxes(
-        categoryorder="array",
-        categoryarray=order,
-        showgrid=False,
-        row=1,
-        col=2,
-    )
-    return fig_html(fig)
-
-
-def chart_income(m: dict) -> str:
-    labels = ["工资", "政府福利", "其他收入"]
-    inc_vals = [
-        float(m["wage_incidence"]) * 100,
-        float(m["cent_incidence"]) * 100,
-        float(m["other_incidence"]) * 100,
-    ]
-    amt_vals = [
-        float(m["wage_share_agg"]) * 100,
-        float(m["cent_share_agg"]) * 100,
-        float(m["other_share_agg"]) * 100,
-    ]
-
-    left = go.Figure()
-    left.add_trace(
-        go.Bar(
-            y=labels,
-            x=inc_vals,
-            orientation="h",
-            name="有该类收入的用户占比",
-            marker=dict(color=SERIES[0]),
-            text=[f"{v:.0f}%" for v in inc_vals],
-            textposition="outside",
-            textfont=dict(color=INK2, size=11),
-            cliponaxis=False,
-            hovertemplate="有该类收入的用户占比 %{x:.1f}%<br>%{y}<extra></extra>",
-        )
-    )
-    left.add_trace(
-        go.Bar(
-            y=labels,
-            x=amt_vals,
-            orientation="h",
-            name="收入金额占比",
-            marker=dict(color=SERIES[1]),
-            text=[f"{v:.0f}%" for v in amt_vals],
-            textposition="outside",
-            textfont=dict(color=INK2, size=11),
-            cliponaxis=False,
-            hovertemplate="收入金额占比 %{x:.1f}%<br>%{y}<extra></extra>",
-        )
-    )
-    base_layout(left, height=430, margin=dict(l=82, r=18, t=78, b=76), showlegend=True)
-    left.update_layout(
-        barmode="group",
-        bargap=0.32,
-        bargroupgap=0.08,
-        legend=dict(
-            orientation="h",
-            x=0,
-            xanchor="left",
-            y=-0.18,
-            yanchor="top",
-            font=dict(size=11),
-            bgcolor="rgba(0,0,0,0)",
-        ),
-    )
-    left.update_xaxes(
-        range=[0, 112],
-        tickvals=[0, 25, 50, 75, 100],
-        ticktext=["0", "25%", "50%", "75%", "100%"],
-    )
-    left.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
-    add_title(left, f"收入来源：{fmt_pct(m['other_share_agg'], 0)} 的金额来自其他收入")
-
-    pct = lambda x: float(x) * 100 if np.isfinite(x) else 0.0
-    labor = pct(m["wage_share_agg"] + m["cent_share_agg"])
-    ext_inc = pct(m["other_ext_share"] * m["other_share_agg"])
-    int_inc = pct(m["other_internal_share"] * m["other_share_agg"])
-    rest_inc = max(0.0, pct(m["other_share_agg"]) - ext_inc - int_inc)
-    ext_dbt = pct(m["ext_transfer_share_global"])
-    int_dbt = pct(m["internal_transfer_share_global"])
-    rest_dbt = max(0.0, 100.0 - ext_dbt - int_dbt)
-
-    right = go.Figure()
-    seg_defs = [
-        ("工资+福利", ["收入构成"], [labor], SERIES[0], "#ffffff"),
-        ("外部转账", ["收入构成", "支出构成"], [ext_inc, ext_dbt], SERIES[1], "#ffffff"),
-        ("内部转账", ["收入构成", "支出构成"], [int_inc, int_dbt], SERIES[3], INK),
-        ("其他", ["收入构成", "支出构成"], [rest_inc, rest_dbt], NEUTRAL, "#ffffff"),
-    ]
-    for name, ys, xs, color, text_color in seg_defs:
-        shown = [
-            "其他支出" if name == "其他" and y == "支出构成" else name for y in ys
-        ]
-        right.add_trace(
-            go.Bar(
-                y=ys,
-                x=xs,
-                orientation="h",
-                name=name,
-                marker=dict(color=color, line=dict(color=SURFACE, width=1.5)),
-                text=[f"{lab}<br>{v:.0f}%" for lab, v in zip(shown, xs)],
-                textposition="inside",
-                insidetextanchor="middle",
-                textfont=dict(color=text_color, size=11),
-                customdata=[[lab, v] for lab, v in zip(shown, xs)],
-                hovertemplate="%{y}<br>%{customdata[0]}：%{customdata[1]:.1f}%<extra></extra>",
-            )
-        )
-    base_layout(right, height=430, margin=dict(l=84, r=18, t=78, b=76))
-    right.update_layout(barmode="stack", bargap=0.45)
-    right.update_xaxes(
-        range=[0, 100],
-        tickvals=[0, 25, 50, 75, 100],
-        ticktext=["0", "25%", "50%", "75%", "100%"],
-    )
-    right.update_yaxes(
-        categoryorder="array",
-        categoryarray=["支出构成", "收入构成"],
-        showgrid=False,
-    )
-    add_title(
-        right,
-        f"转账主导：占收入 {fmt_pct(m['transfer_inc_share'], 0)}、占支出 {fmt_pct(m['ext_transfer_share_global'] + m['internal_transfer_share_global'], 0)}",
-    )
-
-    return (
-        f'<div class="chart-grid"><div>{fig_html(left)}</div>'
-        f"<div>{fig_html(right)}</div></div>"
-    )
-
-
-def chart_consumption(m: dict, top_n: int = 10) -> str:
-    items = sorted(m["cat_shares"].items(), key=lambda kv: kv[1])[-top_n:]
-    labels = [
-        CONSUMPTION_CATS[k] + ("（风险类）" if k == "gambling" else "") for k, _ in items
-    ]
-    vals = [float(v) * 100 for _, v in items]
-    colors = [STATUS["critical"] if k == "gambling" else SERIES[0] for k, _ in items]
-    totals = [fmt_money(m["cat_totals"][k], compact=True) for k, _ in items]
-
-    fig = go.Figure(
-        go.Bar(
-            y=labels,
-            x=vals,
-            orientation="h",
-            marker=dict(color=colors),
-            text=[f"{v:.1f}%" for v in vals],
-            textposition="outside",
-            textfont=dict(color=INK2, size=11),
-            cliponaxis=False,
-            customdata=[[t] for t in totals],
-            hovertemplate="%{y}<br>占消费 %{x:.1f}%<br>6 个月总额 %{customdata[0]}<extra></extra>",
-        )
-    )
-    base_layout(fig, height=430, margin=dict(l=124, r=34, t=64, b=48))
-    fig.update_xaxes(
-        range=[0, max(vals) * 1.22 if vals else 1],
-        ticksuffix="%",
-        title="占消费比例",
-    )
-    fig.update_yaxes(categoryorder="array", categoryarray=labels, showgrid=False)
-    top3 = "、".join(CONSUMPTION_CATS[k] for k, _ in items[-3:][::-1])
-    add_title(
-        fig,
-        f"消费结构：{top3}居前 · 可识别消费覆盖总支出 {fmt_pct(m['cons_share_exp_agg'])}",
-        y=1.12,
-    )
-    return fig_html(fig)
-
-
 def chart_liability(m: dict) -> str:
     raw = [
         ("现金贷 / 工资预支", m["adv_use"], m["adv_amt_share"], m["dish_advance"]),
@@ -1815,6 +1688,143 @@ def chart_liability(m: dict) -> str:
         f'<div class="chart-grid even"><div>{fig_html(left)}</div>'
         f"<div>{fig_html(right)}</div></div>"
     )
+
+
+def chart_fixed_burden(m: dict, seg: pd.DataFrame) -> str:
+    labels = ["盈余型", "平衡型", "赤字型", "重压型"]
+    order = labels[::-1]
+    colors_by_seg = {
+        "盈余型": STATUS["good"],
+        "平衡型": STATUS["warning"],
+        "赤字型": STATUS["serious"],
+        "重压型": STATUS["critical"],
+    }
+
+    fixed_vals = [
+        float(seg.loc[s, "fixed_wage"]) * 100 if s in seg.index else np.nan
+        for s in order
+    ]
+    fixed_plot = [v if np.isfinite(v) else 0.0 for v in fixed_vals]
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        column_widths=[1.0, 1.0],
+        horizontal_spacing=0.16,
+    )
+    fig.add_trace(
+        go.Bar(
+            y=order,
+            x=fixed_plot,
+            orientation="h",
+            marker=dict(color=[colors_by_seg[s] for s in order]),
+            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in fixed_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>固定账单 / 工资中位 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=1,
+    )
+    med = float(m["fixed_wage_p50"]) * 100 if np.isfinite(m["fixed_wage_p50"]) else np.nan
+    if np.isfinite(med):
+        fig.add_vline(
+            x=med,
+            line=dict(color=BASELINE, width=1, dash="dot"),
+            row=1,
+            col=1,
+        )
+        fig.add_annotation(
+            x=med,
+            y=1,
+            xref="x",
+            yref="y domain",
+            text=f"全体中位 {med:.1f}%",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color=MUTED, size=10.5),
+        )
+    low = float(seg.loc["盈余型", "fixed_wage"]) if "盈余型" in seg.index else np.nan
+    high = float(seg.loc["重压型", "fixed_wage"]) if "重压型" in seg.index else np.nan
+    ratio = high / low if np.isfinite(high) and np.isfinite(low) and low > 0 else np.nan
+    add_panel_title(
+        fig,
+        f"固定账单负担：重压型是盈余型的 {ratio:.1f} 倍" if np.isfinite(ratio) else "固定账单负担",
+        "x domain",
+    )
+
+    rent_vals = [
+        float(seg.loc[s, "rent_inc"]) * 100 if s in seg.index else np.nan
+        for s in order
+    ]
+    rent_plot = [v if np.isfinite(v) else 0.0 for v in rent_vals]
+    fig.add_trace(
+        go.Bar(
+            y=order,
+            x=rent_plot,
+            orientation="h",
+            marker=dict(color=SERIES[0]),
+            text=[f"{v:.1f}%" if np.isfinite(v) else "—" for v in rent_vals],
+            textposition="outside",
+            textfont=dict(color=INK2, size=11),
+            cliponaxis=False,
+            hovertemplate="%{y}<br>房租覆盖率 %{x:.1f}%<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+    overall = float(m["rent_incidence"]) * 100 if np.isfinite(m["rent_incidence"]) else np.nan
+    if np.isfinite(overall):
+        fig.add_vline(
+            x=overall,
+            line=dict(color=BASELINE, width=1, dash="dot"),
+            row=1,
+            col=2,
+        )
+        fig.add_annotation(
+            x=overall,
+            y=1,
+            xref="x2",
+            yref="y2 domain",
+            text=f"全体 {overall:.1f}%",
+            showarrow=False,
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(color=MUTED, size=10.5),
+        )
+    add_panel_title(fig, "房租覆盖率：赤字型与重压型接近一半", "x2 domain", "y2 domain")
+
+    base_layout(fig, height=430, margin=dict(l=72, r=24, t=78, b=64))
+    fig.update_xaxes(
+        range=[0, max(fixed_plot) * 1.30 if any(fixed_plot) else 1],
+        ticksuffix="%",
+        title="固定账单 / 工资（有工资用户，中位）",
+        row=1,
+        col=1,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=1,
+    )
+    fig.update_xaxes(
+        range=[0, max(rent_plot) * 1.30 if any(rent_plot) else 1],
+        ticksuffix="%",
+        title="房租覆盖率（有房租交易用户占比）",
+        row=1,
+        col=2,
+    )
+    fig.update_yaxes(
+        categoryorder="array",
+        categoryarray=order,
+        showgrid=False,
+        row=1,
+        col=2,
+    )
+    return fig_html(fig)
 
 
 def chart_health(d: pd.DataFrame, m: dict) -> str:

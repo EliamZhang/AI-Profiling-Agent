@@ -21,12 +21,12 @@ from pathlib import Path
 
 from plotly.offline import get_plotlyjs
 
-import compare_profile_report as cmp_fw
-import deck_framework as ui
-import fundo_profile_report as fundo_mod
-import wagego_profile_report as wagego_mod
-import compare_profile_enrichment as compare_extra
-import profile_enrichment as profile_extra
+from scripts import compare_profile_report as cmp_fw
+from scripts import deck_framework as ui
+from scripts import fundo_profile_report as fundo_mod
+from scripts import wagego_profile_report as wagego_mod
+from scripts import compare_profile_enrichment as compare_extra
+from scripts import profile_enrichment as profile_extra
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

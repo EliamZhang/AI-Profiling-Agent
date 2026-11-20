@@ -40,7 +40,7 @@
 - [fundo_cross_analysis.csv](data/fundo_cross_analysis.csv)：机构数、偿债负担、历史余额、行为分层、互斥窗口和核验结果的聚合统计。
 - [fundo_segment_summary.csv](data/fundo_segment_summary.csv)：本次 Fundo 样本的分层金额中位数，替代原文中指向不明确的通用分层文件。
 
-运行 `python build_profile_decks.py --only fundo` 从原始 CSV 重建 HTML 和新增审计数据。运行 `python review_fundo_variables.py` 可重新生成候选变量统计。业务计算现集中在 `profile_enrichment.py`，`fundo_profile_enrichment.py` 保留兼容入口；WageGo 与两品牌对比已复用相同公式、阈值和时间窗口。
+运行 `python build_profile_decks.py --only fundo` 从原始 CSV 重建 HTML 和新增审计数据。运行 `python review_fundo_variables.py` 可重新生成候选变量统计。画像加载与图表共用 `scripts/profile_report_base.py`，业务计算集中在 `scripts/profile_enrichment.py`；WageGo 与两品牌对比已复用相同公式、阈值和时间窗口。
 
 验证包含金融分母为零/缺失、带符号净额、互斥窗口、缺失拒付标签、公式不一致、行业覆盖与发薪周期等 5 项测试，以及全部 25 页的离线浏览器渲染检查。恒等式使用金额误差 $0.02、预计算比率误差 0.00002 作为容差；所有新增导出均为聚合数据，不包含用户标识或逐户金额。
 
